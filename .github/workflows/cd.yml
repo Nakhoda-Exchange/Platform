@@ -1,0 +1,42 @@
+name: CD
+
+# Builds the production Docker image and uploads it as a downloadable
+# artifact (a `docker load`-able tarball). No registry or secrets required.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  docker-image:
+    name: Build & export image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image and export to tarball
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: nakhoda-platform:${{ github.sha }}
+          outputs: type=docker,dest=/tmp/nakhoda-platform-image.tar
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-${{ github.sha }}
+          path: /tmp/nakhoda-platform-image.tar
+          retention-days: 14
+          if-no-files-found: error
