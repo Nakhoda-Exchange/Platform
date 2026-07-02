@@ -96,3 +96,41 @@ bun run format       # format everything (optional; the hook covers staged files
 ```
 
 **Verify UI changes on both mobile Safari (WebKit) and Chrome** — the app is mobile-first and RTL, and Safari has caught issues Chrome did not.
+
+## Pull Requests
+
+Open your PR against `main`. Opening one auto-populates the description from
+[`.github/pull_request_template.md`](.github/pull_request_template.md) — fill it
+in and complete the checklist. Keep PRs focused: one logical change per PR.
+
+## Branch protection (maintainers)
+
+`main` should be protected on GitHub so the rules above are enforced, not just
+documented. In **Settings → Branches → Add branch ruleset** (or _Branch
+protection rules_) for `main`, enable:
+
+- **Require a pull request before merging** — with at least **1 approval**.
+- **Require status checks to pass** — add `lint` and `type-check` once CI runs them.
+- **Require branches to be up to date before merging**.
+- **Require linear history** (no merge commits) — squash or rebase merges only.
+- **Do not allow force pushes** and **do not allow deletions**.
+- **Include administrators** (apply the rules to everyone).
+
+A maintainer can apply an equivalent baseline via the API:
+
+```bash
+gh api -X PUT repos/Nakhoda-Exchange/Platform/branches/main/protection --input - <<'JSON'
+{
+  "required_status_checks": null,
+  "enforce_admins": true,
+  "required_pull_request_reviews": { "required_approving_review_count": 1 },
+  "restrictions": null,
+  "required_linear_history": true,
+  "allow_force_pushes": false,
+  "allow_deletions": false
+}
+JSON
+```
+
+> Once CI is set up, replace `"required_status_checks": null` with
+> `{ "strict": true, "contexts": ["lint", "type-check"] }`.
