@@ -1,0 +1,15 @@
+.git
+.github
+.next
+node_modules
+.husky
+.idea
+.vscode
+npm-debug.log*
+Dockerfile
+.dockerignore
+README.md
+CONTRIBUTORS.md
+CLAUDE.md
+AGENTS.md
+.env*
