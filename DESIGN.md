@@ -15,9 +15,15 @@ Figma mirrors these values (the Figma file has no variables yet — raw values).
 Nakhoda is **mobile-first, RTL Persian**. `<html dir="rtl">`, Vazirmatn font.
 Every screen must hold up on **mobile Safari (WebKit) and Chrome (Chromium)**.
 
-- **Language/direction:** Persian, right-to-left. Latin/number runs that must
+**North-star:** the radical simplicity of our rival [Moonshot](https://moonshot.com/)
+— one obvious action per screen, big/legible, nothing an elder has to puzzle
+over. When copying a Moonshot pattern, keep it blue-only and RTL. The full voice
+
+- visual rules live in the `nakhoda-ux` skill.
+
+* **Language/direction:** Persian, right-to-left. Latin/number runs that must
   read left-to-right (OTP boxes, ticker symbols) get an explicit `dir="ltr"`.
-- **Digits:** always Persian digits in UI copy. Convert with `lib/utils/digits.ts`
+* **Digits:** always Persian digits in UI copy. Convert with `lib/utils/digits.ts`
   — never hand-roll.
 
 ## Color
@@ -80,8 +86,16 @@ Full catalog in `COMPONENTS.md`. Rules:
 - **IconBadge** — 48px `brand-soft` square, 12px radius, houses a `brand` icon.
 - **Icons** — inline SVG (`components/ui/icons.tsx`), `stroke="currentColor"`,
   2px stroke, round caps. Recolor with `text-*`. Never import an icon font.
-- **Logo** — wordmark "ناخدا" in `brand` extrabold + anchor mark in a filled
-  `brand` tile (10px radius).
+- **Logo** — the single `Logo` (`components/layout/logo.tsx`): wordmark "ناخدا"
+  in `brand` extrabold + anchor mark in a filled `brand` tile. One logo
+  everywhere; there is no separate auth/ship-wheel variant anymore.
+- **Platform shell** — sticky `PlatformHeader` (logo or per-route title + a
+  support action) and a **floating** `BottomNav` (rounded card, shadow, brand-tint
+  active pill, iOS safe-area). Both RTL; nav order is right→left.
+- **Market row** — coin badge (brand letter, blue-only), name/symbol, price
+  (IRT + USD), and a green/red change pill that always pairs color with ▲/▼.
+- **Splash** — full-screen `brand` overlay with the white anchor + spinner,
+  shown on load (web + PWA) and matched to the PWA manifest `background_color`.
 
 ## Interaction & states
 

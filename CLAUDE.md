@@ -46,8 +46,33 @@ Clean architecture with a typed DI container. The dependency rule points inward:
 ## Components
 
 - `components/ui/` — generic primitives. There is a **single `Button`** (`variant` / `size` / `shape` / `fullWidth`); to style a `Link` like a button, use the exported `buttonClasses()` recipe. Icons are inline SVGs in `components/ui/icons.tsx` (`stroke="currentColor"`; recolor with `text-*`).
-- `components/{layout,landing,auth}/` — feature components that compose the primitives. Keep `"use client"` on interactive leaves only; pages and layout are server components.
+- `components/{layout,landing,auth,market,pwa,support}/` — feature components that compose the primitives. Keep `"use client"` on interactive leaves only; pages and layout are server components. There is **one** `Logo` (`components/layout/logo.tsx`) used everywhere — do not fork it.
 
-## Auth flow (concrete example of the layering)
+## Auth → status → KYC (concrete example of the layering)
 
-Landing CTA (`components/landing/phone-cta-card.tsx`) or `/login` → `startLogin` action → `RequestOtpUseCase` → `MockAuthRepository` (opaque `crypto.randomUUID()` challenge) → redirect to `/login/verify?phone&cid&rs` → `verifyLogin` → home. The mock code is always **`123456`**. The challenge currently travels in the URL (mock only; a real backend should use an httpOnly cookie).
+Landing CTA (`components/landing/phone-cta-card.tsx`) or `/login` → `startLogin` action → `RequestOtpUseCase` → `MockAuthRepository` (opaque `crypto.randomUUID()` challenge) → redirect to `/login/verify?phone&cid&rs` → `verifyLogin`. The mock code is always **`123456`**.
+
+`verifyOtp` returns a **login status** that decides the destination (`app/actions/auth.ts`):
+
+- `registration` → `/kyc` (default for new numbers)
+- `approved` → `/market` (mock: `09111111111`)
+- `declined` → `/declined` (mock: `09000000000`) — an empty page with a centered retry-KYC button; a declined user never sees the platform.
+
+**KYC** (`app/kyc`, `app/kyc/confirm`, docs in `doc/kyc/`): national code + Jalali birth date → `InquireIdentityUseCase` (enforces `MIN_SIGNUP_AGE`) → mock identity inquiry → read-only confirm → `/market`. The inquiry result is stashed **server-side** in `KycSessionStore` under an opaque id carried in an **httpOnly cookie** — never in the URL (that's the tamper-safe pattern; the OTP challenge is still URL-borne, mock-only).
+
+## Platform shell, market, PWA, support
+
+- **Shell** — the authenticated app lives under the `app/(platform)/` route group; `AppLayout` wraps it in `AppShell` (sticky `PlatformHeader` + floating `BottomNav`). Header content is per-route via `HEADER_CONFIG` (logo on main tabs, title/back on sub-pages); nav items are in `components/layout/platform-nav.ts`. Landing/auth are **outside** the group, so no shell there.
+- **Market** (`/market`) — coin list (PLP): `MarketRepository` → `ListCoinsUseCase`; `MarketList`/`CoinListItem` show name/symbol, 24h change (green/red **plus** ▲/▼ + aria label — never color alone), IRT + USD. Money/percent formatting in `lib/utils/money.ts`. Rows link to `/market/[symbol]` (PDP). Search/filters are a separate feature.
+- **PWA** — `app/manifest.ts` (installable, `start_url: "/market"`), `public/sw.js` + `ServiceWorkerRegister` (**production only** — a SW in dev caches Turbopack HMR chunks and causes `ChunkLoadError`), branded splash (`components/pwa/`). Icons: `bun run` → `node scripts/generate-icons.mjs`.
+- **Support chat** — Goftino (`components/support/`), opened from the header icon via `openSupportChat()`; the default launcher is hidden. Widget id from `NEXT_PUBLIC_GOFTINO_WIDGET_ID`.
+
+## Environment
+
+Public config only, read in the browser, so `NEXT_PUBLIC_`-prefixed. `.env` is gitignored; `.env.example` lists the keys.
+
+- `NEXT_PUBLIC_GOFTINO_WIDGET_ID` — Goftino support-chat widget id.
+
+## Design & UX
+
+Blue-only palette (brand + neutrals); non-blue only for a real state or gain/loss data. One logo everywhere — the `Logo` component (`components/layout/logo.tsx`): «ناخدا» wordmark + anchor mark in a brand tile. Simplicity is the bar (north-star: our rival **Moonshot**, moonshot.com). Details in `DESIGN.md`, `COMPONENTS.md`, and the `nakhoda-ux` skill.

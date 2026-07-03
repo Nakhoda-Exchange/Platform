@@ -44,8 +44,10 @@ Surface container: 20px radius, hairline `line` border, white fill. `as` +
 ### Icons — `icons.tsx`
 
 Inline SVG, `stroke="currentColor"`, 2px, round caps/joins, `aria-hidden`.
-Recolor via `text-*`. Add new icons here following `Icon` wrapper.
-Current: ShipWheel, Smartphone, ZapOff, Coins, Anchor, Edit, Rocket.
+Recolor via `text-*`. Add new icons here following the `Icon` wrapper.
+Current: Anchor, Smartphone, ZapOff, Coins, Edit, Rocket, ChevronRight,
+ChevronLeft, User, Wallet, TrendingUp, Headphones. (No ShipWheel — the logo is
+the anchor now.)
 
 ### Container / Section — `container.tsx`, `section.tsx`
 
@@ -53,19 +55,40 @@ Page width + vertical rhythm wrappers (1200px content cap).
 
 ## Auth (`components/auth/`)
 
-`AuthShell` (centered 420px column), `AuthHeader`, `AuthLogo` (wordmark + anchor
-tile), `PhoneLoginForm`, `OtpInput` (LTR 6-box), `OtpVerifyForm`, `ResendTimer`.
+`AuthShell` (centered 420px column), `AuthHeader` (uses `Logo`), `PhoneLoginForm`,
+`OtpInput` (LTR 6-box), `OtpVerifyForm`, `ResendTimer`.
 
-**KYC reuses these:** same `AuthShell`/logo/header, `Field` for inputs,
+**KYC reuses these:** same `AuthShell`/`Logo`/header, `Field` for inputs,
 `Button` `xl` for the CTA. New screens = new forms, not new primitives.
 
 ## Layout (`components/layout/`)
 
-`SiteShell`, `SiteHeader`, `SiteFooter`, `Logo`.
+- **`Logo`** — the single Nakhoda logo (wordmark + anchor tile) used everywhere.
+- **Platform shell** — `AppShell` (sticky header + content + floating nav),
+  `PlatformHeader` (per-route logo/title/back + support action, client),
+  `BottomNav` (route-aware active tab, client). Config in `platform-nav.ts`
+  (`NAV_ITEMS`, `HEADER_CONFIG`).
+- **Landing chrome** — `SiteShell`, `SiteHeader`, `SiteFooter`.
 
 ## Landing (`components/landing/`)
 
 `Hero`, `PhoneCtaCard`, `Waves`, `FeatureCard`, `FeatureGrid` (LTR grid).
+
+## Market (`components/market/`)
+
+`MarketList` + `CoinListItem` (row → `/market/[symbol]`), `CoinBadge` (brand
+letter badge), `ChangePill` (green/red + ▲/▼ + aria label). Formatting in
+`lib/utils/money.ts`.
+
+## PWA (`components/pwa/`)
+
+`SplashScreen` (SSR overlay), `SplashHider` (fades it once interactive),
+`ServiceWorkerRegister` (registers in prod, tears down any SW in dev).
+
+## Support (`components/support/`)
+
+`GoftinoChat` (loads Goftino, hides its launcher, fullscreen-on-open) and
+`openSupportChat()` used by the header support button.
 
 ## Adding a component
 
