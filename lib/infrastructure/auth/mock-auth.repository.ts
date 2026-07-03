@@ -2,6 +2,7 @@ import type { AuthRepository } from "@/lib/core/application/auth/ports/auth-repo
 import type { Mobile } from "@/lib/core/domain/auth/mobile";
 import type { OtpChallenge } from "@/lib/core/domain/auth/otp-challenge";
 import type { AuthSession } from "@/lib/core/domain/auth/auth-session";
+import type { LoginStatus } from "@/lib/core/domain/auth/login-status";
 import { fail, ok, type Result } from "@/lib/core/domain/shared/result";
 import { toEnglishDigits } from "@/lib/utils/digits";
 
@@ -13,6 +14,16 @@ interface StoredChallenge {
 
 const RESEND_AFTER_SECONDS = 120;
 const MOCK_CODE = "123456";
+
+/**
+ * Mock login status by mobile so the whole post-OTP flow is drivable without a
+ * backend. A real adapter gets this from the verify response.
+ */
+function mockStatusFor(mobile: string): LoginStatus {
+  if (mobile === "09000000000") return "declined";
+  if (mobile === "09111111111") return "approved";
+  return "registration"; // any other (new) user starts in KYC
+}
 
 /** Simulates network latency so the mock behaves like a real backend. */
 function delay(ms = 600): Promise<void> {
@@ -58,6 +69,7 @@ export class MockAuthRepository implements AuthRepository {
       userId: `user_${challenge.mobile}`,
       mobile: challenge.mobile,
       token: "mock-session-token",
+      status: mockStatusFor(challenge.mobile),
     });
   }
 }

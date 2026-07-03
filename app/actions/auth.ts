@@ -51,9 +51,17 @@ export async function resendOtp(formData: FormData): Promise<void> {
   redirect(verifyUrl(mobile, challengeId, resendAfterSeconds));
 }
 
+/** Post-login destination for each user status. */
+const DESTINATION = {
+  registration: "/kyc",
+  approved: "/market",
+  declined: "/declined",
+} as const;
+
 /**
- * Step 2 — verify the submitted code. On success the user is logged in and sent
- * to the home page (a real app would land on the dashboard).
+ * Step 2 — verify the submitted code. On success the login status decides where
+ * the user goes: new users into KYC, approved users to the market, and declined
+ * users to a dead-end page (they never reach the platform).
  */
 export async function verifyLogin(
   _prev: AuthFormState,
@@ -69,5 +77,5 @@ export async function verifyLogin(
     return { error: result.error.message };
   }
 
-  redirect("/");
+  redirect(DESTINATION[result.data.status]);
 }

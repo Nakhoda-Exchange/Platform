@@ -17,7 +17,7 @@ npx tsc --noEmit     # type-check
 ```
 
 - Only **one** `next dev` is allowed per project directory (Next 16); a second one exits. If styles look broken after editing tokens, it's usually a stale dev server — restart it (see Tailwind note below).
-- There is **no test suite**. Verify behavior by driving the running app in a browser (WebKit + Chromium), especially for the auth/OTP flow.
+- Unit tests run on **`bun test`** (colocated `*.test.ts`; e.g. the national-code checksum and Jalali date utils). Keep pure domain/util logic covered there. UI and flow behavior still needs **driving the running app in a browser** (WebKit + Chromium), especially the auth/OTP → KYC flow.
 
 ## Framework gotchas (Next.js 16 + Tailwind v4)
 

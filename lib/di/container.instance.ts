@@ -1,6 +1,9 @@
 import { RequestOtpUseCase } from "@/lib/core/application/auth/use-cases/request-otp.use-case";
 import { VerifyOtpUseCase } from "@/lib/core/application/auth/use-cases/verify-otp.use-case";
+import { InquireIdentityUseCase } from "@/lib/core/application/kyc/use-cases/inquire-identity.use-case";
 import { MockAuthRepository } from "@/lib/infrastructure/auth/mock-auth.repository";
+import { MockIdentityInquiryRepository } from "@/lib/infrastructure/kyc/mock-identity-inquiry.repository";
+import { MockKycSessionStore } from "@/lib/infrastructure/kyc/mock-kyc-session-store";
 import { Container } from "./container";
 import { TOKENS } from "./tokens";
 
@@ -17,6 +20,15 @@ export function buildContainer(): Container {
     TOKENS.AuthRepository,
     () => new MockAuthRepository(),
   );
+  container.registerSingleton(
+    TOKENS.IdentityInquiryPort,
+    () => new MockIdentityInquiryRepository(),
+  );
+  // Singleton: the pending-KYC map must survive between submit and confirm.
+  container.registerSingleton(
+    TOKENS.KycSessionStore,
+    () => new MockKycSessionStore(),
+  );
 
   // Application: construct use cases from their dependencies.
   container.register(
@@ -26,6 +38,10 @@ export function buildContainer(): Container {
   container.register(
     TOKENS.VerifyOtpUseCase,
     (c) => new VerifyOtpUseCase(c.resolve(TOKENS.AuthRepository)),
+  );
+  container.register(
+    TOKENS.InquireIdentityUseCase,
+    (c) => new InquireIdentityUseCase(c.resolve(TOKENS.IdentityInquiryPort)),
   );
 
   return container;
