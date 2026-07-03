@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AuthLogo } from "./auth-logo";
+import { Logo } from "@/components/layout/logo";
 
 interface AuthHeaderProps {
   title: ReactNode;
@@ -10,7 +10,7 @@ interface AuthHeaderProps {
 export function AuthHeader({ title, subtitle }: AuthHeaderProps) {
   return (
     <div className="flex w-full flex-col items-start gap-4">
-      <AuthLogo />
+      <Logo />
       <div className="flex w-full flex-col gap-2 text-right">
         <h1 className="text-[32px] font-extrabold leading-tight text-slate-900">
           {title}

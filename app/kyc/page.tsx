@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AuthShell } from "@/components/auth/auth-shell";
-import { AuthLogo } from "@/components/auth/auth-logo";
+import { Logo } from "@/components/layout/logo";
 import { KycProgress } from "@/components/kyc/kyc-progress";
 import { KycIdentityForm } from "@/components/kyc/kyc-identity-form";
 
@@ -12,7 +12,7 @@ export default function KycPage() {
   return (
     <AuthShell>
       <div className="flex w-full flex-col items-start gap-6">
-        <AuthLogo />
+        <Logo />
         <KycProgress step={1} />
         <div className="flex w-full flex-col gap-2 text-right">
           <h1 className="text-[28px] font-extrabold leading-tight text-slate-900">

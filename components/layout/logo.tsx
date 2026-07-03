@@ -1,26 +1,35 @@
 import Link from "next/link";
-import { ShipWheelIcon } from "@/components/ui/icons";
+import { AnchorIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils/cn";
 
 interface LogoProps {
-  /** Text size in px; the wheel scales alongside it. */
+  /** Wordmark font size in px; the anchor tile scales alongside it. */
   size?: number;
   className?: string;
   /** Pass `null` to render a plain (non-linked) wordmark. */
   href?: string | null;
 }
 
-/** The Nakhoda wordmark: "ناخدا" beside the ship-wheel mark. */
+/**
+ * The single Nakhoda logo — used everywhere: "ناخدا" wordmark beside the anchor
+ * mark in a filled brand tile. There is only one logo; do not fork it.
+ */
 export function Logo({ size = 24, className, href = "/" }: LogoProps) {
+  const tile = Math.round(size * 1.5);
   const content = (
-    <span className={cn("flex items-center gap-2 text-brand", className)}>
+    <span className={cn("flex items-center gap-3", className)}>
       <span
-        className="font-extrabold text-ink"
-        style={{ fontSize: size, lineHeight: 1 }}
+        className="font-extrabold leading-none text-brand"
+        style={{ fontSize: size }}
       >
         ناخدا
       </span>
-      <ShipWheelIcon size={Math.round(size * 1.15)} />
+      <span
+        className="flex items-center justify-center rounded-[10px] bg-brand text-white"
+        style={{ width: tile, height: tile }}
+      >
+        <AnchorIcon size={Math.round(tile * 0.55)} />
+      </span>
     </span>
   );
 
