@@ -1,6 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
+
+// viewport-fit=cover lets env(safe-area-inset-*) resolve (iOS notch / home bar).
+export const viewport: Viewport = { viewportFit: "cover" };
 
 const vazirmatn = Vazirmatn({
   subsets: ["arabic", "latin"],
