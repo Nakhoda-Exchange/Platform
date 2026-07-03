@@ -1,36 +1,69 @@
 # ناخدا (Nakhoda)
 
-A modern platform for trading altcoins, built mobile-first for a Persian (RTL) audience. This repository is the web platform and is intended to house the marketing **landing**, the **platform** app, and the **blog**. Today it ships the landing page and the phone/OTP authentication flow; there is no backend yet, so all data access goes through repository **ports** backed by in-memory **mock adapters**.
+A modern, **mobile-first, RTL Persian** platform for trading altcoins. This repo
+is the web platform — the marketing **landing**, the authenticated **app**, and
+(later) the blog. There is no backend yet, so all data access goes through
+repository **ports** backed by in-memory **mock adapters**; swapping to a real
+backend is a one-file change in the DI composition root.
+
+It's also an installable **PWA** with a branded splash, and simple enough that a
+first-time crypto buyer can finish a task without asking a question — our design
+north-star is the radical simplicity of our rival, [Moonshot](https://moonshot.com/)
+(see the `nakhoda-ux` design guide).
 
 ## Stack
 
-- **Next.js 16** (App Router, Turbopack, React 19) — note: this is a breaking-change release, see `AGENTS.md`
+- **Next.js 16** (App Router, Turbopack, React 19) — a breaking-change release, see `AGENTS.md`
 - **Tailwind CSS v4** (CSS-first `@theme` tokens in `app/globals.css`)
-- **TypeScript**
-- **Vazirmatn** font via `next/font/google`; the whole app is RTL (`<html dir="rtl">`)
+- **TypeScript**, **Vazirmatn** font; the whole app is RTL (`<html dir="rtl">`)
+- **jalaali-js** for Jalali (Persian) dates; **Goftino** for support chat
+- Tests via **`bun test`**
 
 ## Getting started
 
 ```bash
-bun install        # bun.lock is the lockfile (npm also works)
-bun run dev        # http://localhost:3000 (Turbopack)
+bun install           # bun.lock is the lockfile (npm also works)
+cp .env.example .env   # set NEXT_PUBLIC_GOFTINO_WIDGET_ID
+bun run dev           # http://localhost:3000 (Turbopack)
 ```
 
-> Next.js 16 allows only **one** dev server per project directory — a second `next dev` in the same folder will exit.
+> Next.js 16 allows only **one** dev server per project directory — a second `next dev` in the same folder exits.
 
 ## Scripts
 
-| Command            | Description                      |
-| ------------------ | -------------------------------- |
-| `bun run dev`      | Start the dev server (Turbopack) |
-| `bun run build`    | Production build                 |
-| `bun run start`    | Serve the production build       |
-| `bun run lint`     | Run ESLint                       |
-| `npx tsc --noEmit` | Type-check                       |
+| Command             | Description                                    |
+| ------------------- | ---------------------------------------------- |
+| `bun run dev`       | Dev server (Turbopack)                         |
+| `bun run build`     | Production build                               |
+| `bun run start`     | Serve the production build                     |
+| `bun run clean`     | Remove `.next` and kill a stale `:3000` server |
+| `bun run lint`      | ESLint                                         |
+| `bun run typecheck` | `tsc --noEmit`                                 |
+| `bun test`          | Unit tests (colocated `*.test.ts`)             |
+| `bun run format`    | Prettier write                                 |
+
+## Features
+
+- **Landing** — marketing page with the phone CTA.
+- **Auth** — phone + OTP (mock code **`123456`** for any `09xxxxxxxxx`).
+- **Login-status routing** — after OTP, the user's status picks the destination:
+  `registration → /kyc`, `approved → /market`, `declined → /declined` (a dead-end
+  retry page; the platform is never shown to a declined user).
+- **KYC** — national code + Jalali birth date → identity inquiry → read-only
+  confirm. Min sign-up age enforced. See `doc/kyc/`.
+- **Platform shell** — sticky header + floating bottom nav wrapping the
+  authenticated app (`/market`, `/wallet`, `/account`), via the `(platform)`
+  route group.
+- **Market** — coin list (PLP) with icon/name/symbol, 24h change (green/red), and
+  IRT + USD prices; rows open the coin detail page.
+- **Support chat** — Goftino, opened from the header icon (no default launcher).
+- **PWA** — installable, opens on `/market`, branded splash.
 
 ## Architecture
 
-The app follows **clean architecture** with a small **dependency-injection** container. The dependency rule points inward: domain ← application ← infrastructure, and the presentation layer (Next.js) talks to use cases through the DI container.
+**Clean architecture** with a small typed **DI** container. The dependency rule
+points inward: domain ← application ← infrastructure; the presentation layer
+(Next.js) reaches use cases through the container.
 
 ```
 lib/
@@ -39,19 +72,26 @@ lib/
     application/     ports (repository interfaces) + use cases
   infrastructure/    adapters implementing ports (mock, in-memory for now)
   di/                typed container; container.instance.ts is the composition root
-  utils/             cn(), Persian-digit helpers
+  utils/             cn(), digits, jalali, money helpers
 app/                 routes + thin server actions (app/actions/)
-components/          ui/ primitives, then layout/ landing/ auth/ feature folders
+  (platform)/        authenticated app under the shell (market/wallet/account)
+components/          ui/ primitives, then layout/ auth/ landing/ market/ pwa/ support/
 ```
 
-To move off mocks, swap the adapter registration in `lib/di/container.instance.ts` — nothing else changes.
+To move off mocks, swap the adapter registration in
+`lib/di/container.instance.ts` — nothing else changes.
 
-## Auth flow
+## Docs
 
-Landing CTA or `/login` → request OTP → `/login/verify` → verify → home. The mock OTP code is always **`123456`** for any valid Iranian mobile (`09xxxxxxxxx`).
+- **`CLAUDE.md`** / **`AGENTS.md`** — guidance for contributors and AI assistants.
+- **`DESIGN.md`** — design tokens, typography, RTL, a11y. **`COMPONENTS.md`** — component catalog.
+- **`doc/<feature>/`** — per-feature PRD + implementation flow (e.g. `doc/kyc/`).
+- **`CONTRIBUTORS.md`** — branch/commit conventions (every change on a branch → PR).
+- The `nakhoda-ux` skill (`.claude/skills/`) — design + Persian UX-writing rules.
 
 ## Conventions
 
-- **Mobile-first, RTL, and must work on both mobile Safari and Chrome.** Verify UI changes in WebKit and Chromium.
-- Design tokens live in `app/globals.css` under `@theme`; editing them requires a **dev server restart**.
-- More detail for contributors (and AI assistants) lives in `CLAUDE.md` and `AGENTS.md`.
+- **Mobile-first, RTL, must work on mobile Safari _and_ Chrome** — verify in WebKit and Chromium.
+- **Blue-only palette** (brand + neutrals); non-blue only for a real state or gain/loss data.
+- Design tokens live in `app/globals.css` under `@theme`; editing them needs a **dev-server restart**.
+- Persian digits everywhere in UI; convert via `lib/utils/digits.ts`.
