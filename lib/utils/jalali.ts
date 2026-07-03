@@ -32,6 +32,21 @@ export function isValidJalaliDate(value: string): boolean {
 }
 
 /**
+ * Live input mask for a `YYYY/MM/DD` field: keeps the digits the user typed
+ * (Persian or Latin), caps at 8, and auto-inserts the `/` separators. Preserves
+ * digit script so a Persian typist keeps seeing Persian digits.
+ *
+ * ponytail: append-at-end only. Mid-string edits can jump the caret — a mask
+ * lib fixes that, but it's not worth a dependency for one birth-date field.
+ */
+export function maskJalaliDate(value: string): string {
+  const d = value.replace(/[^0-9۰-۹]/g, "").slice(0, 8);
+  return [d.slice(0, 4), d.slice(4, 6), d.slice(6, 8)]
+    .filter(Boolean)
+    .join("/");
+}
+
+/**
  * Whole years between a Jalali birth date and `now`, or `null` if the date is
  * malformed. `now` is injectable so callers (and tests) stay deterministic.
  */
