@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Logo } from "./logo";
 import { ChevronRightIcon, HeadphonesIcon } from "@/components/ui/icons";
 import { HEADER_CONFIG } from "./platform-nav";
+import { openSupportChat } from "@/components/support/goftino";
 
 /**
  * Platform app bar. Per-route (via HEADER_CONFIG): the home tab shows the logo,
@@ -36,13 +37,14 @@ export function PlatformHeader() {
         )}
       </div>
 
-      <Link
-        href="#"
+      <button
+        type="button"
+        onClick={openSupportChat}
         aria-label="پشتیبانی"
-        className="flex size-11 items-center justify-center rounded-xl bg-surface text-gray-500 transition-colors hover:bg-gray-100"
+        className="flex size-11 cursor-pointer items-center justify-center rounded-xl bg-surface text-gray-500 transition-colors hover:bg-gray-100"
       >
         <HeadphonesIcon size={20} />
-      </Link>
+      </button>
     </header>
   );
 }
