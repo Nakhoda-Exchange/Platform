@@ -3,8 +3,23 @@ import { toGregorian } from "jalaali-js";
 import {
   isValidJalaliDate,
   jalaliAgeInYears,
+  maskJalaliDate,
   normalizeJalaliDate,
 } from "./jalali";
+
+describe("maskJalaliDate", () => {
+  test("auto-inserts slashes and caps at 8 digits", () => {
+    expect(maskJalaliDate("1375")).toBe("1375");
+    expect(maskJalaliDate("13750")).toBe("1375/0");
+    expect(maskJalaliDate("13750512")).toBe("1375/05/12");
+    expect(maskJalaliDate("137505129")).toBe("1375/05/12"); // extra digit dropped
+  });
+
+  test("keeps Persian digits and ignores junk", () => {
+    expect(maskJalaliDate("۱۳۷۵۰۵")).toBe("۱۳۷۵/۰۵");
+    expect(maskJalaliDate("1375//05")).toBe("1375/05");
+  });
+});
 
 describe("normalizeJalaliDate", () => {
   test("normalizes Persian digits, dashes, and short parts", () => {
