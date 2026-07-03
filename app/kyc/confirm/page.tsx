@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
-import { AuthLogo } from "@/components/auth/auth-logo";
+import { Logo } from "@/components/layout/logo";
 import { KycProgress } from "@/components/kyc/kyc-progress";
 import { KycConfirmForm } from "@/components/kyc/kyc-confirm-form";
 import { container } from "@/lib/di/container.instance";
@@ -26,7 +26,7 @@ export default async function KycConfirmPage() {
   return (
     <AuthShell>
       <div className="flex w-full flex-col items-start gap-6">
-        <AuthLogo />
+        <Logo />
         <KycProgress step={2} />
         <div className="flex w-full flex-col gap-2 text-right">
           <h1 className="text-[28px] font-extrabold leading-tight text-slate-900">
