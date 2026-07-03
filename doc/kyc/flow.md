@@ -6,9 +6,12 @@ copy: [`PRD.md`](./PRD.md). Visual system: `DESIGN.md`, `COMPONENTS.md`.
 ## Flow
 
 ```
-/login/verify (OTP ok)
-      │  redirect if user NOT yet verified
-      ▼
+/login/verify (OTP ok) ──▶ verifyOtp returns { session, status }
+      │
+      ├─ status = approved     ─▶ redirect /market
+      ├─ status = declined     ─▶ redirect /declined  (empty page + centered retry-KYC button)
+      └─ status = registration ─▶ redirect /kyc
+                                     │
 /kyc            Screen 1 — identity input (national code, birth date, invite?)
       │  submitKycIdentity()  ──▶ IdentityInquiryUseCase ──▶ port ──▶ Mock adapter
       │                                                             (returns name/father)
@@ -16,10 +19,30 @@ copy: [`PRD.md`](./PRD.md). Visual system: `DESIGN.md`, `COMPONENTS.md`.
 /kyc/confirm    Screen 2 — confirm read-only result
       │  confirmKyc()  ──▶ MarkVerifiedUseCase
       ▼
-/market (or home)
+/market
       ▲
       └── "back" from confirm returns to /kyc with values preserved
 ```
+
+## Auth-repository change (login status)
+
+`verifyOtp` must now report **where the user stands**, not just a session.
+
+- Add a `LoginStatus = 'registration' | 'approved' | 'declined'` type
+  (`lib/core/domain/auth/`), and extend `AuthSession` (or the verify result)
+  with a `status: LoginStatus` field.
+- `AuthRepository.verifyOtp` returns the status; `VerifyOtpUseCase` passes it
+  through. The `MockAuthRepository` decides the status from the mobile so the
+  flow is testable without a backend, e.g.:
+  - a reserved "declined" test number → `declined`
+  - a reserved "approved" test number → `approved`
+  - everything else (new user) → `registration`
+- `verifyLogin` action branches on `status`:
+  `registration → redirect('/kyc')`, `approved → redirect('/market')`,
+  `declined → redirect('/declined')`. It no longer hard-codes `redirect('/')`.
+- `/declined` is a standalone page — **no site chrome**: centered column, short
+  message, one primary button «تلاش مجدد احراز هویت» linking to `/kyc`. A
+  declined user must never reach the platform, so don't render market/nav here.
 
 ## Layering (mirror the auth feature)
 
@@ -43,7 +66,9 @@ infrastructure; presentation resolves use cases from the DI container.
 4. **DI** — register port→adapter and the use cases in `container.instance.ts`
    under new `TOKENS`. That composition root is the only place bindings live.
 5. **Presentation**
-   - Routes: `app/kyc/page.tsx` (input), `app/kyc/confirm/page.tsx` (confirm).
+   - Routes: `app/kyc/page.tsx` (input), `app/kyc/confirm/page.tsx` (confirm),
+     `app/declined/page.tsx` (declined dead-end), and a `/market` destination
+     for approved users.
    - Server actions `app/actions/kyc.ts` (`"use server"`, async only; keep
      constants/types in a sibling `kyc-state.ts`). Actions stay thin: resolve
      the use case, `.execute()`, return an error state or `redirect()`.
