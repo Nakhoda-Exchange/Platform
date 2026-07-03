@@ -25,12 +25,28 @@ name the inquiry returns. On success they land on the market.
 > As a newly logged-in user, I enter my national code and birth date, confirm
 > the identity the system finds for me, and reach the market — so I can trade.
 
+## Login status gate (after OTP)
+
+OTP verification now returns the user's **status**, which decides where they go.
+The platform is only ever shown to `approved` users.
+
+| Status         | Meaning                              | Destination                 |
+| -------------- | ------------------------------------ | --------------------------- |
+| `registration` | New / not yet verified               | KYC flow (`/kyc`)           |
+| `approved`     | Verified                             | Market                      |
+| `declined`     | Rejected — must not see the platform | Declined page (`/declined`) |
+
+- **Declined** is a dead end: an otherwise **empty page** with a single **"تلاش مجدد احراز هویت"** (retry KYC) button centered on it. No header, nav, or market — the platform is never rendered for a declined user. The retry button restarts KYC (`/kyc`).
+
 ## Flow (product view)
 
 ```
-OTP verified ─▶ Identity input ─▶ inquiry ─▶ Confirm identity ─▶ Market
-                     ▲                              │
-                     └──────── back / edit ─────────┘
+OTP verified ─▶ status?
+   ├─ registration ─▶ Identity input ─▶ inquiry ─▶ Confirm identity ─▶ Market
+   │                       ▲                              │
+   │                       └──────── back / edit ─────────┘
+   ├─ approved ─────▶ Market
+   └─ declined ─────▶ Declined page (empty + centered retry-KYC button)
 ```
 
 Figma: `nakhoda-kyc-identity`, `nakhoda-kyc-confirm` (mobile, 390×844).
