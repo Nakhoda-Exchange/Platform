@@ -16,14 +16,13 @@ Nakhoda is **mobile-first, RTL Persian**. `<html dir="rtl">`, Vazirmatn font.
 Every screen must hold up on **mobile Safari (WebKit) and Chrome (Chromium)**.
 
 **North-star:** the radical simplicity of our rival [Moonshot](https://moonshot.com/)
-— one obvious action per screen, big/legible, nothing an elder has to puzzle
+— one obvious action per screen, big and legible, nothing an elder has to puzzle
 over. When copying a Moonshot pattern, keep it blue-only and RTL. The full voice
+and visual rules live in the `nakhoda-ux` skill.
 
-- visual rules live in the `nakhoda-ux` skill.
-
-* **Language/direction:** Persian, right-to-left. Latin/number runs that must
+- **Language/direction:** Persian, right-to-left. Latin/number runs that must
   read left-to-right (OTP boxes, ticker symbols) get an explicit `dir="ltr"`.
-* **Digits:** always Persian digits in UI copy. Convert with `lib/utils/digits.ts`
+- **Digits:** always Persian digits in UI copy. Convert with `lib/utils/digits.ts`
   — never hand-roll.
 
 ## Color
