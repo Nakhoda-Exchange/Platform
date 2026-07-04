@@ -1,5 +1,9 @@
 import type { MarketRepository } from "@/lib/core/application/market/ports/market-repository.port";
 import type { Coin } from "@/lib/core/domain/market/coin";
+import type {
+  ChartRange,
+  CoinDetail,
+} from "@/lib/core/domain/market/coin-detail";
 import { ok, type Result } from "@/lib/core/domain/shared/result";
 
 function delay(ms = 400): Promise<void> {
@@ -155,9 +159,73 @@ const COINS: Coin[] = [
   },
 ];
 
+// Short Persian «about» blurbs for the well-known coins; others fall back to a
+// generic line. Mock copy — swap for CMS/API content later.
+const DESCRIPTIONS: Record<string, string> = {
+  btc: "بیت‌کوین نخستین و شناخته‌شده‌ترین رمزارز جهان است که در سال ۲۰۰۹ معرفی شد و پایه‌ی بازار رمزارزها به شمار می‌رود.",
+  eth: "اتریوم پلتفرمی برای قراردادهای هوشمند است و بستر بسیاری از پروژه‌های غیرمتمرکز و توکن‌ها روی آن ساخته شده است.",
+  usdt: "تتر یک استیبل‌کوین است که ارزش آن به دلار آمریکا وابسته است و برای حفظ ارزش و نقل‌وانتقال سریع کاربرد دارد.",
+  sol: "سولانا یک شبکه‌ی بلاک‌چینی سریع و کم‌هزینه است که برای اپلیکیشن‌های غیرمتمرکز و توکن‌های پرکاربرد شناخته می‌شود.",
+};
+
+/**
+ * Deterministic pseudo-random price walk that trends toward `end` and pins its
+ * last point to `end` (the current price). Seeded so SSR and client agree.
+ * ponytail: mock series; a real time-series API replaces this whole method.
+ */
+function seededSeries(
+  seed: number,
+  points: number,
+  end: number,
+  drift: number,
+): number[] {
+  let s = seed >>> 0;
+  const rnd = () => (s = (s * 1664525 + 1013904223) >>> 0) / 0xffffffff;
+  const start = end / (1 + drift);
+  const out: number[] = [];
+  for (let i = 0; i < points; i++) {
+    const t = i / (points - 1);
+    const base = start + (end - start) * t;
+    const noise = (rnd() - 0.5) * end * 0.05;
+    out.push(Math.max(base + noise, end * 0.0001));
+  }
+  out[points - 1] = end;
+  return out;
+}
+
 export class MockMarketRepository implements MarketRepository {
   async listCoins(): Promise<Result<Coin[]>> {
     await delay();
     return ok(COINS);
+  }
+
+  async getCoinDetail(idOrSymbol: string): Promise<Result<CoinDetail | null>> {
+    await delay();
+    const key = idOrSymbol.toLowerCase();
+    const coin = COINS.find(
+      (c) => c.id === key || c.symbol.toLowerCase() === key,
+    );
+    if (!coin) return ok(null);
+
+    const seed = [...coin.symbol].reduce((a, c) => a + c.charCodeAt(0), 0);
+    const d = coin.change24h / 100;
+    const series: Record<ChartRange, number[]> = {
+      "24h": seededSeries(seed + 1, 24, coin.priceIrt, d),
+      "7d": seededSeries(seed + 7, 28, coin.priceIrt, d * 1.8),
+      "1m": seededSeries(seed + 30, 30, coin.priceIrt, d * 3),
+      "1y": seededSeries(seed + 365, 24, coin.priceIrt, d * 6),
+    };
+    const s24 = series["24h"];
+
+    return ok({
+      coin,
+      high24h: Math.max(...s24),
+      low24h: Math.min(...s24),
+      volume24h: Math.round(coin.marketCap * 0.6) / 10, // همت, ~6% of market cap
+      description:
+        DESCRIPTIONS[coin.id] ??
+        `${coin.name} (${coin.symbol}) یکی از رمزارزهای قابل معامله در ناخداست. قیمت لحظه‌ای و نمودار آن را اینجا دنبال کنید.`,
+      series,
+    });
   }
 }
