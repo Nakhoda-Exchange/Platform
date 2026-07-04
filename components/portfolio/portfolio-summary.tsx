@@ -67,7 +67,7 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
           خرید/فروش
         </Link>
         <Link
-          href="#"
+          href="/wallet/history"
           className={buttonClasses({
             variant: "ghost",
             size: "lg",
