@@ -17,6 +17,10 @@ function headerConfigFor(pathname: string): HeaderConfig {
   if (/^\/market\/.+/.test(pathname)) {
     return { title: "جزئیات رمزارز", backHref: "/market" };
   }
+  const trade = pathname.match(/^\/trade\/([^/]+)/);
+  if (trade) {
+    return { title: "معامله", backHref: `/market/${trade[1]}` };
+  }
   return {};
 }
 
