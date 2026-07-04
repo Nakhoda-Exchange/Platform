@@ -66,6 +66,8 @@ export function buildContainer(): Container {
   container.registerSingleton(
     TOKENS.WalletRepository,
     () => new MockWalletRepository(),
+  );
+  container.registerSingleton(
     TOKENS.UserRepository,
     () => new MockUserRepository(),
   );
@@ -144,6 +146,8 @@ export function buildContainer(): Container {
         c.resolve(TOKENS.MarketRepository),
         c.resolve(TOKENS.WalletRepository),
       ),
+  );
+  container.register(
     TOKENS.GetProfileUseCase,
     (c) => new GetProfileUseCase(c.resolve(TOKENS.UserRepository)),
   );
