@@ -11,6 +11,10 @@ import { MockAuthRepository } from "@/lib/infrastructure/auth/mock-auth.reposito
 import { MockTradeRepository } from "@/lib/infrastructure/trade/mock-trade.repository";
 import { MockTransactionsRepository } from "@/lib/infrastructure/wallet/mock-transactions.repository";
 import { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-cases/list-transactions.use-case";
+import { DepositIrtUseCase } from "@/lib/core/application/wallet/use-cases/deposit-irt.use-case";
+import { ManageCardsUseCase } from "@/lib/core/application/wallet/use-cases/manage-cards.use-case";
+import { GetDepositAddressUseCase } from "@/lib/core/application/wallet/use-cases/get-deposit-address.use-case";
+import { MockWalletRepository } from "@/lib/infrastructure/wallet/mock-wallet.repository";
 import { MockPortfolioRepository } from "@/lib/infrastructure/portfolio/mock-portfolio.repository";
 import { MockIdentityInquiryRepository } from "@/lib/infrastructure/kyc/mock-identity-inquiry.repository";
 import { MockKycSessionStore } from "@/lib/infrastructure/kyc/mock-kyc-session-store";
@@ -55,6 +59,10 @@ export function buildContainer(): Container {
   container.registerSingleton(
     TOKENS.TransactionsRepository,
     () => new MockTransactionsRepository(),
+  );
+  container.registerSingleton(
+    TOKENS.WalletRepository,
+    () => new MockWalletRepository(),
   );
 
   // Application: construct use cases from their dependencies.
@@ -106,6 +114,22 @@ export function buildContainer(): Container {
     TOKENS.ListTransactionsUseCase,
     (c) =>
       new ListTransactionsUseCase(c.resolve(TOKENS.TransactionsRepository)),
+  );
+  container.register(
+    TOKENS.DepositIrtUseCase,
+    (c) => new DepositIrtUseCase(c.resolve(TOKENS.WalletRepository)),
+  );
+  container.register(
+    TOKENS.ManageCardsUseCase,
+    (c) => new ManageCardsUseCase(c.resolve(TOKENS.WalletRepository)),
+  );
+  container.register(
+    TOKENS.GetDepositAddressUseCase,
+    (c) =>
+      new GetDepositAddressUseCase(
+        c.resolve(TOKENS.MarketRepository),
+        c.resolve(TOKENS.WalletRepository),
+      ),
   );
   return container;
 }

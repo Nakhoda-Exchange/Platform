@@ -16,6 +16,10 @@ import type { GetTradeContextUseCase } from "@/lib/core/application/trade/use-ca
 import type { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
 import type { TransactionsRepository } from "@/lib/core/application/wallet/ports/transactions-repository.port";
 import type { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-cases/list-transactions.use-case";
+import type { WalletRepository } from "@/lib/core/application/wallet/ports/wallet-repository.port";
+import type { DepositIrtUseCase } from "@/lib/core/application/wallet/use-cases/deposit-irt.use-case";
+import type { ManageCardsUseCase } from "@/lib/core/application/wallet/use-cases/manage-cards.use-case";
+import type { GetDepositAddressUseCase } from "@/lib/core/application/wallet/use-cases/get-deposit-address.use-case";
 
 /** Central registry of injection tokens, grouped by layer. */
 export const TOKENS = {
@@ -29,6 +33,7 @@ export const TOKENS = {
   TransactionsRepository: token<TransactionsRepository>(
     "TransactionsRepository",
   ),
+  WalletRepository: token<WalletRepository>("WalletRepository"),
   // Application use cases
   RequestOtpUseCase: token<RequestOtpUseCase>("RequestOtpUseCase"),
   VerifyOtpUseCase: token<VerifyOtpUseCase>("VerifyOtpUseCase"),
@@ -47,5 +52,10 @@ export const TOKENS = {
   PlaceOrderUseCase: token<PlaceOrderUseCase>("PlaceOrderUseCase"),
   ListTransactionsUseCase: token<ListTransactionsUseCase>(
     "ListTransactionsUseCase",
+  ),
+  DepositIrtUseCase: token<DepositIrtUseCase>("DepositIrtUseCase"),
+  ManageCardsUseCase: token<ManageCardsUseCase>("ManageCardsUseCase"),
+  GetDepositAddressUseCase: token<GetDepositAddressUseCase>(
+    "GetDepositAddressUseCase",
   ),
 } as const;
