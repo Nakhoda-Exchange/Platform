@@ -6,8 +6,8 @@ is the web platform — the marketing **landing**, the authenticated **app**, an
 repository **ports** backed by in-memory **mock adapters**; swapping to a real
 backend is a one-file change in the DI composition root.
 
-It's also an installable **PWA** with a branded splash, and simple enough that a
-first-time crypto buyer can finish a task without asking a question — our design
+It's simple enough that a first-time crypto buyer can finish a task without
+asking a question — our design
 north-star is the radical simplicity of our rival, [Moonshot](https://moonshot.com/)
 (see the `nakhoda-ux` design guide).
 
@@ -57,7 +57,6 @@ bun run dev           # http://localhost:3000 (Turbopack)
 - **Market** — coin list (PLP) with icon/name/symbol, 24h change (green/red), and
   IRT + USD prices; rows open the coin detail page.
 - **Support chat** — Goftino, opened from the header icon (no default launcher).
-- **PWA** — installable, opens on `/market`, branded splash.
 
 ## Architecture
 
@@ -75,7 +74,7 @@ lib/
   utils/             cn(), digits, jalali, money helpers
 app/                 routes + thin server actions (app/actions/)
   (platform)/        authenticated app under the shell (market/wallet/account)
-components/          ui/ primitives, then layout/ auth/ landing/ market/ pwa/ support/
+components/          ui/ primitives, then layout/ auth/ landing/ market/ support/
 ```
 
 To move off mocks, swap the adapter registration in

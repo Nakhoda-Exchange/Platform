@@ -93,8 +93,6 @@ Full catalog in `COMPONENTS.md`. Rules:
   active pill, iOS safe-area). Both RTL; nav order is right→left.
 - **Market row** — coin badge (brand letter, blue-only), name/symbol, price
   (IRT + USD), and a green/red change pill that always pairs color with ▲/▼.
-- **Splash** — full-screen `brand` overlay with the white anchor + spinner,
-  shown on load (web + PWA) and matched to the PWA manifest `background_color`.
 
 ## Interaction & states
 

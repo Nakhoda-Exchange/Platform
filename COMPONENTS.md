@@ -80,11 +80,6 @@ Page width + vertical rhythm wrappers (1200px content cap).
 letter badge), `ChangePill` (green/red + ▲/▼ + aria label). Formatting in
 `lib/utils/money.ts`.
 
-## PWA (`components/pwa/`)
-
-`SplashScreen` (SSR overlay), `SplashHider` (fades it once interactive),
-`ServiceWorkerRegister` (registers in prod, tears down any SW in dev).
-
 ## Support (`components/support/`)
 
 `GoftinoChat` (loads Goftino, hides its launcher, fullscreen-on-open) and

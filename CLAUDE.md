@@ -46,7 +46,7 @@ Clean architecture with a typed DI container. The dependency rule points inward:
 ## Components
 
 - `components/ui/` — generic primitives. There is a **single `Button`** (`variant` / `size` / `shape` / `fullWidth`); to style a `Link` like a button, use the exported `buttonClasses()` recipe. Icons are inline SVGs in `components/ui/icons.tsx` (`stroke="currentColor"`; recolor with `text-*`).
-- `components/{layout,landing,auth,market,pwa,support}/` — feature components that compose the primitives. Keep `"use client"` on interactive leaves only; pages and layout are server components. There is **one** `Logo` (`components/layout/logo.tsx`) used everywhere — do not fork it.
+- `components/{layout,landing,auth,market,support}/` — feature components that compose the primitives. Keep `"use client"` on interactive leaves only; pages and layout are server components. There is **one** `Logo` (`components/layout/logo.tsx`) used everywhere — do not fork it.
 
 ## Auth → status → KYC (concrete example of the layering)
 
@@ -60,11 +60,10 @@ Landing CTA (`components/landing/phone-cta-card.tsx`) or `/login` → `startLogi
 
 **KYC** (`app/kyc`, `app/kyc/confirm`, docs in `doc/kyc/`): national code + Jalali birth date → `InquireIdentityUseCase` (enforces `MIN_SIGNUP_AGE`) → mock identity inquiry → read-only confirm → `/market`. The inquiry result is stashed **server-side** in `KycSessionStore` under an opaque id carried in an **httpOnly cookie** — never in the URL (that's the tamper-safe pattern; the OTP challenge is still URL-borne, mock-only).
 
-## Platform shell, market, PWA, support
+## Platform shell, market, support
 
 - **Shell** — the authenticated app lives under the `app/(platform)/` route group; `AppLayout` wraps it in `AppShell` (sticky `PlatformHeader` + floating `BottomNav`). Header content is per-route via `HEADER_CONFIG` (logo on main tabs, title/back on sub-pages); nav items are in `components/layout/platform-nav.ts`. Landing/auth are **outside** the group, so no shell there.
 - **Market** (`/market`) — coin list (PLP): `MarketRepository` → `ListCoinsUseCase`; `MarketList`/`CoinListItem` show name/symbol, 24h change (green/red **plus** ▲/▼ + aria label — never color alone), IRT + USD. Money/percent formatting in `lib/utils/money.ts`. Rows link to `/market/[symbol]` (PDP). Search/filters are a separate feature.
-- **PWA** — `app/manifest.ts` (installable, `start_url: "/market"`), `public/sw.js` + `ServiceWorkerRegister` (**production only** — a SW in dev caches Turbopack HMR chunks and causes `ChunkLoadError`), branded splash (`components/pwa/`). Icons: `bun run` → `node scripts/generate-icons.mjs`.
 - **Support chat** — Goftino (`components/support/`), opened from the header icon via `openSupportChat()`; the default launcher is hidden. Widget id from `NEXT_PUBLIC_GOFTINO_WIDGET_ID`.
 
 ## Environment
