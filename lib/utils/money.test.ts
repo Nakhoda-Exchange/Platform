@@ -1,10 +1,34 @@
 import { describe, expect, test } from "bun:test";
-import { formatChangePercent, formatIrt, formatUsd } from "./money";
+import {
+  formatChangePercent,
+  formatIrt,
+  formatIrtShort,
+  formatMarketCap,
+  formatUsd,
+} from "./money";
 
 describe("formatIrt", () => {
   test("groups thousands in Persian digits + تومان", () => {
     expect(formatIrt(12450000)).toBe("۱۲٬۴۵۰٬۰۰۰ تومان");
     expect(formatIrt(4500)).toBe("۴٬۵۰۰ تومان");
+  });
+
+  test("keeps decimals for small fractional prices (memecoins)", () => {
+    expect(formatIrt(0.18)).toBe("۰٫۱۸ تومان");
+  });
+});
+
+describe("formatIrtShort", () => {
+  test("uses the short ت unit for dense rows", () => {
+    expect(formatIrtShort(4500)).toBe("۴٬۵۰۰ ت");
+    expect(formatIrtShort(0.18)).toBe("۰٫۱۸ ت");
+  });
+});
+
+describe("formatMarketCap", () => {
+  test("grouped Persian digits + همت", () => {
+    expect(formatMarketCap(85000)).toBe("۸۵٬۰۰۰ همت");
+    expect(formatMarketCap(555)).toBe("۵۵۵ همت");
   });
 });
 
