@@ -14,7 +14,7 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
   const up = portfolio.dayChangeIrt >= 0;
   return (
     <section className="flex flex-col gap-5">
-      <div className="flex flex-col items-end gap-1.5">
+      <div className="flex flex-col items-center gap-1.5">
         <span className="text-[14px] text-muted">موجودی کل</span>
         <span className="text-[32px] font-extrabold text-ink">
           {formatIrt(portfolio.totalValueIrt)}
@@ -52,6 +52,28 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
           })}
         >
           برداشت
+        </Link>
+        <Link
+          href="#"
+          className={buttonClasses({
+            variant: "ghost",
+            size: "xl",
+            fullWidth: true,
+            className: "bg-surface",
+          })}
+        >
+          خرید/فروش
+        </Link>
+        <Link
+          href="#"
+          className={buttonClasses({
+            variant: "ghost",
+            size: "xl",
+            fullWidth: true,
+            className: "bg-surface",
+          })}
+        >
+          تاریخچه
         </Link>
       </div>
     </section>
