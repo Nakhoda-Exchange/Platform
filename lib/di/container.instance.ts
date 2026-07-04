@@ -3,7 +3,9 @@ import { VerifyOtpUseCase } from "@/lib/core/application/auth/use-cases/verify-o
 import { InquireIdentityUseCase } from "@/lib/core/application/kyc/use-cases/inquire-identity.use-case";
 import { ListCoinsUseCase } from "@/lib/core/application/market/use-cases/list-coins.use-case";
 import { GetMarketOverviewUseCase } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
+import { GetPortfolioUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio.use-case";
 import { MockAuthRepository } from "@/lib/infrastructure/auth/mock-auth.repository";
+import { MockPortfolioRepository } from "@/lib/infrastructure/portfolio/mock-portfolio.repository";
 import { MockIdentityInquiryRepository } from "@/lib/infrastructure/kyc/mock-identity-inquiry.repository";
 import { MockKycSessionStore } from "@/lib/infrastructure/kyc/mock-kyc-session-store";
 import { MockMarketRepository } from "@/lib/infrastructure/market/mock-market.repository";
@@ -36,6 +38,10 @@ export function buildContainer(): Container {
     TOKENS.MarketRepository,
     () => new MockMarketRepository(),
   );
+  container.registerSingleton(
+    TOKENS.PortfolioRepository,
+    () => new MockPortfolioRepository(),
+  );
 
   // Application: construct use cases from their dependencies.
   container.register(
@@ -57,6 +63,10 @@ export function buildContainer(): Container {
   container.register(
     TOKENS.GetMarketOverviewUseCase,
     (c) => new GetMarketOverviewUseCase(c.resolve(TOKENS.MarketRepository)),
+  );
+  container.register(
+    TOKENS.GetPortfolioUseCase,
+    (c) => new GetPortfolioUseCase(c.resolve(TOKENS.PortfolioRepository)),
   );
 
   return container;

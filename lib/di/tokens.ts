@@ -8,6 +8,8 @@ import type { InquireIdentityUseCase } from "@/lib/core/application/kyc/use-case
 import type { MarketRepository } from "@/lib/core/application/market/ports/market-repository.port";
 import type { ListCoinsUseCase } from "@/lib/core/application/market/use-cases/list-coins.use-case";
 import type { GetMarketOverviewUseCase } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
+import type { PortfolioRepository } from "@/lib/core/application/portfolio/ports/portfolio-repository.port";
+import type { GetPortfolioUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio.use-case";
 
 /** Central registry of injection tokens, grouped by layer. */
 export const TOKENS = {
@@ -16,6 +18,7 @@ export const TOKENS = {
   IdentityInquiryPort: token<IdentityInquiryPort>("IdentityInquiryPort"),
   KycSessionStore: token<KycSessionStore>("KycSessionStore"),
   MarketRepository: token<MarketRepository>("MarketRepository"),
+  PortfolioRepository: token<PortfolioRepository>("PortfolioRepository"),
   // Application use cases
   RequestOtpUseCase: token<RequestOtpUseCase>("RequestOtpUseCase"),
   VerifyOtpUseCase: token<VerifyOtpUseCase>("VerifyOtpUseCase"),
@@ -26,4 +29,5 @@ export const TOKENS = {
   GetMarketOverviewUseCase: token<GetMarketOverviewUseCase>(
     "GetMarketOverviewUseCase",
   ),
+  GetPortfolioUseCase: token<GetPortfolioUseCase>("GetPortfolioUseCase"),
 } as const;
