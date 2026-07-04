@@ -35,10 +35,12 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
 
       <PortfolioChart />
 
-      <div className="flex gap-3">
+      {/* 2×2 grid: four xl buttons in one flex row overflow a 390px viewport
+          (px-6 + whitespace-nowrap can't shrink). lg keeps ≥44px targets. */}
+      <div className="grid grid-cols-2 gap-3">
         <Link
           href="/market"
-          className={buttonClasses({ size: "xl", fullWidth: true })}
+          className={buttonClasses({ size: "lg", fullWidth: true })}
         >
           واریز
         </Link>
@@ -46,7 +48,7 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
           href="#"
           className={buttonClasses({
             variant: "ghost",
-            size: "xl",
+            size: "lg",
             fullWidth: true,
             className: "bg-surface",
           })}
@@ -57,7 +59,7 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
           href="#"
           className={buttonClasses({
             variant: "ghost",
-            size: "xl",
+            size: "lg",
             fullWidth: true,
             className: "bg-surface",
           })}
@@ -68,7 +70,7 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
           href="#"
           className={buttonClasses({
             variant: "ghost",
-            size: "xl",
+            size: "lg",
             fullWidth: true,
             className: "bg-surface",
           })}
