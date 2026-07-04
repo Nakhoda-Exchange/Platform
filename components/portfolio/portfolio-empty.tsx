@@ -23,7 +23,7 @@ export function PortfolioEmpty() {
           خرید رمزارز
         </Link>
         <Link
-          href="#"
+          href="/wallet/deposit"
           className={buttonClasses({
             variant: "ghost",
             size: "xl",
