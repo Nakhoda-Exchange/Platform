@@ -14,6 +14,8 @@ import type { GetPortfolioUseCase } from "@/lib/core/application/portfolio/use-c
 import type { TradeRepository } from "@/lib/core/application/trade/ports/trade-repository.port";
 import type { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/get-trade-context.use-case";
 import type { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
+import type { TransactionsRepository } from "@/lib/core/application/wallet/ports/transactions-repository.port";
+import type { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-cases/list-transactions.use-case";
 
 /** Central registry of injection tokens, grouped by layer. */
 export const TOKENS = {
@@ -24,6 +26,9 @@ export const TOKENS = {
   MarketRepository: token<MarketRepository>("MarketRepository"),
   PortfolioRepository: token<PortfolioRepository>("PortfolioRepository"),
   TradeRepository: token<TradeRepository>("TradeRepository"),
+  TransactionsRepository: token<TransactionsRepository>(
+    "TransactionsRepository",
+  ),
   // Application use cases
   RequestOtpUseCase: token<RequestOtpUseCase>("RequestOtpUseCase"),
   VerifyOtpUseCase: token<VerifyOtpUseCase>("VerifyOtpUseCase"),
@@ -40,4 +45,7 @@ export const TOKENS = {
     "GetTradeContextUseCase",
   ),
   PlaceOrderUseCase: token<PlaceOrderUseCase>("PlaceOrderUseCase"),
+  ListTransactionsUseCase: token<ListTransactionsUseCase>(
+    "ListTransactionsUseCase",
+  ),
 } as const;

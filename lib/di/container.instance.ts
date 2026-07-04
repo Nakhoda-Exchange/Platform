@@ -9,6 +9,8 @@ import { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/g
 import { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
 import { MockAuthRepository } from "@/lib/infrastructure/auth/mock-auth.repository";
 import { MockTradeRepository } from "@/lib/infrastructure/trade/mock-trade.repository";
+import { MockTransactionsRepository } from "@/lib/infrastructure/wallet/mock-transactions.repository";
+import { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-cases/list-transactions.use-case";
 import { MockPortfolioRepository } from "@/lib/infrastructure/portfolio/mock-portfolio.repository";
 import { MockIdentityInquiryRepository } from "@/lib/infrastructure/kyc/mock-identity-inquiry.repository";
 import { MockKycSessionStore } from "@/lib/infrastructure/kyc/mock-kyc-session-store";
@@ -49,6 +51,10 @@ export function buildContainer(): Container {
   container.registerSingleton(
     TOKENS.TradeRepository,
     () => new MockTradeRepository(),
+  );
+  container.registerSingleton(
+    TOKENS.TransactionsRepository,
+    () => new MockTransactionsRepository(),
   );
 
   // Application: construct use cases from their dependencies.
@@ -95,6 +101,11 @@ export function buildContainer(): Container {
         c.resolve(TOKENS.MarketRepository),
         c.resolve(TOKENS.TradeRepository),
       ),
+  );
+  container.register(
+    TOKENS.ListTransactionsUseCase,
+    (c) =>
+      new ListTransactionsUseCase(c.resolve(TOKENS.TransactionsRepository)),
   );
   return container;
 }

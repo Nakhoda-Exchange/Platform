@@ -1,16 +1,23 @@
 import type { Coin } from "@/lib/core/domain/market/coin";
 import type { Holding } from "@/lib/core/domain/portfolio/portfolio";
 import type { TradeSide } from "@/lib/core/domain/trade/order";
+import type { Transaction } from "@/lib/core/domain/wallet/transaction";
 
 /**
  * Shared in-memory wallet for the mock adapters (per-process, like all mocks):
- * the portfolio mock reads it, the trade mock settles orders against it — so a
- * mock buy/sell immediately shows up on the Holdings screen.
+ * the portfolio mock reads it, the trade mock settles orders against it, and
+ * the transactions mock lists its history — so a mock buy/sell immediately
+ * shows up on the Holdings screen AND in the history timeline.
  */
 export interface MockWallet {
   irt: number; // cash balance, Toman
   holdings: Holding[];
+  transactions: Transaction[];
 }
+
+/** Minutes/days ago → Date, for seeding a believable timeline. */
+const ago = (days: number, minutes = 0) =>
+  new Date(Date.now() - days * 86_400_000 - minutes * 60_000);
 
 // Values consistent with mock-market prices (amount × priceIrt = valueIrt).
 export const wallet: MockWallet = {
@@ -72,6 +79,70 @@ export const wallet: MockWallet = {
       valueIrt: 358_800,
     },
   ],
+  // Seeded history (newest first not required — the use case sorts).
+  transactions: [
+    {
+      id: "t-1",
+      type: "buy",
+      status: "done",
+      at: ago(0, 130),
+      amountIrt: 1_600_000,
+      symbol: "TON",
+      coinName: "تون‌کوین",
+      amountCoin: 5,
+      iconUrl: "/coins/ton.png",
+    },
+    {
+      id: "t-2",
+      type: "withdraw",
+      status: "pending",
+      at: ago(0, 45),
+      amountIrt: 20_000_000,
+    },
+    {
+      id: "t-3",
+      type: "deposit",
+      status: "done",
+      at: ago(1, 300),
+      amountIrt: 50_000_000,
+    },
+    {
+      id: "t-4",
+      type: "sell",
+      status: "done",
+      at: ago(1, 520),
+      amountIrt: 4_150_000,
+      symbol: "SOL",
+      coinName: "سولانا",
+      amountCoin: 0.5,
+      iconUrl: "/coins/sol.png",
+    },
+    {
+      id: "t-5",
+      type: "withdraw",
+      status: "failed",
+      at: ago(3, 200),
+      amountIrt: 8_000_000,
+    },
+    {
+      id: "t-6",
+      type: "buy",
+      status: "done",
+      at: ago(6, 80),
+      amountIrt: 5_850_000,
+      symbol: "BTC",
+      coinName: "بیت‌کوین",
+      amountCoin: 0.0015,
+      iconUrl: "/coins/btc.png",
+    },
+    {
+      id: "t-7",
+      type: "deposit",
+      status: "done",
+      at: ago(9, 60),
+      amountIrt: 220_000_000,
+    },
+  ],
 };
 
 /** Settles an executed order against the wallet (balance checks already done). */
@@ -81,6 +152,17 @@ export function settleTrade(
   amountCoin: number,
   totalIrt: number,
 ): void {
+  wallet.transactions.push({
+    id: crypto.randomUUID(),
+    type: side,
+    status: "done",
+    at: new Date(),
+    amountIrt: totalIrt,
+    symbol: coin.symbol,
+    coinName: coin.name,
+    amountCoin,
+    iconUrl: coin.iconUrl,
+  });
   const held = wallet.holdings.find((h) => h.coin.id === coin.id);
   if (side === "buy") {
     wallet.irt -= totalIrt;

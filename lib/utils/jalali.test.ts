@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { toGregorian } from "jalaali-js";
 import {
+  formatJalaliDay,
+  formatTimeFa,
   isValidJalaliDate,
   jalaliAgeInYears,
   maskJalaliDate,
@@ -52,5 +54,16 @@ describe("jalaliAgeInYears", () => {
 
   test("returns null for a malformed date", () => {
     expect(jalaliAgeInYears("nope")).toBeNull();
+  });
+});
+
+describe("formatJalaliDay / formatTimeFa", () => {
+  test("formats a Date as a Persian Jalali day", () => {
+    // 1405/04/13 == 2026-07-04
+    expect(formatJalaliDay(new Date(2026, 6, 4))).toBe("۱۳ تیر ۱۴۰۵");
+  });
+
+  test("formats time with Persian digits, zero-padded", () => {
+    expect(formatTimeFa(new Date(2026, 6, 4, 9, 5))).toBe("۰۹:۰۵");
   });
 });

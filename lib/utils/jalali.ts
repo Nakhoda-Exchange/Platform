@@ -1,5 +1,5 @@
-import { isValidJalaaliDate, toGregorian } from "jalaali-js";
-import { toEnglishDigits } from "./digits";
+import { isValidJalaaliDate, toGregorian, toJalaali } from "jalaali-js";
+import { toEnglishDigits, toPersianDigits } from "./digits";
 
 /** Plausible birth-year window for a Jalali date field. */
 const MIN_YEAR = 1300;
@@ -63,4 +63,32 @@ export function jalaliAgeInYears(
   const monthDiff = now.getMonth() + 1 - gm;
   if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < gd)) age--;
   return age;
+}
+
+/** Jalali month names, 1-indexed via JALALI_MONTHS[jm - 1]. */
+export const JALALI_MONTHS = [
+  "فروردین",
+  "اردیبهشت",
+  "خرداد",
+  "تیر",
+  "مرداد",
+  "شهریور",
+  "مهر",
+  "آبان",
+  "آذر",
+  "دی",
+  "بهمن",
+  "اسفند",
+] as const;
+
+/** A Date → its Jalali day label, e.g. «۱۳ تیر ۱۴۰۵». */
+export function formatJalaliDay(date: Date): string {
+  const { jy, jm, jd } = toJalaali(date);
+  return `${toPersianDigits(jd)} ${JALALI_MONTHS[jm - 1]} ${toPersianDigits(jy)}`;
+}
+
+/** A Date → Persian-digit `HH:MM`, e.g. «۱۴:۰۵». */
+export function formatTimeFa(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return toPersianDigits(`${pad(date.getHours())}:${pad(date.getMinutes())}`);
 }
