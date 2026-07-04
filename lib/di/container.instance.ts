@@ -2,6 +2,7 @@ import { RequestOtpUseCase } from "@/lib/core/application/auth/use-cases/request
 import { VerifyOtpUseCase } from "@/lib/core/application/auth/use-cases/verify-otp.use-case";
 import { InquireIdentityUseCase } from "@/lib/core/application/kyc/use-cases/inquire-identity.use-case";
 import { ListCoinsUseCase } from "@/lib/core/application/market/use-cases/list-coins.use-case";
+import { GetMarketOverviewUseCase } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
 import { MockAuthRepository } from "@/lib/infrastructure/auth/mock-auth.repository";
 import { MockIdentityInquiryRepository } from "@/lib/infrastructure/kyc/mock-identity-inquiry.repository";
 import { MockKycSessionStore } from "@/lib/infrastructure/kyc/mock-kyc-session-store";
@@ -52,6 +53,10 @@ export function buildContainer(): Container {
   container.register(
     TOKENS.ListCoinsUseCase,
     (c) => new ListCoinsUseCase(c.resolve(TOKENS.MarketRepository)),
+  );
+  container.register(
+    TOKENS.GetMarketOverviewUseCase,
+    (c) => new GetMarketOverviewUseCase(c.resolve(TOKENS.MarketRepository)),
   );
 
   return container;

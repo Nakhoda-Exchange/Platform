@@ -7,6 +7,7 @@ import type { KycSessionStore } from "@/lib/core/application/kyc/ports/kyc-sessi
 import type { InquireIdentityUseCase } from "@/lib/core/application/kyc/use-cases/inquire-identity.use-case";
 import type { MarketRepository } from "@/lib/core/application/market/ports/market-repository.port";
 import type { ListCoinsUseCase } from "@/lib/core/application/market/use-cases/list-coins.use-case";
+import type { GetMarketOverviewUseCase } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
 
 /** Central registry of injection tokens, grouped by layer. */
 export const TOKENS = {
@@ -22,4 +23,7 @@ export const TOKENS = {
     "InquireIdentityUseCase",
   ),
   ListCoinsUseCase: token<ListCoinsUseCase>("ListCoinsUseCase"),
+  GetMarketOverviewUseCase: token<GetMarketOverviewUseCase>(
+    "GetMarketOverviewUseCase",
+  ),
 } as const;
