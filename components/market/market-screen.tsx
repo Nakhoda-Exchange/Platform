@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { MarketOverview } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
 import { SearchIcon } from "@/components/ui/icons";
 import { toEnglishDigits } from "@/lib/utils/digits";
+import { replaceUrlParam } from "@/lib/utils/url-param";
 import { TopGainers } from "./top-gainers";
 import { TrendingList } from "./trending-list";
 import { NewCoins } from "./new-coins";
@@ -14,8 +15,16 @@ import { AllAssets } from "./all-assets";
  * all-assets. Typing in search hides the curated sections and shows matches.
  * (Portfolio balance lives on the Holdings tab, not here.)
  */
-export function MarketScreen({ overview }: { overview: MarketOverview }) {
-  const [query, setQuery] = useState("");
+export function MarketScreen({
+  overview,
+  initialQuery = "",
+  initialFilter,
+}: {
+  overview: MarketOverview;
+  initialQuery?: string;
+  initialFilter?: string;
+}) {
+  const [query, setQuery] = useState(initialQuery);
   const searching = query.trim() !== "";
 
   const results = useMemo(() => {
@@ -33,7 +42,10 @@ export function MarketScreen({ overview }: { overview: MarketOverview }) {
         <SearchIcon size={20} className="shrink-0 text-placeholder" />
         <input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            replaceUrlParam("q", e.target.value.trim() || null);
+          }}
           placeholder="جستجوی رمزارز…"
           aria-label="جستجوی رمزارز"
           className="w-full bg-transparent text-right text-[16px] text-ink outline-none placeholder:text-placeholder"
@@ -47,7 +59,11 @@ export function MarketScreen({ overview }: { overview: MarketOverview }) {
           <TopGainers coins={overview.topGainers} />
           <TrendingList coins={overview.trending} />
           <NewCoins coins={overview.newCoins} />
-          <AllAssets coins={overview.all} />
+          <AllAssets
+            coins={overview.all}
+            initialFilter={initialFilter}
+            urlSync
+          />
         </>
       )}
     </div>
