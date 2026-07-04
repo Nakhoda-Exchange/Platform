@@ -13,6 +13,7 @@ import { MockTransactionsRepository } from "@/lib/infrastructure/wallet/mock-tra
 import { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-cases/list-transactions.use-case";
 import { DepositIrtUseCase } from "@/lib/core/application/wallet/use-cases/deposit-irt.use-case";
 import { ManageCardsUseCase } from "@/lib/core/application/wallet/use-cases/manage-cards.use-case";
+import { WithdrawUseCase } from "@/lib/core/application/wallet/use-cases/withdraw.use-case";
 import { GetDepositAddressUseCase } from "@/lib/core/application/wallet/use-cases/get-deposit-address.use-case";
 import { MockWalletRepository } from "@/lib/infrastructure/wallet/mock-wallet.repository";
 import { GetProfileUseCase } from "@/lib/core/application/account/use-cases/get-profile.use-case";
@@ -126,6 +127,15 @@ export function buildContainer(): Container {
   container.register(
     TOKENS.ManageCardsUseCase,
     (c) => new ManageCardsUseCase(c.resolve(TOKENS.WalletRepository)),
+  );
+  container.register(
+    TOKENS.WithdrawUseCase,
+    (c) =>
+      new WithdrawUseCase(
+        c.resolve(TOKENS.MarketRepository),
+        c.resolve(TOKENS.TradeRepository),
+        c.resolve(TOKENS.WalletRepository),
+      ),
   );
   container.register(
     TOKENS.GetDepositAddressUseCase,

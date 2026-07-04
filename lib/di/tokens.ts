@@ -19,6 +19,7 @@ import type { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-
 import type { WalletRepository } from "@/lib/core/application/wallet/ports/wallet-repository.port";
 import type { DepositIrtUseCase } from "@/lib/core/application/wallet/use-cases/deposit-irt.use-case";
 import type { ManageCardsUseCase } from "@/lib/core/application/wallet/use-cases/manage-cards.use-case";
+import type { WithdrawUseCase } from "@/lib/core/application/wallet/use-cases/withdraw.use-case";
 import type { GetDepositAddressUseCase } from "@/lib/core/application/wallet/use-cases/get-deposit-address.use-case";
 import type { UserRepository } from "@/lib/core/application/account/ports/user-repository.port";
 import type { GetProfileUseCase } from "@/lib/core/application/account/use-cases/get-profile.use-case";
@@ -58,6 +59,7 @@ export const TOKENS = {
   ),
   DepositIrtUseCase: token<DepositIrtUseCase>("DepositIrtUseCase"),
   ManageCardsUseCase: token<ManageCardsUseCase>("ManageCardsUseCase"),
+  WithdrawUseCase: token<WithdrawUseCase>("WithdrawUseCase"),
   GetDepositAddressUseCase: token<GetDepositAddressUseCase>(
     "GetDepositAddressUseCase",
   ),

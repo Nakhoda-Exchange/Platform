@@ -5,27 +5,18 @@ import { useEffect, useState, useTransition } from "react";
 import type { BankCard } from "@/lib/core/domain/wallet/bank-card";
 import type { CardDeposit } from "@/lib/core/domain/wallet/deposit";
 import { MIN_DEPOSIT_IRT } from "@/lib/core/domain/wallet/deposit";
-import {
-  addBankCard,
-  checkDeposit,
-  startCardDeposit,
-} from "@/app/actions/deposit";
+import { checkDeposit, startCardDeposit } from "@/app/actions/deposit";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
-import { Sheet } from "@/components/ui/sheet";
 import { CheckCircleIcon } from "@/components/ui/icons";
 import { toEnglishDigits, toPersianDigits } from "@/lib/utils/digits";
 import { formatIrt } from "@/lib/utils/money";
 import { CopyButton } from "./copy-button";
+import { CardPicker, formatCard } from "./card-picker";
 import { cn } from "@/lib/utils/cn";
 
 const QUICK_AMOUNTS = [500_000, 1_000_000, 5_000_000];
 const POLL_MS = 3_000;
-
-/** 16 digits → «۶۲۱۹ ۸۶۱۹ ۰۰۰۴ ۵۸۷۵» for display (LTR). */
-function formatCard(number: string): string {
-  return toPersianDigits(number.replace(/(\d{4})(?=\d)/g, "$1 "));
-}
 
 /**
  * Card-to-card Toman deposit, three steps:
@@ -40,11 +31,6 @@ export function IrtDepositForm({ initialCards }: { initialCards: BankCard[] }) {
   const [digits, setDigits] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-
-  // add-card sheet
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [cardInput, setCardInput] = useState("");
-  const [cardError, setCardError] = useState<string | null>(null);
 
   // started deposit (step 2) + its countdown/polling
   const [deposit, setDeposit] = useState<CardDeposit | null>(null);
@@ -203,43 +189,18 @@ export function IrtDepositForm({ initialCards }: { initialCards: BankCard[] }) {
         ))}
       </div>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="pb-2 text-[13px] font-semibold text-ink">
-          کارت مبدأ
-        </legend>
-        {cards.map((card) => (
-          <label
-            key={card.id}
-            className={cn(
-              "flex cursor-pointer items-center justify-between rounded-field border p-4 transition-colors",
-              selectedId === card.id
-                ? "border-brand bg-brand/5"
-                : "border-line bg-surface",
-            )}
-          >
-            <input
-              type="radio"
-              name="card"
-              checked={selectedId === card.id}
-              onChange={() => setSelectedId(card.id)}
-              className="sr-only"
-            />
-            <span dir="ltr" className="text-[15px] font-bold text-ink">
-              {formatCard(card.number)}
-            </span>
-            {selectedId === card.id ? (
-              <CheckCircleIcon size={20} className="text-brand" />
-            ) : null}
-          </label>
-        ))}
-        <button
-          type="button"
-          onClick={() => setSheetOpen(true)}
-          className="flex h-12 items-center justify-center rounded-field border border-dashed border-line text-[14px] font-bold text-brand transition-colors hover:bg-brand/5"
-        >
-          + افزودن کارت جدید
-        </button>
-      </fieldset>
+      <CardPicker
+        label="کارت مبدأ"
+        cards={cards}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        onCardAdded={(card) => {
+          setCards((cur) =>
+            cur.some((c) => c.id === card.id) ? cur : [...cur, card],
+          );
+          setSelectedId(card.id);
+        }}
+      />
 
       <div className="mt-auto">
         <Button
@@ -263,55 +224,6 @@ export function IrtDepositForm({ initialCards }: { initialCards: BankCard[] }) {
           {pending ? "در حال دریافت شماره کارت…" : "دریافت شماره کارت واریز"}
         </Button>
       </div>
-
-      <Sheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        title="افزودن کارت بانکی"
-      >
-        <Field
-          name="cardNumber"
-          label="شماره کارت (۱۶ رقم)"
-          inputMode="numeric"
-          dir="ltr"
-          placeholder="۶۰۳۷ ۹۹۷۵ ۹۹۵۷ ۱۳۴۶"
-          value={toPersianDigits(cardInput.replace(/(\d{4})(?=\d)/g, "$1 "))}
-          onChange={(e) => {
-            setCardError(null);
-            setCardInput(
-              toEnglishDigits(e.target.value)
-                .replace(/[^\d]/g, "")
-                .slice(0, 16),
-            );
-          }}
-          error={cardError}
-        />
-        <Button
-          type="button"
-          size="lg"
-          fullWidth
-          disabled={cardInput.length !== 16 || pending}
-          onClick={() =>
-            startTransition(async () => {
-              const result = await addBankCard(cardInput);
-              if (!result.ok) {
-                setCardError(result.message);
-                return;
-              }
-              setCards((cur) =>
-                cur.some((c) => c.id === result.data.id)
-                  ? cur
-                  : [...cur, result.data],
-              );
-              setSelectedId(result.data.id);
-              setCardInput("");
-              setSheetOpen(false);
-            })
-          }
-        >
-          ذخیره کارت
-        </Button>
-      </Sheet>
     </div>
   );
 }

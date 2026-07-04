@@ -45,7 +45,7 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
           واریز
         </Link>
         <Link
-          href="#"
+          href="/wallet/withdraw"
           className={buttonClasses({
             variant: "ghost",
             size: "lg",
