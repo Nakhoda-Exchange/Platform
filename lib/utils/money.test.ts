@@ -1,11 +1,20 @@
 import { describe, expect, test } from "bun:test";
 import {
   formatChangePercent,
+  formatCoinAmount,
   formatIrt,
   formatIrtShort,
   formatMarketCap,
   formatUsd,
 } from "./money";
+
+describe("formatCoinAmount", () => {
+  test("Persian digits, fractional and grouped", () => {
+    expect(formatCoinAmount(0.0015)).toBe("۰٫۰۰۱۵");
+    expect(formatCoinAmount(5)).toBe("۵");
+    expect(formatCoinAmount(12500)).toBe("۱۲٬۵۰۰");
+  });
+});
 
 describe("formatIrt", () => {
   test("groups thousands in Persian digits + تومان", () => {

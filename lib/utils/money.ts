@@ -39,3 +39,9 @@ export function formatChangePercent(change: number): string {
 export function formatMarketCap(hemat: number): string {
   return `${irtFormat.format(Math.round(hemat))} همت`;
 }
+
+/** Coin amount held → Persian digits, e.g. 0.0015 → «۰٫۰۰۱۵», 5 → «۵». */
+export function formatCoinAmount(amount: number): string {
+  if (amount >= 1000) return irtFormat.format(amount);
+  return toPersianDigits(String(amount)).replace(".", "٫");
+}
