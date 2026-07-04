@@ -5,7 +5,10 @@ import { ListCoinsUseCase } from "@/lib/core/application/market/use-cases/list-c
 import { GetMarketOverviewUseCase } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
 import { GetCoinDetailUseCase } from "@/lib/core/application/market/use-cases/get-coin-detail.use-case";
 import { GetPortfolioUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio.use-case";
+import { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/get-trade-context.use-case";
+import { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
 import { MockAuthRepository } from "@/lib/infrastructure/auth/mock-auth.repository";
+import { MockTradeRepository } from "@/lib/infrastructure/trade/mock-trade.repository";
 import { MockPortfolioRepository } from "@/lib/infrastructure/portfolio/mock-portfolio.repository";
 import { MockIdentityInquiryRepository } from "@/lib/infrastructure/kyc/mock-identity-inquiry.repository";
 import { MockKycSessionStore } from "@/lib/infrastructure/kyc/mock-kyc-session-store";
@@ -43,6 +46,10 @@ export function buildContainer(): Container {
     TOKENS.PortfolioRepository,
     () => new MockPortfolioRepository(),
   );
+  container.registerSingleton(
+    TOKENS.TradeRepository,
+    () => new MockTradeRepository(),
+  );
 
   // Application: construct use cases from their dependencies.
   container.register(
@@ -72,6 +79,22 @@ export function buildContainer(): Container {
   container.register(
     TOKENS.GetPortfolioUseCase,
     (c) => new GetPortfolioUseCase(c.resolve(TOKENS.PortfolioRepository)),
+  );
+  container.register(
+    TOKENS.GetTradeContextUseCase,
+    (c) =>
+      new GetTradeContextUseCase(
+        c.resolve(TOKENS.MarketRepository),
+        c.resolve(TOKENS.TradeRepository),
+      ),
+  );
+  container.register(
+    TOKENS.PlaceOrderUseCase,
+    (c) =>
+      new PlaceOrderUseCase(
+        c.resolve(TOKENS.MarketRepository),
+        c.resolve(TOKENS.TradeRepository),
+      ),
   );
   return container;
 }
