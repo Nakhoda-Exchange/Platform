@@ -24,4 +24,18 @@ export interface WalletRepository {
   ): Promise<Result<CardDeposit>>;
   /** Poll a started deposit until the backend reports it submitted. */
   getDepositStatus(depositId: string): Promise<Result<DepositStatus>>;
+  /** Crypto withdrawal network fee per coin id, in units of that coin. */
+  getWithdrawFees(): Promise<Result<Record<string, number>>>;
+  /** Request a Toman withdrawal to one of the user's cards (stays pending). */
+  requestIrtWithdraw(
+    cardId: string,
+    amountIrt: number,
+  ): Promise<Result<{ id: string }>>;
+  /** Request a crypto withdrawal to an external address (stays pending). */
+  requestCryptoWithdraw(
+    coinId: string,
+    address: string,
+    amountCoin: number,
+    amountIrt: number,
+  ): Promise<Result<{ id: string }>>;
 }

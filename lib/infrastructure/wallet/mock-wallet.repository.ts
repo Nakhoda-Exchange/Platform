@@ -8,6 +8,15 @@ import type {
 import { ok, type Result } from "@/lib/core/domain/shared/result";
 import { wallet } from "../portfolio/mock-wallet-state";
 
+// Crypto withdrawal network fees (units of each coin). Mock values.
+const WITHDRAW_FEES: Record<string, number> = {
+  btc: 0.0002,
+  eth: 0.003,
+  usdt: 1,
+  sol: 0.01,
+  ton: 0.05,
+};
+
 function delay(ms = 400): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -92,6 +101,61 @@ export class MockWalletRepository implements WalletRepository {
       companyName: "شرکت ناخدا",
       expiresInSeconds: 600,
     });
+  }
+
+  async getWithdrawFees(): Promise<Result<Record<string, number>>> {
+    await delay(100);
+    return ok({ ...WITHDRAW_FEES });
+  }
+
+  async requestIrtWithdraw(
+    _cardId: string,
+    amountIrt: number,
+  ): Promise<Result<{ id: string }>> {
+    await delay();
+    const id = crypto.randomUUID();
+    // Reserve the funds; a back-office approves it, so it stays pending.
+    wallet.irt -= amountIrt;
+    wallet.transactions.push({
+      id,
+      type: "withdraw",
+      status: "pending",
+      at: new Date(),
+      amountIrt,
+    });
+    return ok({ id });
+  }
+
+  async requestCryptoWithdraw(
+    coinId: string,
+    _address: string,
+    amountCoin: number,
+    amountIrt: number,
+  ): Promise<Result<{ id: string }>> {
+    await delay();
+    const id = crypto.randomUUID();
+    const held = wallet.holdings.find((h) => h.coin.id === coinId);
+    if (held) {
+      held.amount -= amountCoin;
+      const price = held.valueIrt / (held.amount + amountCoin);
+      if (held.amount <= 1e-9) {
+        wallet.holdings.splice(wallet.holdings.indexOf(held), 1);
+      } else {
+        held.valueIrt = Math.round(held.amount * price);
+      }
+      wallet.transactions.push({
+        id,
+        type: "withdraw",
+        status: "pending",
+        at: new Date(),
+        amountIrt,
+        symbol: held.coin.symbol,
+        coinName: held.coin.name,
+        amountCoin,
+        iconUrl: held.coin.iconUrl,
+      });
+    }
+    return ok({ id });
   }
 
   async getDepositStatus(depositId: string): Promise<Result<DepositStatus>> {

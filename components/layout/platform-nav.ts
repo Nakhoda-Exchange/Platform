@@ -32,4 +32,5 @@ export interface HeaderConfig {
 export const HEADER_CONFIG: Record<string, HeaderConfig> = {
   "/wallet/history": { title: "تاریخچه", backHref: "/wallet" },
   "/wallet/deposit": { title: "واریز", backHref: "/wallet" },
+  "/wallet/withdraw": { title: "برداشت", backHref: "/wallet" },
 };
