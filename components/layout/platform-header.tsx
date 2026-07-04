@@ -4,8 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "./logo";
 import { ChevronRightIcon, HeadphonesIcon } from "@/components/ui/icons";
-import { HEADER_CONFIG } from "./platform-nav";
+import { HEADER_CONFIG, type HeaderConfig } from "./platform-nav";
 import { openSupportChat } from "@/components/support/goftino";
+
+/**
+ * Header config for a route. Static sub-pages live in HEADER_CONFIG; dynamic
+ * ones (the coin detail page) are matched by pattern here so every nested
+ * screen gets a back button without hardcoding each coin.
+ */
+function headerConfigFor(pathname: string): HeaderConfig {
+  if (HEADER_CONFIG[pathname]) return HEADER_CONFIG[pathname];
+  if (/^\/market\/.+/.test(pathname)) {
+    return { title: "جزئیات رمزارز", backHref: "/market" };
+  }
+  return {};
+}
 
 /**
  * Platform app bar. Per-route (via HEADER_CONFIG): the home tab shows the logo,
@@ -15,7 +28,7 @@ import { openSupportChat } from "@/components/support/goftino";
  */
 export function PlatformHeader() {
   const pathname = usePathname();
-  const cfg = HEADER_CONFIG[pathname] ?? {};
+  const cfg = headerConfigFor(pathname);
   const showTitle = Boolean(cfg.title || cfg.backHref);
 
   return (
