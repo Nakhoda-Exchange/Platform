@@ -6,18 +6,21 @@
 // doesn't help — a 404 on the update check leaves the old SW in place.
 //
 // So we serve THIS instead: on their next SW update check the browser installs
-// it, and on activate it unregisters itself, clears all caches, and reloads any
-// controlled tab once — leaving the device with no SW.
+// it, and on activate it clears all caches and unregisters itself — leaving the
+// device with no SW.
+//
+// It must NOT reload the page. A previous version called client.navigate() on
+// activate to force a refresh; that caused a reload loop (each navigation
+// triggers an SW update check → re-activate → navigate again). We just evict
+// silently; the next natural navigation is already SW-free.
 self.addEventListener("install", () => self.skipWaiting());
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      await self.registration.unregister();
       const keys = await caches.keys();
       await Promise.all(keys.map((key) => caches.delete(key)));
-      const clients = await self.clients.matchAll({ type: "window" });
-      for (const client of clients) client.navigate(client.url);
+      await self.registration.unregister();
     })(),
   );
 });
