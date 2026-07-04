@@ -7,7 +7,6 @@ import {
   BellIcon,
   ChevronLeftIcon,
   FileTextIcon,
-  GlobeIcon,
   HeadphonesIcon,
   ShieldIcon,
   type IconProps,
@@ -83,9 +82,6 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
               profile.twoFactorEnabled ? "font-bold text-brand" : undefined
             }
           />
-        </li>
-        <li>
-          <Row Icon={GlobeIcon} label="زبان" value="فارسی" />
         </li>
         <li>
           <Row Icon={BellIcon} label="اعلان‌ها" />
