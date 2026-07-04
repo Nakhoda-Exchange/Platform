@@ -51,5 +51,8 @@
   "trustedDependencies": [
     "sharp",
     "unrs-resolver"
-  ]
+  ],
+  "patchedDependencies": {
+    "next@16.2.10": "patches/next@16.2.10.patch"
+  }
 }
