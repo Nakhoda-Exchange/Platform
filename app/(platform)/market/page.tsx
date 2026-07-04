@@ -7,10 +7,15 @@ export const metadata: Metadata = {
   title: "بازار | ناخدا",
 };
 
-export default async function MarketPage() {
-  const result = await container
-    .resolve(TOKENS.GetMarketOverviewUseCase)
-    .execute();
+export default async function MarketPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; f?: string }>;
+}) {
+  const [{ q, f }, result] = await Promise.all([
+    searchParams,
+    container.resolve(TOKENS.GetMarketOverviewUseCase).execute(),
+  ]);
 
   if (!result.ok) {
     return (
@@ -22,5 +27,11 @@ export default async function MarketPage() {
     );
   }
 
-  return <MarketScreen overview={result.data} />;
+  return (
+    <MarketScreen
+      overview={result.data}
+      initialQuery={q ?? ""}
+      initialFilter={f}
+    />
+  );
 }

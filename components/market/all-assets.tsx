@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { Coin } from "@/lib/core/domain/market/coin";
 import { CoinRow } from "./coin-row";
 import { cn } from "@/lib/utils/cn";
+import { replaceUrlParam } from "@/lib/utils/url-param";
 
 type FilterKey = "all" | "gainers" | "losers" | "mcap";
 
@@ -22,12 +23,20 @@ export function AllAssets({
   coins,
   title = "همه ارزها",
   showFilters = true,
+  initialFilter,
+  urlSync = false,
 }: {
   coins: Coin[];
   title?: string;
   showFilters?: boolean;
+  initialFilter?: string;
+  urlSync?: boolean;
 }) {
-  const [filter, setFilter] = useState<FilterKey>("all");
+  const [filter, setFilter] = useState<FilterKey>(
+    FILTERS.some((f) => f.key === initialFilter)
+      ? (initialFilter as FilterKey)
+      : "all",
+  );
 
   const sorted = useMemo(() => {
     const list = [...coins];
@@ -48,7 +57,11 @@ export function AllAssets({
             <button
               key={f.key}
               type="button"
-              onClick={() => setFilter(f.key)}
+              onClick={() => {
+                setFilter(f.key);
+                if (urlSync)
+                  replaceUrlParam("f", f.key === "all" ? null : f.key);
+              }}
               aria-pressed={f.key === filter}
               className={cn(
                 "shrink-0 rounded-full px-4 py-2 text-[13px] transition-colors",
