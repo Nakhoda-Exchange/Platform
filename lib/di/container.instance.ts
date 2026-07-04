@@ -68,7 +68,6 @@ export function buildContainer(): Container {
     TOKENS.GetPortfolioUseCase,
     (c) => new GetPortfolioUseCase(c.resolve(TOKENS.PortfolioRepository)),
   );
-
   return container;
 }
 
