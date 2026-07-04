@@ -14,9 +14,9 @@ export interface NavItem {
 
 // Bottom-nav items in RTL order (first = rightmost): market â¦ account.
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/market", label: "Ø¨Ø§Ø²Ø§Ø±", Icon: TrendingUpIcon },
-  { href: "/wallet", label: "Ø¯Ø§Ø±Ø§ÛÛ", Icon: WalletIcon },
-  { href: "/account", label: "Ø­Ø³Ø§Ø¨ Ú©Ø§Ø±Ø¨Ø±Û", Icon: UserIcon },
+  { href: "/market", label: "بازار", Icon: TrendingUpIcon },
+  { href: "/wallet", label: "کیف پول", Icon: WalletIcon },
+  { href: "/account", label: "حساب کاربری", Icon: UserIcon },
 ];
 
 export interface HeaderConfig {
