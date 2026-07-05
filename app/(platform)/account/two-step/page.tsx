@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
 import { TwoStepForm } from "@/components/account/two-step-form";
-import { BiometricSection } from "@/components/account/biometric-section";
 
 export const metadata: Metadata = {
   title: "ورود دومرحله‌ای | ناخدا",
@@ -22,10 +21,7 @@ export default async function TwoStepPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-5 px-4 pb-6 pt-4">
-      {result.data.twoFactorEnabled ? (
-        <BiometricSection userName={result.data.name} />
-      ) : null}
+    <div className="flex flex-1 flex-col px-4 pb-6 pt-4">
       <TwoStepForm enabled={result.data.twoFactorEnabled} />
     </div>
   );
