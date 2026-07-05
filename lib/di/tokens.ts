@@ -23,6 +23,7 @@ import type { WithdrawUseCase } from "@/lib/core/application/wallet/use-cases/wi
 import type { GetDepositAddressUseCase } from "@/lib/core/application/wallet/use-cases/get-deposit-address.use-case";
 import type { UserRepository } from "@/lib/core/application/account/ports/user-repository.port";
 import type { GetProfileUseCase } from "@/lib/core/application/account/use-cases/get-profile.use-case";
+import type { TwoStepPasswordUseCase } from "@/lib/core/application/account/use-cases/two-step-password.use-case";
 import type { AnnouncementsRepository } from "@/lib/core/application/account/ports/announcements-repository.port";
 import type { ListAnnouncementsUseCase } from "@/lib/core/application/account/use-cases/list-announcements.use-case";
 
@@ -69,6 +70,9 @@ export const TOKENS = {
     "GetDepositAddressUseCase",
   ),
   GetProfileUseCase: token<GetProfileUseCase>("GetProfileUseCase"),
+  TwoStepPasswordUseCase: token<TwoStepPasswordUseCase>(
+    "TwoStepPasswordUseCase",
+  ),
   ListAnnouncementsUseCase: token<ListAnnouncementsUseCase>(
     "ListAnnouncementsUseCase",
   ),

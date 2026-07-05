@@ -17,6 +17,7 @@ import { WithdrawUseCase } from "@/lib/core/application/wallet/use-cases/withdra
 import { GetDepositAddressUseCase } from "@/lib/core/application/wallet/use-cases/get-deposit-address.use-case";
 import { MockWalletRepository } from "@/lib/infrastructure/wallet/mock-wallet.repository";
 import { GetProfileUseCase } from "@/lib/core/application/account/use-cases/get-profile.use-case";
+import { TwoStepPasswordUseCase } from "@/lib/core/application/account/use-cases/two-step-password.use-case";
 import { MockUserRepository } from "@/lib/infrastructure/account/mock-user.repository";
 import { MockAnnouncementsRepository } from "@/lib/infrastructure/account/mock-announcements.repository";
 import { ListAnnouncementsUseCase } from "@/lib/core/application/account/use-cases/list-announcements.use-case";
@@ -156,6 +157,10 @@ export function buildContainer(): Container {
   container.register(
     TOKENS.GetProfileUseCase,
     (c) => new GetProfileUseCase(c.resolve(TOKENS.UserRepository)),
+  );
+  container.register(
+    TOKENS.TwoStepPasswordUseCase,
+    (c) => new TwoStepPasswordUseCase(c.resolve(TOKENS.UserRepository)),
   );
   container.register(
     TOKENS.ListAnnouncementsUseCase,

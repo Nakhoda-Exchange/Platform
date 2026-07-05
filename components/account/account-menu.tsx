@@ -78,6 +78,7 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
           <Row
             Icon={ShieldIcon}
             label="ورود دومرحله‌ای"
+            href="/account/two-step"
             value={profile.twoFactorEnabled ? "فعال" : "غیرفعال"}
             valueClassName={
               profile.twoFactorEnabled ? "font-bold text-brand" : undefined

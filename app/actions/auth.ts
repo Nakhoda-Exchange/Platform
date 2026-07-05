@@ -57,6 +57,12 @@ const DESTINATION = {
   approved: "/market",
   declined: "/declined",
 } as const;
+type LoginStatus = keyof typeof DESTINATION;
+
+/** Clamp an untrusted status param to a known value. */
+function asStatus(raw: string): LoginStatus {
+  return raw in DESTINATION ? (raw as LoginStatus) : "registration";
+}
 
 /**
  * Step 2 — verify the submitted code. On success the login status decides where
@@ -77,5 +83,35 @@ export async function verifyLogin(
     return { error: result.error.message };
   }
 
+  // Second step: users who set a two-step password must enter it before the
+  // platform. Mock-only: the status travels in the URL like the OTP challenge
+  // does; a real backend keeps it in the session.
+  const profile = await container.resolve(TOKENS.GetProfileUseCase).execute();
+  if (profile.ok && profile.data.twoFactorEnabled) {
+    const phone = String(formData.get("phone") ?? "");
+    const params = new URLSearchParams({ st: result.data.status, phone });
+    redirect(`/login/two-step?${params.toString()}`);
+  }
+
   redirect(DESTINATION[result.data.status]);
+}
+
+/**
+ * Step 3 (only when a two-step password is set) — verify it, then continue to
+ * the status destination.
+ */
+export async function verifyTwoStepLogin(
+  _prev: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const password = String(formData.get("password") ?? "");
+  const result = await container
+    .resolve(TOKENS.TwoStepPasswordUseCase)
+    .verify(password);
+
+  if (!result.ok) {
+    return { error: result.error.message };
+  }
+
+  redirect(DESTINATION[asStatus(String(formData.get("st") ?? ""))]);
 }
