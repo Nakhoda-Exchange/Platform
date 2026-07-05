@@ -39,13 +39,13 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
           (px-6 + whitespace-nowrap can't shrink). lg keeps ≥44px targets. */}
       <div className="grid grid-cols-2 gap-3">
         <Link
-          href="/market"
+          href="/wallet/deposit"
           className={buttonClasses({ size: "lg", fullWidth: true })}
         >
           واریز
         </Link>
         <Link
-          href="#"
+          href="/wallet/withdraw"
           className={buttonClasses({
             variant: "ghost",
             size: "lg",

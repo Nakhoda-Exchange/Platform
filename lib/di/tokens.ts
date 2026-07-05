@@ -16,6 +16,11 @@ import type { GetTradeContextUseCase } from "@/lib/core/application/trade/use-ca
 import type { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
 import type { TransactionsRepository } from "@/lib/core/application/wallet/ports/transactions-repository.port";
 import type { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-cases/list-transactions.use-case";
+import type { WalletRepository } from "@/lib/core/application/wallet/ports/wallet-repository.port";
+import type { DepositIrtUseCase } from "@/lib/core/application/wallet/use-cases/deposit-irt.use-case";
+import type { ManageCardsUseCase } from "@/lib/core/application/wallet/use-cases/manage-cards.use-case";
+import type { WithdrawUseCase } from "@/lib/core/application/wallet/use-cases/withdraw.use-case";
+import type { GetDepositAddressUseCase } from "@/lib/core/application/wallet/use-cases/get-deposit-address.use-case";
 import type { UserRepository } from "@/lib/core/application/account/ports/user-repository.port";
 import type { GetProfileUseCase } from "@/lib/core/application/account/use-cases/get-profile.use-case";
 
@@ -31,6 +36,7 @@ export const TOKENS = {
   TransactionsRepository: token<TransactionsRepository>(
     "TransactionsRepository",
   ),
+  WalletRepository: token<WalletRepository>("WalletRepository"),
   UserRepository: token<UserRepository>("UserRepository"),
   // Application use cases
   RequestOtpUseCase: token<RequestOtpUseCase>("RequestOtpUseCase"),
@@ -50,6 +56,12 @@ export const TOKENS = {
   PlaceOrderUseCase: token<PlaceOrderUseCase>("PlaceOrderUseCase"),
   ListTransactionsUseCase: token<ListTransactionsUseCase>(
     "ListTransactionsUseCase",
+  ),
+  DepositIrtUseCase: token<DepositIrtUseCase>("DepositIrtUseCase"),
+  ManageCardsUseCase: token<ManageCardsUseCase>("ManageCardsUseCase"),
+  WithdrawUseCase: token<WithdrawUseCase>("WithdrawUseCase"),
+  GetDepositAddressUseCase: token<GetDepositAddressUseCase>(
+    "GetDepositAddressUseCase",
   ),
   GetProfileUseCase: token<GetProfileUseCase>("GetProfileUseCase"),
 } as const;
