@@ -17,20 +17,15 @@ import { formatChangePercent, formatIrtShort } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 
 // echarts only downloads on first sheet open, not with the wallet page.
-// The fallback is the empty card with a quiet centered spinner (iOS
-// activity-indicator style), sized like the real card so nothing jumps.
+// The fallback is a plain empty card, sized like the real one (300px,
+// measured in WebKit) so the chart swaps in with zero layout jump.
 const PortfolioHistoryChart = dynamic(
   () =>
     import("./portfolio-history-chart").then((m) => m.PortfolioHistoryChart),
   {
     ssr: false,
     loading: () => (
-      <div
-        aria-hidden
-        className="flex h-[300px] items-center justify-center rounded-card bg-surface"
-      >
-        <span className="size-7 animate-spin rounded-full border-[2.5px] border-line border-t-brand" />
-      </div>
+      <div aria-hidden className="h-[300px] rounded-card bg-surface" />
     ),
   },
 );
