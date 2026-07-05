@@ -3,7 +3,9 @@
 import { redirect } from "next/navigation";
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
+import { cookies } from "next/headers";
 import type { AuthFormState } from "./auth-state";
+import { REFERRAL_COOKIE } from "./referral-state";
 
 function verifyUrl(phone: string, cid: string, resendSeconds: number): string {
   const params = new URLSearchParams({
@@ -30,6 +32,18 @@ export async function startLogin(
 
   if (!result.ok) {
     return { error: result.error.message };
+  }
+
+  // A shared referral link (?ref=CODE) rides the login form; keep it in an
+  // httpOnly cookie until KYC completes, where the attribution is applied.
+  const ref = String(formData.get("ref") ?? "").trim();
+  if (/^[A-Za-z]{2,8}-\d{3,6}$/.test(ref)) {
+    (await cookies()).set(REFERRAL_COOKIE, ref.toUpperCase(), {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
   }
 
   const { challengeId, mobile: normalized, resendAfterSeconds } = result.data;
