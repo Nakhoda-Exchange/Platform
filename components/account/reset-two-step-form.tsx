@@ -8,11 +8,12 @@ import { isStrongPassword } from "@/lib/core/domain/account/two-step-password";
 import { isValidNationalCode } from "@/lib/core/domain/kyc/national-code";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { JalaliDateField } from "@/components/ui/jalali-date-field";
 import { OtpInput } from "@/components/auth/otp-input";
 import { PasswordChecks } from "./password-checks";
 import { CheckCircleIcon } from "@/components/ui/icons";
 import { toEnglishDigits, toPersianDigits } from "@/lib/utils/digits";
-import { isValidJalaliDate, maskJalaliDate } from "@/lib/utils/jalali";
+import { isValidJalaliDate } from "@/lib/utils/jalali";
 import { cn } from "@/lib/utils/cn";
 
 const STEPS = ["هویت", "کد پیامکی", "رمز تازه"] as const;
@@ -151,14 +152,11 @@ export function ResetTwoStepForm({
           }
           error={step === 0 ? serverError : null}
         />
-        <Field
-          name="birthDate"
+        <JalaliDateField
           label="تاریخ تولد (شمسی)"
-          inputMode="numeric"
-          dir="ltr"
-          placeholder="۱۳۷۵/۰۶/۱۵"
+          name="birthDate"
           value={birthDate}
-          onChange={(e) => setBirthDate(maskJalaliDate(e.target.value))}
+          onChange={setBirthDate}
         />
       </div>
 
