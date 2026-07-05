@@ -73,6 +73,24 @@ describe("GetPortfolioHistoryUseCase", () => {
     }
   });
 
+  test("pinning keeps a deposit/withdraw event on the last point", async () => {
+    const event = { type: "deposit" as const, amountIrt: 100 };
+    const result = await new GetPortfolioHistoryUseCase(
+      repoOf({
+        ...history,
+        daily: [
+          { at: 1, valueIrt: 900 },
+          { at: 2, valueIrt: 999, event },
+        ],
+      }),
+    ).execute();
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.daily.at(-1)?.event).toEqual(event);
+      expect(result.data.daily.at(-1)?.valueIrt).toBe(1_500);
+    }
+  });
+
   test("sorts out-of-order points ascending before pinning", async () => {
     const result = await new GetPortfolioHistoryUseCase(
       repoOf({

@@ -35,7 +35,7 @@ export class GetPortfolioHistoryUseCase {
       }
       points.sort((a, b) => a.at - b.at);
       const last = points[points.length - 1];
-      points[points.length - 1] = { at: last.at, valueIrt: totalIrt };
+      points[points.length - 1] = { ...last, valueIrt: totalIrt };
       history[range] = points;
     }
     return ok(history);

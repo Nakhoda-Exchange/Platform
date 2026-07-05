@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type ComponentType, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { Sheet } from "@/components/ui/sheet";
-import { ChevronLeftIcon } from "@/components/ui/icons";
+import {
+  ArrowUpIcon,
+  ChevronLeftIcon,
+  ClockIcon,
+  CoinsIcon,
+  TrendingUpIcon,
+  WalletIcon,
+  type IconProps,
+} from "@/components/ui/icons";
 import type { PortfolioHistory } from "@/lib/core/domain/portfolio/portfolio-history";
 import { formatChangePercent, formatIrtShort } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
@@ -12,7 +20,7 @@ import { cn } from "@/lib/utils/cn";
 const PortfolioHistoryChart = dynamic(
   () =>
     import("./portfolio-history-chart").then((m) => m.PortfolioHistoryChart),
-  { ssr: false, loading: () => <div className="h-[250px]" aria-hidden /> },
+  { ssr: false, loading: () => <div className="h-[330px]" aria-hidden /> },
 );
 
 /** «▲ +۱٬۲۳۴ ت (٪۵/۶)» gain/loss colored — sign and words, never color alone. */
@@ -26,10 +34,21 @@ function SignedIrt({ amount, percent }: { amount: number; percent: number }) {
   );
 }
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+function Row({
+  Icon,
+  label,
+  children,
+}: {
+  Icon: ComponentType<IconProps>;
+  label: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex items-center justify-between border-b border-line py-4 last:border-0">
-      <dt className="text-[15px] text-muted">{label}</dt>
+    <div className="flex items-center gap-3 border-b border-line py-3.5 last:border-0">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+        <Icon size={18} />
+      </span>
+      <dt className="flex-1 text-[15px] text-muted">{label}</dt>
       <dd className="text-[15px] font-bold text-ink">{children}</dd>
     </div>
   );
@@ -82,17 +101,21 @@ export function PortfolioDetails({
       >
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain">
           {history ? <PortfolioHistoryChart history={history} /> : null}
-          <dl className="flex flex-col">
-            <Row label="موجودی تومانی">{formatIrtShort(availableIrt)}</Row>
-            <Row label="ارزش رمزارزها">{formatIrtShort(holdingsValueIrt)}</Row>
-            <Row label="سود کل">
+          <dl className="flex flex-col rounded-card bg-surface px-4">
+            <Row Icon={WalletIcon} label="موجودی تومانی">
+              {formatIrtShort(availableIrt)}
+            </Row>
+            <Row Icon={CoinsIcon} label="ارزش رمزارزها">
+              {formatIrtShort(holdingsValueIrt)}
+            </Row>
+            <Row Icon={TrendingUpIcon} label="سود کل">
               <SignedIrt amount={profitIrt} percent={profitPercent} />
             </Row>
-            <Row label="امروز">
+            <Row Icon={ClockIcon} label="امروز">
               <SignedIrt amount={dayChangeIrt} percent={dayChangePercent} />
             </Row>
             {pendingWithdrawIrt > 0 ? (
-              <Row label="برداشت در انتظار">
+              <Row Icon={ArrowUpIcon} label="برداشت در انتظار">
                 <span className="text-brand">
                   {formatIrtShort(pendingWithdrawIrt)}
                 </span>
