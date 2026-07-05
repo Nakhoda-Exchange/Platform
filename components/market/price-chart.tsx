@@ -1,11 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import type { Coin } from "@/lib/core/domain/market/coin";
 import {
   CHART_RANGES,
   type ChartRange,
+  type PricePoint,
 } from "@/lib/core/domain/market/coin-detail";
+import type { ChartRangeDef } from "@/components/ui/live-area-chart";
+import { formatChangePercent, formatIrt, formatUsd } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
+
+// echarts only downloads when a PDP is opened, not with the app shell.
+// The fallback is a plain empty card at the real card's height (300px)
+// so the chart swaps in with zero layout jump.
+const LiveAreaChart = dynamic(
+  () => import("@/components/ui/live-area-chart").then((m) => m.LiveAreaChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div aria-hidden className="h-[300px] rounded-card bg-surface" />
+    ),
+  },
+);
 
 const RANGE_LABELS: Record<ChartRange, string> = {
   "24h": "۲۴ ساعت",
@@ -14,77 +31,43 @@ const RANGE_LABELS: Record<ChartRange, string> = {
   "1y": "۱ سال",
 };
 
-const W = 358;
-const H = 150;
-const PAD = 14;
-
-/** Line + area path for a value series, scaled to the viewBox. */
-function buildPath(values: number[]): { line: string; area: string } {
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
-  const pts = values.map((v, i) => {
-    const x = (i / (values.length - 1)) * W;
-    const y = H - PAD - ((v - min) / span) * (H - PAD * 2);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const line = pts.map((p, i) => `${i ? "L" : "M"}${p}`).join(" ");
-  return { line, area: `${line} L${W},${H} L0,${H} Z` };
-}
-
 /**
- * Coin price chart with a range switcher. Mock series arrive from the server;
- * switching range swaps arrays client-side (no round-trip). Chart flows LTR
- * (old → new) as trading charts conventionally do, even in an RTL app.
+ * PDP price chart: the shared LiveAreaChart fed with the coin's price
+ * history. The card headline IS the live price; while idle the subhead
+ * shows the USD price and 24h change, and scrubbing swaps it for the
+ * peeked moment.
  */
 export function PriceChart({
+  coin,
   series,
 }: {
-  series: Record<ChartRange, number[]>;
+  coin: Coin;
+  series: Record<ChartRange, PricePoint[]>;
 }) {
-  const [range, setRange] = useState<ChartRange>("24h");
-  const { line, area } = buildPath(series[range]);
+  const up = coin.change24h >= 0;
+  const ranges: ChartRangeDef[] = CHART_RANGES.map((key) => ({
+    key,
+    label: RANGE_LABELS[key],
+    points: series[key].map((p) => ({ at: p.at, value: p.priceIrt })),
+    showTime: key === "24h",
+  }));
 
   return (
-    <div className="flex flex-col gap-4">
-      <div dir="ltr">
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          className="h-[150px] w-full"
-          preserveAspectRatio="none"
-          aria-label={`نمودار قیمت ${RANGE_LABELS[range]}`}
-          role="img"
-        >
-          <path d={area} fill="var(--color-brand)" fillOpacity="0.1" />
-          <path
-            d={line}
-            fill="none"
-            stroke="var(--color-brand)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </div>
-
-      <div className="flex justify-between gap-2">
-        {CHART_RANGES.map((r) => (
-          <button
-            key={r}
-            type="button"
-            onClick={() => setRange(r)}
-            aria-pressed={r === range}
-            className={cn(
-              "h-10 flex-1 rounded-full text-[13px] font-bold transition-colors",
-              r === range
-                ? "bg-brand text-white"
-                : "bg-surface text-muted hover:bg-line",
-            )}
+    <LiveAreaChart
+      ranges={ranges}
+      formatValue={formatIrt}
+      ariaLabel={`نمودار قیمت ${coin.name}`}
+      idleSubhead={
+        <span dir="ltr" className="flex items-center gap-2">
+          <span className="text-muted">{formatUsd(coin.priceUsd)}</span>
+          <span
+            aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
+            className={cn("font-bold", up ? "text-gain" : "text-loss")}
           >
-            {RANGE_LABELS[r]}
-          </button>
-        ))}
-      </div>
-    </div>
+            {up ? "▲" : "▼"} {formatChangePercent(coin.change24h)}
+          </span>
+        </span>
+      }
+    />
   );
 }

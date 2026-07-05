@@ -4,6 +4,15 @@ import type { Coin } from "./coin";
 export type ChartRange = "24h" | "7d" | "1m" | "1y";
 export const CHART_RANGES: readonly ChartRange[] = ["24h", "7d", "1m", "1y"];
 
+/**
+ * One priced moment on the PDP chart. `at` is epoch ms — deliberately not a
+ * Date, so the payload crosses server → client props untouched.
+ */
+export interface PricePoint {
+  at: number; // epoch ms
+  priceIrt: number; // Toman
+}
+
 /** A coin plus the extra data the detail page (PDP) needs: chart + stats + about. */
 export interface CoinDetail {
   coin: Coin;
@@ -11,5 +20,5 @@ export interface CoinDetail {
   low24h: number; // 24h low price, Toman
   volume24h: number; // 24h traded volume, همت
   description: string; // short Persian «about» blurb
-  series: Record<ChartRange, number[]>; // mock price points per range (oldest → newest)
+  series: Record<ChartRange, PricePoint[]>; // price points per range (oldest → newest)
 }
