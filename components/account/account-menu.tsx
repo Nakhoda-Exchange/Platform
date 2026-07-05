@@ -7,6 +7,7 @@ import {
   BellIcon,
   ChevronLeftIcon,
   FileTextIcon,
+  GiftIcon,
   HeadphonesIcon,
   ShieldIcon,
   type IconProps,
@@ -87,6 +88,13 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
         </li>
         <li>
           <ThemeRow />
+        </li>
+        <li>
+          <Row
+            Icon={GiftIcon}
+            label="دعوت از دوستان"
+            href="/account/referral"
+          />
         </li>
         <li>
           <Row Icon={BellIcon} label="اعلان‌ها" href="/account/announcements" />

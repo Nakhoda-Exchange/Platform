@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
 import { KYC_PENDING_COOKIE, type KycFormState } from "./kyc-state";
+import { REFERRAL_COOKIE } from "./referral-state";
 
 /**
  * KYC step 1 — validate national code + Jalali birth date and run the identity
@@ -54,5 +55,13 @@ export async function confirmKyc(): Promise<void> {
     await container.resolve(TOKENS.KycSessionStore).clear(pendingId);
     store.delete(KYC_PENDING_COOKIE);
   }
+
+  // Referral attribution finalizes here: KYC passed with a stored ?ref code.
+  const ref = store.get(REFERRAL_COOKIE)?.value;
+  if (ref) {
+    await container.resolve(TOKENS.GetReferralOverviewUseCase).applyCode(ref);
+    store.delete(REFERRAL_COOKIE);
+  }
+
   redirect("/market");
 }

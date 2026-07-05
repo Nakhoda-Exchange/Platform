@@ -7,7 +7,12 @@ export const metadata: Metadata = {
   title: "ورود به ناخدا",
 };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ref?: string }>;
+}) {
+  const { ref } = await searchParams;
   return (
     <AuthShell>
       <AuthHeader
@@ -15,7 +20,7 @@ export default function LoginPage() {
         subtitle="برای ورود یا ایجاد حساب، شماره موبایل خود را وارد کنید."
       />
 
-      <PhoneLoginForm />
+      <PhoneLoginForm refCode={ref} />
 
       <p className="text-center text-[13px] leading-[1.8] text-muted">
         با ادامه،{" "}

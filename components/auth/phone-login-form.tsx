@@ -6,7 +6,7 @@ import { initialAuthFormState } from "@/app/actions/auth-state";
 import { isValidIranMobile } from "@/lib/utils/digits";
 import { Button } from "@/components/ui/button";
 
-export function PhoneLoginForm() {
+export function PhoneLoginForm({ refCode }: { refCode?: string }) {
   const [state, formAction, pending] = useActionState(
     startLogin,
     initialAuthFormState,
@@ -16,6 +16,7 @@ export function PhoneLoginForm() {
 
   return (
     <form action={formAction} className="flex w-full flex-col gap-6">
+      {refCode ? <input type="hidden" name="ref" value={refCode} /> : null}
       <div className="flex w-full flex-col gap-2">
         <label
           htmlFor="mobile"
