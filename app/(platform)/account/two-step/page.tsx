@@ -22,10 +22,7 @@ export default async function TwoStepPage() {
 
   return (
     <div className="flex flex-1 flex-col px-4 pb-6 pt-4">
-      <TwoStepForm
-        enabled={result.data.twoFactorEnabled}
-        mobile={result.data.mobile}
-      />
+      <TwoStepForm enabled={result.data.twoFactorEnabled} />
     </div>
   );
 }

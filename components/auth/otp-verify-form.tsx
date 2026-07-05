@@ -55,6 +55,7 @@ export function OtpVerifyForm({
       </div>
 
       <input type="hidden" name="cid" value={cid} />
+      <input type="hidden" name="phone" value={phone} />
 
       <div className="flex w-full flex-col items-center gap-4">
         <Button
