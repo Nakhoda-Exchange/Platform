@@ -132,8 +132,9 @@ function buildOption(
   return {
     animation: true,
     animationDuration: 0, // no entry animation — instant first paint
-    animationDurationUpdate: LIVE_TICK_MS * 0.75, // the live line glides
-    animationEasingUpdate: "linear",
+    // No global update tween: switching tabs swaps the line INSTANTLY.
+    // Only the live-tail series opts back in (its own animation settings).
+    animationDurationUpdate: 0,
     grid: { left: 0, right: 0, top: 8, bottom: 0 },
     tooltip: {
       trigger: "axis",
