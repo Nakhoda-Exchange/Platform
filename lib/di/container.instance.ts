@@ -161,6 +161,8 @@ export function buildContainer(): Container {
   container.register(
     TOKENS.TwoStepPasswordUseCase,
     (c) => new TwoStepPasswordUseCase(c.resolve(TOKENS.UserRepository)),
+  );
+  container.register(
     TOKENS.ListAnnouncementsUseCase,
     (c) =>
       new ListAnnouncementsUseCase(c.resolve(TOKENS.AnnouncementsRepository)),
