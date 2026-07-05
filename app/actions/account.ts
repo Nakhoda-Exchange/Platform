@@ -28,7 +28,13 @@ export async function setTwoStepPassword(
       String(formData.get("password") ?? ""),
       String(formData.get("confirm") ?? ""),
     );
-  if (!result.ok) return { status: "error", message: result.error.message };
+  if (!result.ok) {
+    return {
+      status: "error",
+      message: result.error.message,
+      code: result.error.code,
+    };
+  }
   return { status: "success" };
 }
 
@@ -49,6 +55,12 @@ export async function resetTwoStepPassword(
       String(formData.get("password") ?? ""),
       String(formData.get("confirm") ?? ""),
     );
-  if (!result.ok) return { status: "error", message: result.error.message };
+  if (!result.ok) {
+    return {
+      status: "error",
+      message: result.error.message,
+      code: result.error.code,
+    };
+  }
   return { status: "success" };
 }
