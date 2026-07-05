@@ -1,7 +1,13 @@
 import Link from "next/link";
+import type { ComponentType } from "react";
 import type { Portfolio } from "@/lib/core/domain/portfolio/portfolio";
-import { PortfolioChart } from "./portfolio-chart";
-import { buttonClasses } from "@/components/ui/button";
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ClockIcon,
+  CoinsIcon,
+  type IconProps,
+} from "@/components/ui/icons";
 import {
   formatChangePercent,
   formatIrt,
@@ -9,11 +15,22 @@ import {
 } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 
-/** Total account value, today's P&L, a trend chart, and deposit/withdraw actions. */
+const ACTIONS: {
+  href: string;
+  label: string;
+  Icon: ComponentType<IconProps>;
+}[] = [
+  { href: "/wallet/deposit", label: "واریز", Icon: ArrowDownIcon },
+  { href: "/wallet/withdraw", label: "برداشت", Icon: ArrowUpIcon },
+  { href: "/market", label: "خرید/فروش", Icon: CoinsIcon },
+  { href: "/wallet/history", label: "تاریخچه", Icon: ClockIcon },
+];
+
+/** Total account value, today's P&L, and the icon quick actions. */
 export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
   const up = portfolio.dayChangeIrt >= 0;
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-6">
       <div className="flex flex-col items-center gap-1.5">
         <span className="text-[14px] text-muted">موجودی کل</span>
         <span className="text-[32px] font-extrabold text-ink">
@@ -33,51 +50,24 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
         </div>
       </div>
 
-      <PortfolioChart />
-
-      {/* 2×2 grid: four xl buttons in one flex row overflow a 390px viewport
-          (px-6 + whitespace-nowrap can't shrink). lg keeps ≥44px targets. */}
-      <div className="grid grid-cols-2 gap-3">
-        <Link
-          href="/wallet/deposit"
-          className={buttonClasses({ size: "lg", fullWidth: true })}
-        >
-          واریز
-        </Link>
-        <Link
-          href="/wallet/withdraw"
-          className={buttonClasses({
-            variant: "ghost",
-            size: "lg",
-            fullWidth: true,
-            className: "bg-surface",
-          })}
-        >
-          برداشت
-        </Link>
-        <Link
-          href="#"
-          className={buttonClasses({
-            variant: "ghost",
-            size: "lg",
-            fullWidth: true,
-            className: "bg-surface",
-          })}
-        >
-          خرید/فروش
-        </Link>
-        <Link
-          href="/wallet/history"
-          className={buttonClasses({
-            variant: "ghost",
-            size: "lg",
-            fullWidth: true,
-            className: "bg-surface",
-          })}
-        >
-          تاریخچه
-        </Link>
-      </div>
+      {/* Icon quick actions (Moonshot-style): circle icon + short label. */}
+      <nav
+        aria-label="عملیات کیف پول"
+        className="flex items-start justify-between px-2"
+      >
+        {ACTIONS.map(({ href, label, Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className="group flex w-16 flex-col items-center gap-2"
+          >
+            <span className="flex size-13 items-center justify-center rounded-full bg-brand/10 text-brand transition-colors group-hover:bg-brand/15">
+              <Icon size={22} />
+            </span>
+            <span className="text-[12px] font-bold text-ink">{label}</span>
+          </Link>
+        ))}
+      </nav>
     </section>
   );
 }
