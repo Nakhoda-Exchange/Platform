@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ComponentType } from "react";
 import type { Portfolio } from "@/lib/core/domain/portfolio/portfolio";
+import type { PortfolioHistory } from "@/lib/core/domain/portfolio/portfolio-history";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -27,7 +28,13 @@ const ACTIONS: {
  * compact profit pill that opens the 90vh details sheet (cash/holdings/
  * profit/today/pending breakdown), and the icon quick actions.
  */
-export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
+export function PortfolioSummary({
+  portfolio,
+  history,
+}: {
+  portfolio: Portfolio;
+  history: PortfolioHistory | null;
+}) {
   return (
     <section className="flex flex-col gap-5">
       <div className="flex flex-col items-center gap-2">
@@ -43,6 +50,7 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
           dayChangeIrt={portfolio.dayChangeIrt}
           dayChangePercent={portfolio.dayChangePercent}
           pendingWithdrawIrt={portfolio.pendingWithdrawIrt}
+          history={history}
         />
       </div>
 

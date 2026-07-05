@@ -5,6 +5,7 @@ import type {
   CoinDetail,
 } from "@/lib/core/domain/market/coin-detail";
 import { ok, type Result } from "@/lib/core/domain/shared/result";
+import { seededSeries } from "@/lib/infrastructure/shared/seeded-series";
 
 function delay(ms = 400): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -167,31 +168,6 @@ const DESCRIPTIONS: Record<string, string> = {
   usdt: "تتر یک استیبل‌کوین است که ارزش آن به دلار آمریکا وابسته است و برای حفظ ارزش و نقل‌وانتقال سریع کاربرد دارد.",
   sol: "سولانا یک شبکه‌ی بلاک‌چینی سریع و کم‌هزینه است که برای اپلیکیشن‌های غیرمتمرکز و توکن‌های پرکاربرد شناخته می‌شود.",
 };
-
-/**
- * Deterministic pseudo-random price walk that trends toward `end` and pins its
- * last point to `end` (the current price). Seeded so SSR and client agree.
- * ponytail: mock series; a real time-series API replaces this whole method.
- */
-function seededSeries(
-  seed: number,
-  points: number,
-  end: number,
-  drift: number,
-): number[] {
-  let s = seed >>> 0;
-  const rnd = () => (s = (s * 1664525 + 1013904223) >>> 0) / 0xffffffff;
-  const start = end / (1 + drift);
-  const out: number[] = [];
-  for (let i = 0; i < points; i++) {
-    const t = i / (points - 1);
-    const base = start + (end - start) * t;
-    const noise = (rnd() - 0.5) * end * 0.05;
-    out.push(Math.max(base + noise, end * 0.0001));
-  }
-  out[points - 1] = end;
-  return out;
-}
 
 export class MockMarketRepository implements MarketRepository {
   async listCoins(): Promise<Result<Coin[]>> {

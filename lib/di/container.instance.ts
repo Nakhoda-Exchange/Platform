@@ -5,6 +5,7 @@ import { ListCoinsUseCase } from "@/lib/core/application/market/use-cases/list-c
 import { GetMarketOverviewUseCase } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
 import { GetCoinDetailUseCase } from "@/lib/core/application/market/use-cases/get-coin-detail.use-case";
 import { GetPortfolioUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio.use-case";
+import { GetPortfolioHistoryUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio-history.use-case";
 import { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/get-trade-context.use-case";
 import { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
 import { MockAuthRepository } from "@/lib/infrastructure/auth/mock-auth.repository";
@@ -113,6 +114,11 @@ export function buildContainer(): Container {
   container.register(
     TOKENS.GetPortfolioUseCase,
     (c) => new GetPortfolioUseCase(c.resolve(TOKENS.PortfolioRepository)),
+  );
+  container.register(
+    TOKENS.GetPortfolioHistoryUseCase,
+    (c) =>
+      new GetPortfolioHistoryUseCase(c.resolve(TOKENS.PortfolioRepository)),
   );
   container.register(
     TOKENS.GetTradeContextUseCase,

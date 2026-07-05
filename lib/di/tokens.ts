@@ -11,6 +11,7 @@ import type { GetMarketOverviewUseCase } from "@/lib/core/application/market/use
 import type { GetCoinDetailUseCase } from "@/lib/core/application/market/use-cases/get-coin-detail.use-case";
 import type { PortfolioRepository } from "@/lib/core/application/portfolio/ports/portfolio-repository.port";
 import type { GetPortfolioUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio.use-case";
+import type { GetPortfolioHistoryUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio-history.use-case";
 import type { TradeRepository } from "@/lib/core/application/trade/ports/trade-repository.port";
 import type { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/get-trade-context.use-case";
 import type { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
@@ -59,6 +60,9 @@ export const TOKENS = {
   ),
   GetCoinDetailUseCase: token<GetCoinDetailUseCase>("GetCoinDetailUseCase"),
   GetPortfolioUseCase: token<GetPortfolioUseCase>("GetPortfolioUseCase"),
+  GetPortfolioHistoryUseCase: token<GetPortfolioHistoryUseCase>(
+    "GetPortfolioHistoryUseCase",
+  ),
   GetTradeContextUseCase: token<GetTradeContextUseCase>(
     "GetTradeContextUseCase",
   ),
