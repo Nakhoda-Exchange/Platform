@@ -5,10 +5,8 @@ import * as echarts from "echarts/core";
 import { LineChart, type LineSeriesOption } from "echarts/charts";
 import {
   GridComponent,
-  MarkLineComponent,
   TooltipComponent,
   type GridComponentOption,
-  type MarkLineComponentOption,
   type TooltipComponentOption,
 } from "echarts/components";
 import { SVGRenderer } from "echarts/renderers";
@@ -20,26 +18,13 @@ import {
   type PortfolioValuePoint,
 } from "@/lib/core/domain/portfolio/portfolio-history";
 import { formatIrtShort } from "@/lib/utils/money";
-import {
-  formatJalaliDay,
-  formatJalaliDayShort,
-  formatTimeFa,
-} from "@/lib/utils/jalali";
+import { formatJalaliDay, formatTimeFa } from "@/lib/utils/jalali";
 import { cn } from "@/lib/utils/cn";
 
-echarts.use([
-  LineChart,
-  GridComponent,
-  MarkLineComponent,
-  TooltipComponent,
-  SVGRenderer,
-]);
+echarts.use([LineChart, GridComponent, TooltipComponent, SVGRenderer]);
 
 type Option = ComposeOption<
-  | LineSeriesOption
-  | GridComponentOption
-  | MarkLineComponentOption
-  | TooltipComponentOption
+  LineSeriesOption | GridComponentOption | TooltipComponentOption
 >;
 
 const RANGE_LABELS: Record<PortfolioHistoryRange, string> = {
@@ -113,25 +98,34 @@ function seriesData(
   );
 }
 
-/** Apple-Stocks-style live level: a dotted line that breathes, not the chart. */
-function liveMarkLine(
-  liveIrt: number,
+/**
+ * The live tail: a dotted segment from the last real point into a phantom
+ * slot at the right edge, ending in a dot that breathes up and down with
+ * the market — only the tail moves, never the plotted history.
+ */
+function liveTailData(
+  points: PortfolioValuePoint[],
   tones: Tones,
-): LineSeriesOption["markLine"] {
-  return {
-    silent: true,
+  liveIrt: number,
+): LineSeriesOption["data"] {
+  const data: NonNullable<LineSeriesOption["data"]> = new Array(
+    points.length + 1,
+  ).fill(null);
+  data[points.length - 1] = {
+    value: points[points.length - 1].valueIrt,
     symbol: "none",
-    animationDurationUpdate: LIVE_TICK_MS * 0.75,
-    animationEasingUpdate: "linear",
-    label: { show: false },
-    lineStyle: { type: "dotted", color: tones.brand, width: 1.5 },
-    data: [{ yAxis: liveIrt }],
   };
+  data[points.length] = {
+    value: liveIrt,
+    symbol: "circle",
+    symbolSize: 7,
+    itemStyle: { color: tones.brand, borderColor: tones.paper, borderWidth: 2 },
+  };
+  return data;
 }
 
 function buildOption(
   points: PortfolioValuePoint[],
-  range: PortfolioHistoryRange,
   tones: Tones,
   liveIrt: number,
 ): Option {
@@ -140,7 +134,7 @@ function buildOption(
     animationDuration: 0, // no entry animation — instant first paint
     animationDurationUpdate: LIVE_TICK_MS * 0.75, // the live line glides
     animationEasingUpdate: "linear",
-    grid: { left: 0, right: 0, top: 8, bottom: 22 },
+    grid: { left: 0, right: 0, top: 8, bottom: 0 },
     tooltip: {
       trigger: "axis",
       showContent: false, // the readout row above the chart IS the tooltip
@@ -153,25 +147,12 @@ function buildOption(
     xAxis: {
       type: "category",
       boundaryGap: false,
-      data: points.map((p) => String(p.at)),
+      // One phantom slot past the newest point hosts the live dotted tail.
+      data: [...points.map((p) => String(p.at)), "live"],
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: {
-        color: tones.muted,
-        fontFamily: "Vazirmatn, sans-serif",
-        fontSize: 11,
-        hideOverlap: true,
-        showMinLabel: true,
-        showMaxLabel: true,
-        // Full-bleed grid: keep the edge labels inside the plot.
-        alignMinLabel: "left",
-        alignMaxLabel: "right",
-        interval: Math.floor(points.length / 3),
-        formatter: (ms: string) => {
-          const d = new Date(Number(ms));
-          return range === "daily" ? formatTimeFa(d) : formatJalaliDayShort(d);
-        },
-      },
+      // No time tags — the readout above names the peeked moment.
+      axisLabel: { show: false },
     },
     yAxis: {
       type: "value",
@@ -185,6 +166,7 @@ function buildOption(
     },
     series: [
       {
+        id: "history",
         type: "line",
         data: seriesData(points, tones),
         smooth: 0.3,
@@ -194,7 +176,18 @@ function buildOption(
         lineStyle: { width: 2.5, color: tones.brand },
         areaStyle: { color: tones.brandSoft },
         emphasis: { disabled: true },
-        markLine: liveMarkLine(liveIrt, tones),
+      },
+      {
+        id: "live",
+        type: "line",
+        data: liveTailData(points, tones, liveIrt),
+        symbol: "none",
+        showSymbol: true,
+        silent: true,
+        lineStyle: { type: "dotted", width: 2, color: tones.brand },
+        emphasis: { disabled: true },
+        animationDurationUpdate: LIVE_TICK_MS * 0.75,
+        animationEasingUpdate: "linear",
       },
     ],
   };
@@ -258,7 +251,6 @@ export function PortfolioHistoryChart({
     chartRef.current?.setOption(
       buildOption(
         points,
-        range,
         readTones(),
         liveIrtRef.current ?? points[points.length - 1].valueIrt,
       ),
@@ -282,49 +274,48 @@ export function PortfolioHistoryChart({
     return () => clearInterval(id);
   }, [history, range]);
 
-  // Each tick only moves the dotted level line — the chart itself stays put.
+  // Each tick only moves the dotted tail — the plotted history stays put.
   useEffect(() => {
     if (liveIrt == null) return;
     chartRef.current?.setOption({
-      series: [{ markLine: liveMarkLine(liveIrt, readTones()) }],
+      series: [
+        {
+          id: "live",
+          data: liveTailData(history[range], readTones(), liveIrt),
+        },
+      ],
     });
-  }, [liveIrt]);
+  }, [liveIrt, history, range]);
 
   return (
     <section
       aria-label="نمودار ارزش دارایی"
       className="flex flex-col gap-3 overflow-hidden rounded-card bg-surface p-4"
     >
-      <div aria-live="polite" className="flex flex-col gap-1">
-        <div className="flex items-baseline justify-between">
-          <span className="text-[20px] font-extrabold tabular-nums text-ink">
-            {formatIrtShort(displayIrt)}
-          </span>
-          <span className="text-[13px] text-muted">
+      <div aria-live="polite" className="flex flex-col gap-0.5">
+        <span className="text-[20px] font-extrabold tabular-nums text-ink">
+          {formatIrtShort(displayIrt)}
+        </span>
+        {/* Subhead: the peeked moment + its cash movement, if any.
+            Fixed height so the chart never jumps while scrubbing. */}
+        <div className="flex h-5 items-center gap-2 text-[13px]">
+          <span className="text-muted">
             {formatJalaliDay(new Date(point.at))}
             {range === "daily" ? ` — ${formatTimeFa(new Date(point.at))}` : ""}
           </span>
-        </div>
-        {/* Fixed height so the chart never jumps while scrubbing. */}
-        <div
-          className={cn(
-            "flex h-5 items-center text-[13px] font-bold",
-            point.event?.type === "withdraw" ? "text-loss" : "text-gain",
-          )}
-        >
-          {point.event
-            ? `${point.event.type === "deposit" ? "واریز" : "برداشت"} ${formatIrtShort(point.event.amountIrt)}`
-            : null}
+          {point.event ? (
+            <span
+              className={cn(
+                "font-bold",
+                point.event.type === "withdraw" ? "text-loss" : "text-gain",
+              )}
+            >
+              {point.event.type === "deposit" ? "واریز" : "برداشت"}{" "}
+              {formatIrtShort(point.event.amountIrt)}
+            </span>
+          ) : null}
         </div>
       </div>
-
-      <div
-        dir="ltr"
-        ref={el}
-        role="img"
-        aria-label={`نمودار ${RANGE_LABELS[range]} ارزش دارایی`}
-        className="-mx-4 h-[170px] touch-none"
-      />
 
       {/* iOS-style segmented control: sliding paper thumb on a line track. */}
       <div className="flex rounded-full bg-line p-1">
@@ -346,6 +337,14 @@ export function PortfolioHistoryChart({
           </button>
         ))}
       </div>
+
+      <div
+        dir="ltr"
+        ref={el}
+        role="img"
+        aria-label={`نمودار ${RANGE_LABELS[range]} ارزش دارایی`}
+        className="-mx-4 -mb-4 h-[160px] touch-none"
+      />
     </section>
   );
 }
