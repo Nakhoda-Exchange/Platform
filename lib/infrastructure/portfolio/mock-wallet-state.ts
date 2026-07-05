@@ -149,6 +149,21 @@ export const wallet: MockWallet = {
       at: ago(9, 60),
       amountIrt: 220_000_000,
     },
+    // Referral rewards — the fee share invitees generated (doc/referral).
+    {
+      id: "r-1",
+      type: "reward",
+      status: "done",
+      at: ago(2, 90),
+      amountIrt: 450_000,
+    },
+    {
+      id: "r-2",
+      type: "reward",
+      status: "done",
+      at: ago(8, 30),
+      amountIrt: 230_000,
+    },
   ],
 };
 

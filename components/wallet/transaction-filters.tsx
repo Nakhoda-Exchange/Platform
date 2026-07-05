@@ -10,6 +10,7 @@ const TYPE_LABEL: Record<TransactionType, string> = {
   sell: "فروش",
   deposit: "واریز",
   withdraw: "برداشت",
+  reward: "پاداش",
 };
 
 /** Type filter chips — plain links (`?type=`), so the page stays a server component. */
