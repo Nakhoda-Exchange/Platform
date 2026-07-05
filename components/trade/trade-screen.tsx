@@ -26,6 +26,9 @@ function roundCoin(amount: number): number {
 
 const SIDE_LABEL: Record<TradeSide, string> = { buy: "خرید", sell: "فروش" };
 
+/** Tappable slider shortcuts (also the native tick marks). */
+const SELL_PERCENT_POINTS = [10, 25, 50, 75, 100] as const;
+
 /**
  * Trade screen (Moonshot-style): side toggle, Toman amount entered on a
  * keypad with live coin conversion, then an inline confirm step → server
@@ -306,25 +309,44 @@ export function TradeScreen({
               ٪{toPersianDigits(sellPercent)}
             </span>
           </div>
+          {/* dir=ltr: the slider grows left→right (۰ چپ، ۱۰۰ راست) like a
+              progress bar, not mirrored by the RTL page. 5% drag steps; the
+              named points below are tappable shortcuts + native ticks. */}
           <input
             type="range"
             min={0}
             max={100}
             step={5}
+            list="sell-percent-points"
             value={sellPercent}
             onChange={(e) => applySellPercent(Number(e.target.value))}
             aria-label="درصد فروش از دارایی"
+            dir="ltr"
             className="h-6 w-full cursor-pointer accent-brand"
           />
-          <div
-            className="flex justify-between text-[11px] text-placeholder"
-            aria-hidden
-          >
-            <span>٪۰</span>
-            <span>٪۲۵</span>
-            <span>٪۵۰</span>
-            <span>٪۷۵</span>
-            <span>٪۱۰۰</span>
+          <datalist id="sell-percent-points">
+            {SELL_PERCENT_POINTS.map((p) => (
+              <option key={p} value={p} />
+            ))}
+          </datalist>
+          <div dir="ltr" className="relative h-5">
+            {SELL_PERCENT_POINTS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => applySellPercent(p)}
+                style={{ left: `${p}%` }}
+                className={cn(
+                  "absolute top-0 px-1 text-[11px] transition-colors",
+                  p === 100 ? "-translate-x-full" : "-translate-x-1/2",
+                  sellPercent === p
+                    ? "font-bold text-brand"
+                    : "text-placeholder hover:text-muted",
+                )}
+              >
+                ٪{toPersianDigits(p)}
+              </button>
+            ))}
           </div>
         </div>
       ) : null}
