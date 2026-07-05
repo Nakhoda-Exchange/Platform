@@ -14,6 +14,7 @@ import { Button, buttonClasses } from "@/components/ui/button";
 import { CheckCircleIcon } from "@/components/ui/icons";
 import { CoinIcon } from "@/components/market/coin-icon";
 import { Keypad } from "./keypad";
+import { toPersianDigits } from "@/lib/utils/digits";
 import { formatCoinAmount, formatIrt } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 
@@ -40,6 +41,9 @@ export function TradeScreen({
 }) {
   const { coin, availableIrt, availableCoin } = context;
   const [side, setSide] = useState<TradeSide>(initialSide);
+  // Entry mode (issue #69): the big number is Toman OR coin units; `digits`
+  // holds the raw entry in the ACTIVE unit ("." allowed only in coin mode).
+  const [unit, setUnit] = useState<"irt" | "coin">("irt");
   const [digits, setDigits] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [state, formAction, pending] = useActionState<TradeFormState, FormData>(
@@ -47,7 +51,11 @@ export function TradeScreen({
     { status: "idle" },
   );
 
-  const amountIrt = Number(digits || "0");
+  const entered = Number(digits || "0");
+  // Coin entry converts to Toman at the current price; the order (and every
+  // guard and fee) stays Toman-denominated — the server action is unchanged.
+  const amountIrt =
+    unit === "irt" ? entered : Math.round(entered * coin.priceIrt);
   // Mirror of the server-side fee math (PlaceOrderUseCase is authoritative):
   // buyers pay the fee out of the entered amount, sellers out of the proceeds.
   const feeIrt = Math.round(amountIrt * FEE_RATE);
@@ -190,19 +198,47 @@ export function TradeScreen({
         </div>
       </div>
 
-      {/* Amount */}
+      {/* Amount — big number in the active unit; tap ⇅ to swap (issue #69) */}
       <div className="flex flex-1 flex-col items-center justify-center gap-2 py-2 text-center">
-        <span
-          className={cn(
-            "text-[34px] font-extrabold",
-            amountIrt > 0 ? "text-ink" : "text-placeholder",
-          )}
+        {unit === "irt" ? (
+          <span
+            className={cn(
+              "text-[34px] font-extrabold",
+              amountIrt > 0 ? "text-ink" : "text-placeholder",
+            )}
+          >
+            {formatIrt(amountIrt)}
+          </span>
+        ) : (
+          <span
+            dir="ltr"
+            className={cn(
+              "text-[34px] font-extrabold",
+              entered > 0 ? "text-ink" : "text-placeholder",
+            )}
+          >
+            {digits ? toPersianDigits(digits).replace(".", "٫") : "۰"}{" "}
+            {coin.symbol}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            setUnit(unit === "irt" ? "coin" : "irt");
+            setDigits("");
+          }}
+          aria-label={
+            unit === "irt" ? "ورود مقدار بر حسب رمزارز" : "ورود مقدار به تومان"
+          }
+          className="flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-[14px] text-muted transition-colors hover:text-ink"
         >
-          {formatIrt(amountIrt)}
-        </span>
-        <span className="text-[15px] text-muted" dir="ltr">
-          ≈ {formatCoinAmount(amountCoin)} {coin.symbol}
-        </span>
+          <span aria-hidden>⇅</span>
+          <span dir="ltr">
+            {unit === "irt"
+              ? `≈ ${formatCoinAmount(amountCoin)} ${coin.symbol}`
+              : `≈ ${formatIrt(amountIrt)}`}
+          </span>
+        </button>
         {error ? (
           <p role="alert" className="text-[13px] font-bold text-loss">
             {error}
@@ -222,7 +258,17 @@ export function TradeScreen({
         </span>
         <button
           type="button"
-          onClick={() => setDigits(String(maxIrt))}
+          onClick={() =>
+            setDigits(
+              unit === "irt"
+                ? String(maxIrt)
+                : String(
+                    side === "sell"
+                      ? availableCoin
+                      : roundCoin(maxIrt / coin.priceIrt),
+                  ),
+            )
+          }
           disabled={maxIrt <= 0}
           className="rounded-full bg-brand/10 px-4 py-1.5 font-bold text-brand transition-colors hover:bg-brand/15 disabled:opacity-50"
         >
@@ -231,9 +277,17 @@ export function TradeScreen({
       </div>
 
       <Keypad
+        decimal={unit === "coin"}
         onDigit={(d) =>
           setDigits((cur) => {
-            if (cur.length >= 12 || (cur === "" && d === "0")) return cur;
+            if (cur.length >= 12) return cur;
+            if (d === ".") {
+              // one separator, coin mode only; leading "." becomes "0."
+              if (unit !== "coin" || cur.includes(".")) return cur;
+              return cur === "" ? "0." : cur + ".";
+            }
+            if (cur === "" && d === "0" && unit === "irt") return cur;
+            if (cur === "0" && d !== "." && unit === "coin") return cur;
             return cur + d;
           })
         }
