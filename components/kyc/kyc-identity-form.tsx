@@ -4,8 +4,9 @@ import { useActionState, useState } from "react";
 import { submitIdentity } from "@/app/actions/kyc";
 import { initialKycFormState } from "@/app/actions/kyc-state";
 import { isValidNationalCode } from "@/lib/core/domain/kyc/national-code";
-import { isValidJalaliDate, maskJalaliDate } from "@/lib/utils/jalali";
+import { isValidJalaliDate } from "@/lib/utils/jalali";
 import { Field } from "@/components/ui/field";
+import { JalaliDateField } from "@/components/ui/jalali-date-field";
 import { Button } from "@/components/ui/button";
 
 export function KycIdentityForm() {
@@ -33,15 +34,11 @@ export function KycIdentityForm() {
           placeholder="۰۰۱۲۳۴۵۶۷۸"
           className="text-right"
         />
-        <Field
+        <JalaliDateField
           label="تاریخ تولد (شمسی)"
           name="birthDate"
           value={birthDate}
-          onChange={(e) => setBirthDate(maskJalaliDate(e.target.value))}
-          inputMode="numeric"
-          dir="ltr"
-          placeholder="۱۳۷۵/۰۵/۱۲"
-          className="text-right"
+          onChange={setBirthDate}
         />
         <Field
           label="کد دعوت (اختیاری)"
