@@ -64,6 +64,28 @@ export function TradeScreen({
   );
   const maxIrt =
     side === "buy" ? availableIrt : Math.floor(availableCoin * coin.priceIrt);
+  // Sell slider (percent of holdings). Derived from the entry, so typing on
+  // the keypad moves the slider too; sliding writes the entry in the active
+  // unit. Sell-only — «چند درصد بفروشم؟» has no buy-side meaning.
+  const sellPercent =
+    maxIrt > 0 ? Math.min(100, Math.round((amountIrt / maxIrt) * 100)) : 0;
+  const applySellPercent = (percent: number) => {
+    if (percent <= 0) {
+      setDigits("");
+      return;
+    }
+    if (unit === "irt") {
+      setDigits(String(Math.floor((maxIrt * percent) / 100)));
+    } else {
+      setDigits(
+        String(
+          percent === 100
+            ? availableCoin
+            : roundCoin((availableCoin * percent) / 100),
+        ),
+      );
+    }
+  };
 
   const error =
     side === "sell" && availableCoin <= 0
@@ -275,6 +297,37 @@ export function TradeScreen({
           همه
         </button>
       </div>
+
+      {side === "sell" && availableCoin > 0 ? (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between text-[13px]">
+            <span className="text-muted">چند درصد از دارایی؟</span>
+            <span className="font-bold text-brand">
+              ٪{toPersianDigits(sellPercent)}
+            </span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={sellPercent}
+            onChange={(e) => applySellPercent(Number(e.target.value))}
+            aria-label="درصد فروش از دارایی"
+            className="h-6 w-full cursor-pointer accent-brand"
+          />
+          <div
+            className="flex justify-between text-[11px] text-placeholder"
+            aria-hidden
+          >
+            <span>٪۰</span>
+            <span>٪۲۵</span>
+            <span>٪۵۰</span>
+            <span>٪۷۵</span>
+            <span>٪۱۰۰</span>
+          </div>
+        </div>
+      ) : null}
 
       <Keypad
         decimal={unit === "coin"}
