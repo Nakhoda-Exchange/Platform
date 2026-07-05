@@ -34,4 +34,5 @@ export const HEADER_CONFIG: Record<string, HeaderConfig> = {
   "/wallet/deposit": { title: "واریز", backHref: "/wallet" },
   "/wallet/withdraw": { title: "برداشت", backHref: "/wallet" },
   "/account/announcements": { title: "اعلان‌ها", backHref: "/account" },
+  "/account/terms": { title: "قوانین و حریم خصوصی", backHref: "/account" },
 };

@@ -98,7 +98,11 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
           />
         </li>
         <li>
-          <Row Icon={FileTextIcon} label="قوانین و حریم خصوصی" />
+          <Row
+            Icon={FileTextIcon}
+            label="قوانین و حریم خصوصی"
+            href="/account/terms"
+          />
         </li>
       </ul>
     </nav>
