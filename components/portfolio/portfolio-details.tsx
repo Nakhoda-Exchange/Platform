@@ -17,8 +17,8 @@ import { formatChangePercent, formatIrtShort } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 
 // echarts only downloads on first sheet open, not with the wallet page.
-// The fallback mirrors the chart card (headline, subhead, segmented, plot)
-// so the sheet doesn't gape or jump while the chunk loads.
+// The fallback is the empty card with a quiet centered spinner (iOS
+// activity-indicator style), sized like the real card so nothing jumps.
 const PortfolioHistoryChart = dynamic(
   () =>
     import("./portfolio-history-chart").then((m) => m.PortfolioHistoryChart),
@@ -27,14 +27,9 @@ const PortfolioHistoryChart = dynamic(
     loading: () => (
       <div
         aria-hidden
-        className="flex flex-col gap-3 overflow-hidden rounded-card bg-surface p-4"
+        className="flex h-[300px] items-center justify-center rounded-card bg-surface"
       >
-        <div className="flex flex-col gap-2">
-          <div className="h-6 w-44 animate-pulse rounded bg-line" />
-          <div className="h-4 w-32 animate-pulse rounded bg-line" />
-        </div>
-        <div className="h-12 animate-pulse rounded-full bg-line" />
-        <div className="-mx-4 -mb-4 h-[160px] animate-pulse bg-line/60" />
+        <span className="size-7 animate-spin rounded-full border-[2.5px] border-line border-t-brand" />
       </div>
     ),
   },
