@@ -3,6 +3,7 @@ import type { Coin } from "@/lib/core/domain/market/coin";
 import type {
   ChartRange,
   CoinDetail,
+  PricePoint,
 } from "@/lib/core/domain/market/coin-detail";
 import { ok, type Result } from "@/lib/core/domain/shared/result";
 import { seededSeries } from "@/lib/infrastructure/shared/seeded-series";
@@ -185,18 +186,33 @@ export class MockMarketRepository implements MarketRepository {
 
     const seed = [...coin.symbol].reduce((a, c) => a + c.charCodeAt(0), 0);
     const d = coin.change24h / 100;
-    const series: Record<ChartRange, number[]> = {
-      "24h": seededSeries(seed + 1, 24, coin.priceIrt, d),
-      "7d": seededSeries(seed + 7, 28, coin.priceIrt, d * 1.8),
-      "1m": seededSeries(seed + 30, 30, coin.priceIrt, d * 3),
-      "1y": seededSeries(seed + 365, 24, coin.priceIrt, d * 6),
+    const end = Date.now();
+    const toPoints = (values: number[], stepMs: number): PricePoint[] =>
+      values.map((v, i) => ({
+        at: end - (values.length - 1 - i) * stepMs,
+        priceIrt: v,
+      }));
+    const series: Record<ChartRange, PricePoint[]> = {
+      "24h": toPoints(seededSeries(seed + 1, 24, coin.priceIrt, d), 3_600_000),
+      "7d": toPoints(
+        seededSeries(seed + 7, 28, coin.priceIrt, d * 1.8),
+        21_600_000,
+      ),
+      "1m": toPoints(
+        seededSeries(seed + 30, 30, coin.priceIrt, d * 3),
+        86_400_000,
+      ),
+      "1y": toPoints(
+        seededSeries(seed + 365, 24, coin.priceIrt, d * 6),
+        1_314_900_000, // ~15.2 days: 24 points spanning a year
+      ),
     };
-    const s24 = series["24h"];
+    const prices24 = series["24h"].map((p) => p.priceIrt);
 
     return ok({
       coin,
-      high24h: Math.max(...s24),
-      low24h: Math.min(...s24),
+      high24h: Math.max(...prices24),
+      low24h: Math.min(...prices24),
       volume24h: Math.round(coin.marketCap * 0.6) / 10, // همت, ~6% of market cap
       description:
         DESCRIPTIONS[coin.id] ??

@@ -5,59 +5,34 @@ import { FavoriteButton } from "./favorite-button";
 import { PriceChart } from "./price-chart";
 import { CoinStats } from "./coin-stats";
 import { buttonClasses } from "@/components/ui/button";
-import { formatChangePercent, formatIrt, formatUsd } from "@/lib/utils/money";
-import { cn } from "@/lib/utils/cn";
 
 /**
- * Coin detail page (PDP): header (icon/name/price/change), price chart with a
- * range switcher, market stats, an «about» blurb, and Buy/Sell CTAs that
+ * Coin detail page (PDP): identity header, the live price-chart card (the
+ * card headline IS the price — live-ticking, with USD + 24h change as the
+ * idle subhead), market stats, an «about» blurb, and Buy/Sell CTAs that
  * deep-link into the Trade screen (#7) with this coin preselected.
  */
 export function CoinDetailScreen({ detail }: { detail: CoinDetail }) {
   const { coin } = detail;
-  const up = coin.change24h >= 0;
   const trade = coin.symbol.toLowerCase();
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-8 pt-4">
-      {/* Header: identity + current price */}
-      <section className="flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <CoinIcon coin={coin} size={52} />
-            <div className="flex flex-col">
-              <span className="text-[18px] font-extrabold text-ink">
-                {coin.name}
-              </span>
-              <span className="text-[13px] text-muted">{coin.symbol}</span>
-            </div>
-          </div>
-          <FavoriteButton coinId={coin.id} />
-        </div>
-
-        <div className="flex items-end justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <span className="text-[26px] font-extrabold text-ink" dir="ltr">
-              {formatIrt(coin.priceIrt)}
+      {/* Header: identity */}
+      <section className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <CoinIcon coin={coin} size={52} />
+          <div className="flex flex-col">
+            <span className="text-[18px] font-extrabold text-ink">
+              {coin.name}
             </span>
-            <span className="text-[14px] text-muted" dir="ltr">
-              {formatUsd(coin.priceUsd)}
-            </span>
+            <span className="text-[13px] text-muted">{coin.symbol}</span>
           </div>
-          <span
-            dir="ltr"
-            aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
-            className={cn(
-              "text-[15px] font-bold",
-              up ? "text-gain" : "text-loss",
-            )}
-          >
-            {up ? "▲" : "▼"} {formatChangePercent(coin.change24h)}
-          </span>
         </div>
+        <FavoriteButton coinId={coin.id} />
       </section>
 
-      <PriceChart series={detail.series} />
+      <PriceChart coin={coin} series={detail.series} />
 
       <CoinStats detail={detail} />
 
