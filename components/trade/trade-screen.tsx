@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import {
+  FEE_RATE,
   MIN_ORDER_IRT,
   type TradeContext,
   type TradeSide,
@@ -47,7 +48,12 @@ export function TradeScreen({
   );
 
   const amountIrt = Number(digits || "0");
-  const amountCoin = roundCoin(amountIrt / coin.priceIrt);
+  // Mirror of the server-side fee math (PlaceOrderUseCase is authoritative):
+  // buyers pay the fee out of the entered amount, sellers out of the proceeds.
+  const feeIrt = Math.round(amountIrt * FEE_RATE);
+  const amountCoin = roundCoin(
+    (amountIrt - (side === "buy" ? feeIrt : 0)) / coin.priceIrt,
+  );
   const maxIrt =
     side === "buy" ? availableIrt : Math.floor(availableCoin * coin.priceIrt);
 
@@ -116,7 +122,10 @@ export function TradeScreen({
             ["نوع سفارش", `${SIDE_LABEL[side]} بازار`],
             ["مقدار", `${formatCoinAmount(amountCoin)} ${coin.symbol}`],
             ["قیمت واحد", formatIrt(coin.priceIrt)],
-            ["مجموع", formatIrt(amountIrt)],
+            ["کارمزد (٪۰٫۳۵)", formatIrt(feeIrt)],
+            side === "sell"
+              ? ["دریافتی خالص", formatIrt(amountIrt - feeIrt)]
+              : ["مجموع پرداختی", formatIrt(amountIrt)],
           ].map(([k, v]) => (
             <div key={k} className="flex items-center justify-between p-4">
               <dt className="text-[15px] text-muted">{k}</dt>

@@ -31,6 +31,7 @@ function tradeStub(balances: TradeBalances) {
     side: TradeSide;
     amountCoin: number;
     totalIrt: number;
+    feeIrt: number;
   }> = [];
   const repo: TradeRepository = {
     getBalances: async () => ok(balances),
@@ -39,8 +40,9 @@ function tradeStub(balances: TradeBalances) {
       side,
       amountCoin,
       totalIrt,
+      feeIrt,
     ): Promise<Result<PlacedOrder>> => {
-      placed.push({ side, amountCoin, totalIrt });
+      placed.push({ side, amountCoin, totalIrt, feeIrt });
       return ok({
         id: "1",
         side,
@@ -49,6 +51,7 @@ function tradeStub(balances: TradeBalances) {
         name: coin.name,
         amountCoin,
         totalIrt,
+        feeIrt,
         priceIrt: coin.priceIrt,
       });
     },
@@ -80,7 +83,7 @@ describe("PlaceOrderUseCase", () => {
     if (!result.ok) expect(result.error.code).toBe("INSUFFICIENT_IRT");
   });
 
-  test("buys convert Toman to coin units at the current price", async () => {
+  test("buys convert net-of-fee Toman to coin units", async () => {
     const { repo, placed } = tradeStub({ availableIrt: 1e10, coinAmounts: {} });
     const result = await new PlaceOrderUseCase(marketStub, repo).execute(
       "BTC",
@@ -88,8 +91,25 @@ describe("PlaceOrderUseCase", () => {
       2_000_000_000,
     );
     expect(result.ok).toBe(true);
-    expect(placed[0]?.amountCoin).toBe(0.5);
+    // fee = 0.35% of 2B = 7,000,000; coins bought with the remainder
+    expect(placed[0]?.feeIrt).toBe(7_000_000);
+    expect(placed[0]?.amountCoin).toBe(1_993_000_000 / 4_000_000_000);
     expect(placed[0]?.totalIrt).toBe(2_000_000_000);
+  });
+
+  test("sell fee is charged on the proceeds, coin amount stays gross", async () => {
+    const { repo, placed } = tradeStub({
+      availableIrt: 0,
+      coinAmounts: { btc: 1 },
+    });
+    const result = await new PlaceOrderUseCase(marketStub, repo).execute(
+      "btc",
+      "sell",
+      2_000_000_000, // 0.5 BTC gross
+    );
+    expect(result.ok).toBe(true);
+    expect(placed[0]?.amountCoin).toBe(0.5);
+    expect(placed[0]?.feeIrt).toBe(7_000_000);
   });
 
   test("rejects a sell above the held amount", async () => {

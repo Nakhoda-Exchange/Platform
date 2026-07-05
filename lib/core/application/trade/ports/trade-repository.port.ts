@@ -19,5 +19,6 @@ export interface TradeRepository {
     side: TradeSide,
     amountCoin: number,
     totalIrt: number,
+    feeIrt: number,
   ): Promise<Result<PlacedOrder>>;
 }
