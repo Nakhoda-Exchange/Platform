@@ -1,4 +1,5 @@
 import {
+  FEE_RATE,
   MIN_ORDER_IRT,
   type PlacedOrder,
   type TradeSide,
@@ -42,7 +43,12 @@ export class PlaceOrderUseCase {
     if (!balances.ok) return balances;
     const { availableIrt, coinAmounts } = balances.data;
 
-    let amountCoin = amountIrt / coin.priceIrt;
+    // The 0.35% fee: a buyer's fee comes out of the entered amount (they
+    // receive coins for the remainder); a seller's fee comes out of the
+    // proceeds. Either way the fee accrues to the platform (referral pool).
+    const feeIrt = Math.round(amountIrt * FEE_RATE);
+    let amountCoin =
+      (amountIrt - (side === "buy" ? feeIrt : 0)) / coin.priceIrt;
 
     if (side === "buy") {
       if (amountIrt > availableIrt) {
@@ -59,6 +65,6 @@ export class PlaceOrderUseCase {
       }
     }
 
-    return this.trade.placeOrder(coin, side, amountCoin, amountIrt);
+    return this.trade.placeOrder(coin, side, amountCoin, amountIrt, feeIrt);
   }
 }

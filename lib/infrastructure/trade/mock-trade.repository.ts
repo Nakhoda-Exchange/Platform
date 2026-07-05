@@ -25,9 +25,10 @@ export class MockTradeRepository implements TradeRepository {
     side: TradeSide,
     amountCoin: number,
     totalIrt: number,
+    feeIrt: number,
   ): Promise<Result<PlacedOrder>> {
     await delay();
-    settleTrade(coin, side, amountCoin, totalIrt);
+    settleTrade(coin, side, amountCoin, totalIrt, feeIrt);
     return ok({
       id: crypto.randomUUID(),
       side,
@@ -36,6 +37,7 @@ export class MockTradeRepository implements TradeRepository {
       name: coin.name,
       amountCoin,
       totalIrt,
+      feeIrt,
       priceIrt: coin.priceIrt,
     });
   }

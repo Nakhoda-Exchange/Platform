@@ -11,6 +11,7 @@ import type { Transaction } from "@/lib/core/domain/wallet/transaction";
  */
 export interface MockWallet {
   irt: number; // cash balance, Toman
+  platformFeesIrt: number; // fees the house collected (the referral pool)
   holdings: Holding[];
   transactions: Transaction[];
 }
@@ -22,6 +23,7 @@ const ago = (days: number, minutes = 0) =>
 // Values consistent with mock-market prices (amount × priceIrt = valueIrt).
 export const wallet: MockWallet = {
   irt: 250_000_000,
+  platformFeesIrt: 0,
   holdings: [
     {
       coin: {
@@ -151,7 +153,9 @@ export function settleTrade(
   side: TradeSide,
   amountCoin: number,
   totalIrt: number,
+  feeIrt: number,
 ): void {
+  wallet.platformFeesIrt += feeIrt;
   wallet.transactions.push({
     id: crypto.randomUUID(),
     type: side,
@@ -183,7 +187,7 @@ export function settleTrade(
       });
     }
   } else {
-    wallet.irt += totalIrt;
+    wallet.irt += totalIrt - feeIrt; // seller receives net of fee
     if (held) {
       held.amount -= amountCoin;
       if (held.amount <= 1e-9) {
