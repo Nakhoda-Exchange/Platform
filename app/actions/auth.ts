@@ -111,6 +111,16 @@ export async function verifyLogin(
 }
 
 /**
+ * Biometric variant of the gate: the device verified the user via WebAuthn
+ * (client-side `navigator.credentials.get`). Mock: the assertion signature is
+ * NOT re-verified here — that is backend work once auth sessions land; this
+ * action only performs the redirect the password path would.
+ */
+export async function passTwoStepBiometric(status: string): Promise<void> {
+  redirect(DESTINATION[asStatus(status)]);
+}
+
+/**
  * Step 3 (only when a two-step password is set) — verify it, then continue to
  * the status destination.
  */
