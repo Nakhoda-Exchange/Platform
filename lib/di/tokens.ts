@@ -24,6 +24,8 @@ import type { GetDepositAddressUseCase } from "@/lib/core/application/wallet/use
 import type { UserRepository } from "@/lib/core/application/account/ports/user-repository.port";
 import type { GetProfileUseCase } from "@/lib/core/application/account/use-cases/get-profile.use-case";
 import type { TwoStepPasswordUseCase } from "@/lib/core/application/account/use-cases/two-step-password.use-case";
+import type { AnnouncementsRepository } from "@/lib/core/application/account/ports/announcements-repository.port";
+import type { ListAnnouncementsUseCase } from "@/lib/core/application/account/use-cases/list-announcements.use-case";
 
 /** Central registry of injection tokens, grouped by layer. */
 export const TOKENS = {
@@ -39,6 +41,9 @@ export const TOKENS = {
   ),
   WalletRepository: token<WalletRepository>("WalletRepository"),
   UserRepository: token<UserRepository>("UserRepository"),
+  AnnouncementsRepository: token<AnnouncementsRepository>(
+    "AnnouncementsRepository",
+  ),
   // Application use cases
   RequestOtpUseCase: token<RequestOtpUseCase>("RequestOtpUseCase"),
   VerifyOtpUseCase: token<VerifyOtpUseCase>("VerifyOtpUseCase"),
@@ -67,5 +72,8 @@ export const TOKENS = {
   GetProfileUseCase: token<GetProfileUseCase>("GetProfileUseCase"),
   TwoStepPasswordUseCase: token<TwoStepPasswordUseCase>(
     "TwoStepPasswordUseCase",
+  ),
+  ListAnnouncementsUseCase: token<ListAnnouncementsUseCase>(
+    "ListAnnouncementsUseCase",
   ),
 } as const;

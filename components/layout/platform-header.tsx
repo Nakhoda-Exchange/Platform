@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "./logo";
 import { ChevronRightIcon, HeadphonesIcon } from "@/components/ui/icons";
+import { NotificationBell } from "./notification-bell";
 import { HEADER_CONFIG, type HeaderConfig } from "./platform-nav";
 import { openSupportChat } from "@/components/support/goftino";
 
@@ -16,6 +17,9 @@ function headerConfigFor(pathname: string): HeaderConfig {
   if (HEADER_CONFIG[pathname]) return HEADER_CONFIG[pathname];
   if (/^\/market\/.+/.test(pathname)) {
     return { title: "جزئیات رمزارز", backHref: "/market" };
+  }
+  if (/^\/account\/announcements\/.+/.test(pathname)) {
+    return { title: "اعلان‌ها", backHref: "/account/announcements" };
   }
   const trade = pathname.match(/^\/trade\/([^/]+)/);
   if (trade) {
@@ -54,14 +58,17 @@ export function PlatformHeader() {
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={openSupportChat}
-        aria-label="پشتیبانی"
-        className="flex size-11 cursor-pointer items-center justify-center rounded-xl bg-surface text-muted transition-colors hover:bg-line"
-      >
-        <HeadphonesIcon size={20} />
-      </button>
+      <div className="flex items-center gap-2">
+        <NotificationBell />
+        <button
+          type="button"
+          onClick={openSupportChat}
+          aria-label="پشتیبانی"
+          className="flex size-11 cursor-pointer items-center justify-center rounded-xl bg-surface text-muted transition-colors hover:bg-line"
+        >
+          <HeadphonesIcon size={20} />
+        </button>
+      </div>
     </header>
   );
 }

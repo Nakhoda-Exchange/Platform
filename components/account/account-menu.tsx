@@ -89,7 +89,7 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
           <ThemeRow />
         </li>
         <li>
-          <Row Icon={BellIcon} label="اعلان‌ها" />
+          <Row Icon={BellIcon} label="اعلان‌ها" href="/account/announcements" />
         </li>
         <li>
           <Row

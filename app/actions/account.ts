@@ -64,3 +64,21 @@ export async function resetTwoStepPassword(
   }
   return { status: "success" };
 }
+
+/** Announcements as serializable DTOs (Dates → ISO) for the client cache. */
+export async function fetchAnnouncements(): Promise<
+  import("@/lib/utils/announcements-db").AnnouncementDto[]
+> {
+  const result = await container
+    .resolve(TOKENS.ListAnnouncementsUseCase)
+    .execute();
+  if (!result.ok) return [];
+  return result.data.map((a) => ({
+    id: a.id,
+    title: a.title,
+    body: a.body,
+    at: a.at.toISOString(),
+    image: a.image,
+    action: a.action,
+  }));
+}
