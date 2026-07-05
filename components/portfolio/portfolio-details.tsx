@@ -1,10 +1,19 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { Sheet } from "@/components/ui/sheet";
 import { ChevronLeftIcon } from "@/components/ui/icons";
+import type { PortfolioHistory } from "@/lib/core/domain/portfolio/portfolio-history";
 import { formatChangePercent, formatIrtShort } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
+
+// echarts only downloads on first sheet open, not with the wallet page.
+const PortfolioHistoryChart = dynamic(
+  () =>
+    import("./portfolio-history-chart").then((m) => m.PortfolioHistoryChart),
+  { ssr: false, loading: () => <div className="h-[250px]" aria-hidden /> },
+);
 
 /** «▲ +۱٬۲۳۴ ت (٪۵/۶)» gain/loss colored — sign and words, never color alone. */
 function SignedIrt({ amount, percent }: { amount: number; percent: number }) {
@@ -40,6 +49,7 @@ export function PortfolioDetails({
   dayChangeIrt,
   dayChangePercent,
   pendingWithdrawIrt,
+  history,
 }: {
   availableIrt: number;
   holdingsValueIrt: number;
@@ -48,6 +58,7 @@ export function PortfolioDetails({
   dayChangeIrt: number;
   dayChangePercent: number;
   pendingWithdrawIrt: number;
+  history: PortfolioHistory | null;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -69,23 +80,26 @@ export function PortfolioDetails({
         title="جزئیات دارایی"
         panelClassName="h-[90vh]"
       >
-        <dl className="flex flex-col">
-          <Row label="موجودی تومانی">{formatIrtShort(availableIrt)}</Row>
-          <Row label="ارزش رمزارزها">{formatIrtShort(holdingsValueIrt)}</Row>
-          <Row label="سود کل">
-            <SignedIrt amount={profitIrt} percent={profitPercent} />
-          </Row>
-          <Row label="امروز">
-            <SignedIrt amount={dayChangeIrt} percent={dayChangePercent} />
-          </Row>
-          {pendingWithdrawIrt > 0 ? (
-            <Row label="برداشت در انتظار">
-              <span className="text-brand">
-                {formatIrtShort(pendingWithdrawIrt)}
-              </span>
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain">
+          {history ? <PortfolioHistoryChart history={history} /> : null}
+          <dl className="flex flex-col">
+            <Row label="موجودی تومانی">{formatIrtShort(availableIrt)}</Row>
+            <Row label="ارزش رمزارزها">{formatIrtShort(holdingsValueIrt)}</Row>
+            <Row label="سود کل">
+              <SignedIrt amount={profitIrt} percent={profitPercent} />
             </Row>
-          ) : null}
-        </dl>
+            <Row label="امروز">
+              <SignedIrt amount={dayChangeIrt} percent={dayChangePercent} />
+            </Row>
+            {pendingWithdrawIrt > 0 ? (
+              <Row label="برداشت در انتظار">
+                <span className="text-brand">
+                  {formatIrtShort(pendingWithdrawIrt)}
+                </span>
+              </Row>
+            ) : null}
+          </dl>
+        </div>
       </Sheet>
     </>
   );

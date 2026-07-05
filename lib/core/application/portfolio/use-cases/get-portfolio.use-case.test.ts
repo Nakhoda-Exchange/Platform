@@ -7,7 +7,10 @@ import type {
 import { GetPortfolioUseCase } from "./get-portfolio.use-case";
 
 function repoOf(snapshot: PortfolioSnapshot): PortfolioRepository {
-  return { getPortfolio: async () => ok(snapshot) };
+  return {
+    getPortfolio: async () => ok(snapshot),
+    getPortfolioHistory: async () => ok({ daily: [], weekly: [], monthly: [] }),
+  };
 }
 
 const coin = (change24h: number) => ({

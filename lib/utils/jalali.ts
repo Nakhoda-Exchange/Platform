@@ -87,6 +87,12 @@ export function formatJalaliDay(date: Date): string {
   return `${toPersianDigits(jd)} ${JALALI_MONTHS[jm - 1]} ${toPersianDigits(jy)}`;
 }
 
+/** A Date → its short Jalali label (no year), e.g. «۱۳ تیر». */
+export function formatJalaliDayShort(date: Date): string {
+  const { jm, jd } = toJalaali(date);
+  return `${toPersianDigits(jd)} ${JALALI_MONTHS[jm - 1]}`;
+}
+
 /** A Date → Persian-digit `HH:MM`, e.g. «۱۴:۰۵». */
 export function formatTimeFa(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");

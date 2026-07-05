@@ -10,7 +10,10 @@ export const metadata: Metadata = {
 };
 
 export default async function WalletPage() {
-  const result = await container.resolve(TOKENS.GetPortfolioUseCase).execute();
+  const [result, historyResult] = await Promise.all([
+    container.resolve(TOKENS.GetPortfolioUseCase).execute(),
+    container.resolve(TOKENS.GetPortfolioHistoryUseCase).execute(),
+  ]);
 
   if (!result.ok) {
     return (
@@ -29,7 +32,10 @@ export default async function WalletPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-6 pt-4">
-      <PortfolioSummary portfolio={portfolio} />
+      <PortfolioSummary
+        portfolio={portfolio}
+        history={historyResult.ok ? historyResult.data : null}
+      />
       <section className="flex flex-col gap-2">
         <h2 className="text-[17px] font-bold text-ink">دارایی‌های من</h2>
         <ul className="flex flex-col divide-y divide-line">
