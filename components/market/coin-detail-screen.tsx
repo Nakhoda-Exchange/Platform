@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
 import { CoinIcon } from "./coin-icon";
+import { FavoriteButton } from "./favorite-button";
 import { PriceChart } from "./price-chart";
 import { CoinStats } from "./coin-stats";
 import { buttonClasses } from "@/components/ui/button";
@@ -21,14 +22,17 @@ export function CoinDetailScreen({ detail }: { detail: CoinDetail }) {
     <div className="flex flex-1 flex-col gap-6 px-4 pb-8 pt-4">
       {/* Header: identity + current price */}
       <section className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <CoinIcon coin={coin} size={52} />
-          <div className="flex flex-col">
-            <span className="text-[18px] font-extrabold text-ink">
-              {coin.name}
-            </span>
-            <span className="text-[13px] text-muted">{coin.symbol}</span>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <CoinIcon coin={coin} size={52} />
+            <div className="flex flex-col">
+              <span className="text-[18px] font-extrabold text-ink">
+                {coin.name}
+              </span>
+              <span className="text-[13px] text-muted">{coin.symbol}</span>
+            </div>
           </div>
+          <FavoriteButton coinId={coin.id} />
         </div>
 
         <div className="flex items-end justify-between gap-3">

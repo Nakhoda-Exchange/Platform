@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Coin } from "@/lib/core/domain/market/coin";
 import { CoinRow } from "./coin-row";
 import { cn } from "@/lib/utils/cn";
 import { replaceUrlParam } from "@/lib/utils/url-param";
+import { FAVORITES_EVENT, getFavorites } from "@/lib/utils/favorites";
 
-type FilterKey = "all" | "gainers" | "losers" | "mcap";
+type FilterKey = "all" | "fav" | "gainers" | "losers" | "mcap";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "همه" },
+  { key: "fav", label: "علاقه‌مندی‌ها" },
   { key: "gainers", label: "بیشترین رشد" },
   { key: "losers", label: "بیشترین ضرر" },
   { key: "mcap", label: "ارزش بازار" },
@@ -38,14 +40,26 @@ export function AllAssets({
       : "all",
   );
 
+  // Watchlist lives in localStorage (per-device until sessions, like the
+  // announcements read-state); the event keeps this list live when a star
+  // toggles elsewhere.
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const read = () => setFavorites(getFavorites());
+    read();
+    window.addEventListener(FAVORITES_EVENT, read);
+    return () => window.removeEventListener(FAVORITES_EVENT, read);
+  }, []);
+
   const sorted = useMemo(() => {
-    const list = [...coins];
+    let list = [...coins];
+    if (filter === "fav") list = list.filter((c) => favorites.has(c.id));
     if (filter === "gainers") list.sort((a, b) => b.change24h - a.change24h);
     else if (filter === "losers")
       list.sort((a, b) => a.change24h - b.change24h);
     else if (filter === "mcap") list.sort((a, b) => b.marketCap - a.marketCap);
     return list;
-  }, [coins, filter]);
+  }, [coins, filter, favorites]);
 
   return (
     <section className="flex flex-col gap-3">
@@ -78,7 +92,9 @@ export function AllAssets({
 
       {sorted.length === 0 ? (
         <p className="py-12 text-center text-[15px] text-muted">
-          رمزارزی پیدا نشد.
+          {filter === "fav"
+            ? "هنوز رمزارزی را ستاره نکرده‌اید. از صفحه هر رمزارز، ستاره را بزنید."
+            : "رمزارزی پیدا نشد."}
         </p>
       ) : (
         <ul className="flex flex-col divide-y divide-line">

@@ -6,6 +6,7 @@ import { SearchIcon } from "@/components/ui/icons";
 import { toEnglishDigits } from "@/lib/utils/digits";
 import { replaceUrlParam } from "@/lib/utils/url-param";
 import { TopGainers } from "./top-gainers";
+import { WatchlistSection } from "./watchlist-section";
 import { TrendingList } from "./trending-list";
 import { NewCoins } from "./new-coins";
 import { AllAssets } from "./all-assets";
@@ -56,6 +57,7 @@ export function MarketScreen({
         <AllAssets coins={results} title="نتایج جستجو" showFilters={false} />
       ) : (
         <>
+          <WatchlistSection coins={overview.all} />
           <TopGainers coins={overview.topGainers} />
           <TrendingList coins={overview.trending} />
           <NewCoins coins={overview.newCoins} />
