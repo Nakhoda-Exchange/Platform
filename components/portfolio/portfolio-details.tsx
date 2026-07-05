@@ -17,10 +17,27 @@ import { formatChangePercent, formatIrtShort } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 
 // echarts only downloads on first sheet open, not with the wallet page.
+// The fallback mirrors the chart card (headline, subhead, segmented, plot)
+// so the sheet doesn't gape or jump while the chunk loads.
 const PortfolioHistoryChart = dynamic(
   () =>
     import("./portfolio-history-chart").then((m) => m.PortfolioHistoryChart),
-  { ssr: false, loading: () => <div className="h-[330px]" aria-hidden /> },
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-hidden
+        className="flex flex-col gap-3 overflow-hidden rounded-card bg-surface p-4"
+      >
+        <div className="flex flex-col gap-2">
+          <div className="h-6 w-44 animate-pulse rounded bg-line" />
+          <div className="h-4 w-32 animate-pulse rounded bg-line" />
+        </div>
+        <div className="h-12 animate-pulse rounded-full bg-line" />
+        <div className="-mx-4 -mb-4 h-[160px] animate-pulse bg-line/60" />
+      </div>
+    ),
+  },
 );
 
 /** «▲ +۱٬۲۳۴ ت (٪۵/۶)» gain/loss colored — sign and words, never color alone. */
