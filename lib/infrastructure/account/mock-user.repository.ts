@@ -18,6 +18,12 @@ const PROFILE: UserProfile = {
 export class MockUserRepository implements UserRepository {
   async getProfile(): Promise<Result<UserProfile>> {
     await delay();
-    return ok(PROFILE);
+    return ok({ ...PROFILE });
+  }
+
+  async setTwoFactor(enabled: boolean): Promise<Result<UserProfile>> {
+    await delay();
+    PROFILE.twoFactorEnabled = enabled;
+    return ok({ ...PROFILE });
   }
 }

@@ -23,6 +23,7 @@ import type { WithdrawUseCase } from "@/lib/core/application/wallet/use-cases/wi
 import type { GetDepositAddressUseCase } from "@/lib/core/application/wallet/use-cases/get-deposit-address.use-case";
 import type { UserRepository } from "@/lib/core/application/account/ports/user-repository.port";
 import type { GetProfileUseCase } from "@/lib/core/application/account/use-cases/get-profile.use-case";
+import type { SetTwoFactorUseCase } from "@/lib/core/application/account/use-cases/set-two-factor.use-case";
 
 /** Central registry of injection tokens, grouped by layer. */
 export const TOKENS = {
@@ -64,4 +65,5 @@ export const TOKENS = {
     "GetDepositAddressUseCase",
   ),
   GetProfileUseCase: token<GetProfileUseCase>("GetProfileUseCase"),
+  SetTwoFactorUseCase: token<SetTwoFactorUseCase>("SetTwoFactorUseCase"),
 } as const;
