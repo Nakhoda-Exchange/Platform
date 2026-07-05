@@ -9,6 +9,7 @@ import type {
 import { ok, type Result } from "@/lib/core/domain/shared/result";
 import { seededSeries } from "@/lib/infrastructure/shared/seeded-series";
 import { wallet } from "./mock-wallet-state";
+import { overlayTransactionEvents } from "./overlay-transaction-events";
 
 function delay(ms = 400): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -43,10 +44,13 @@ export class MockPortfolioRepository implements PortfolioRepository {
       values: number[],
       stepMs: number,
     ): PortfolioValuePoint[] =>
-      values.map((v, i) => ({
-        at: end - (values.length - 1 - i) * stepMs,
-        valueIrt: Math.round(v),
-      }));
+      overlayTransactionEvents(
+        values.map((v, i) => ({
+          at: end - (values.length - 1 - i) * stepMs,
+          valueIrt: Math.round(v),
+        })),
+        wallet.transactions,
+      );
     return ok({
       daily: toPoints(seededSeries(4102, 24, total, 0.02), 3_600_000),
       weekly: toPoints(seededSeries(4108, 28, total, 0.05), 21_600_000),
