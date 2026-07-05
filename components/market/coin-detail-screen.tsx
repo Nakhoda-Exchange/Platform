@@ -45,7 +45,7 @@ export function CoinDetailScreen({ detail }: { detail: CoinDetail }) {
             aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
             className={cn(
               "text-[15px] font-bold",
-              up ? "text-green-700" : "text-red-700",
+              up ? "text-gain" : "text-loss",
             )}
           >
             {up ? "▲" : "▼"} {formatChangePercent(coin.change24h)}

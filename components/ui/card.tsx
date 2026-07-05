@@ -14,7 +14,7 @@ export function Card({ as: Tag = "div", className, dir, children }: CardProps) {
     <Tag
       dir={dir}
       className={cn(
-        "rounded-[var(--radius-card)] border border-line bg-white",
+        "rounded-[var(--radius-card)] border border-line bg-paper",
         className,
       )}
     >

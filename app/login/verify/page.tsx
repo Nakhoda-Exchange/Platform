@@ -29,14 +29,11 @@ export default async function VerifyPage({
         title="تأیید شماره موبایل"
         subtitle={
           <div className="flex w-full flex-col items-start gap-1 text-right">
-            <p className="text-[16px] leading-[1.6] text-slate-500">
+            <p className="text-[16px] leading-[1.6] text-muted">
               کد ۶ رقمی ارسال‌شده به شماره زیر را وارد کنید.
             </p>
             <div className="flex items-center gap-2">
-              <span
-                dir="ltr"
-                className="text-[16px] font-semibold text-slate-900"
-              >
+              <span dir="ltr" className="text-[16px] font-semibold text-ink">
                 {maskMobile(phone)}
               </span>
               <Link

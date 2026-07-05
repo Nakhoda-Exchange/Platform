@@ -16,7 +16,7 @@ export function Keypad({
   onBackspace: () => void;
 }) {
   const key =
-    "h-14 rounded-field text-[22px] font-bold text-ink transition-colors hover:bg-surface active:bg-gray-100";
+    "h-14 rounded-field text-[22px] font-bold text-ink transition-colors hover:bg-surface active:bg-line";
   return (
     <div dir="ltr" className="grid grid-cols-3 gap-1">
       {KEYS.map((d) => (

@@ -126,7 +126,7 @@ export function TradeScreen({
         </dl>
 
         {state.status === "error" ? (
-          <p role="alert" className="text-[14px] font-bold text-red-600">
+          <p role="alert" className="text-[14px] font-bold text-loss">
             {state.message}
           </p>
         ) : null}
@@ -195,7 +195,7 @@ export function TradeScreen({
           ≈ {formatCoinAmount(amountCoin)} {coin.symbol}
         </span>
         {error ? (
-          <p role="alert" className="text-[13px] font-bold text-red-600">
+          <p role="alert" className="text-[13px] font-bold text-loss">
             {error}
           </p>
         ) : null}

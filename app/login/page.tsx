@@ -17,7 +17,7 @@ export default function LoginPage() {
 
       <PhoneLoginForm />
 
-      <p className="text-center text-[13px] leading-[1.8] text-slate-500">
+      <p className="text-center text-[13px] leading-[1.8] text-muted">
         با ادامه،{" "}
         <a href="#" className="font-semibold text-brand">
           قوانین
@@ -29,7 +29,7 @@ export default function LoginPage() {
         ناخدا را می‌پذیرید.
       </p>
 
-      <p className="flex items-center justify-center gap-1 pt-5 text-[14px] text-slate-500">
+      <p className="flex items-center justify-center gap-1 pt-5 text-[14px] text-muted">
         <span>مشکلی در ورود دارید؟</span>
         <a href="#" className="font-bold text-brand">
           پشتیبانی

@@ -4,7 +4,7 @@ import { Waves } from "./waves";
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden bg-white">
+    <section className="relative overflow-hidden bg-paper">
       {/* decorative background */}
       <Waves
         className="right-[-140px] top-6 w-[560px] rotate-[-10deg] sm:right-[-80px]"

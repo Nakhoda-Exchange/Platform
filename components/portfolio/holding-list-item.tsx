@@ -38,7 +38,7 @@ export function HoldingListItem({ holding }: { holding: Holding }) {
           aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)}`}
           className={cn(
             "text-[13px] font-bold",
-            up ? "text-green-700" : "text-red-700",
+            up ? "text-gain" : "text-loss",
           )}
         >
           {up ? "▲" : "▼"} {formatChangePercent(coin.change24h)}

@@ -12,11 +12,11 @@ export function AuthHeader({ title, subtitle }: AuthHeaderProps) {
     <div className="flex w-full flex-col items-start gap-4">
       <Logo />
       <div className="flex w-full flex-col gap-2 text-right">
-        <h1 className="text-[32px] font-extrabold leading-tight text-slate-900">
+        <h1 className="text-[32px] font-extrabold leading-tight text-ink">
           {title}
         </h1>
         {typeof subtitle === "string" ? (
-          <p className="text-[16px] leading-[1.6] text-slate-500">{subtitle}</p>
+          <p className="text-[16px] leading-[1.6] text-muted">{subtitle}</p>
         ) : (
           subtitle
         )}

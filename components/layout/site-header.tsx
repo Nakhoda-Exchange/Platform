@@ -10,7 +10,7 @@ import { Logo } from "./logo";
  */
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-line bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-line bg-paper/80 backdrop-blur-md">
       <Container className="flex h-16 items-center justify-between sm:h-20">
         <Logo size={22} />
 

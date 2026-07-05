@@ -104,12 +104,12 @@ export function OtpInput({
           }}
           onBlur={() => setFocused(null)}
           className={cn(
-            "h-14 min-w-0 flex-1 rounded-[14px] border-[1.5px] text-center text-[24px] font-bold text-slate-900 outline-none transition-colors",
+            "h-14 min-w-0 flex-1 rounded-[14px] border-[1.5px] text-center text-[24px] font-bold text-ink outline-none transition-colors",
             focused === i
               ? "border-brand bg-[#e6e9ff]"
               : value
-                ? "border-slate-300 bg-white"
-                : "border-slate-200 bg-white",
+                ? "border-placeholder/60 bg-paper"
+                : "border-line bg-paper",
           )}
         />
       ))}

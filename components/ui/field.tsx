@@ -33,12 +33,12 @@ export function Field({
         aria-invalid={error ? true : undefined}
         className={cn(
           "h-12 w-full rounded-[var(--radius-field)] border border-line bg-surface px-4 text-[16px] leading-[1.6] text-ink outline-none transition-colors placeholder:text-placeholder focus:border-brand",
-          error && "border-red-400 focus:border-red-500",
+          error && "border-loss/60 focus:border-loss",
           className,
         )}
         {...props}
       />
-      {error ? <p className="text-[12px] text-red-500">{error}</p> : null}
+      {error ? <p className="text-[12px] text-loss">{error}</p> : null}
     </div>
   );
 }

@@ -16,13 +16,13 @@ export function TopGainers({ coins }: { coins: Coin[] }) {
           <Link
             key={coin.id}
             href={`/market/${coin.symbol.toLowerCase()}`}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-line bg-white px-3 py-2"
+            className="flex shrink-0 items-center gap-2 rounded-full border border-line bg-paper px-3 py-2"
           >
             <CoinIcon coin={coin} size={24} />
             <span className="text-[13px] font-bold text-ink">
               {coin.symbol}
             </span>
-            <span dir="ltr" className="text-[12px] font-bold text-green-700">
+            <span dir="ltr" className="text-[12px] font-bold text-gain">
               ▲ {formatChangePercent(coin.change24h)}
             </span>
           </Link>

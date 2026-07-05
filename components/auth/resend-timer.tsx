@@ -43,7 +43,7 @@ export function ResendTimer({
 
   if (remaining > 0) {
     return (
-      <div className="flex w-full justify-center gap-1 text-[14px] text-slate-500">
+      <div className="flex w-full justify-center gap-1 text-[14px] text-muted">
         <span>ارسال مجدد تا</span>
         <span dir="ltr">{formatClock(remaining)}</span>
       </div>
