@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "jalaali-js": "^2.0.0",
+    "marked": "^18.0.5",
     "next": "16.2.10",
     "posthog-js": "^1.396.6",
     "qrcode": "^1.5.4",

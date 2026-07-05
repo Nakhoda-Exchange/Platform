@@ -3,6 +3,7 @@ import Link from "next/link";
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
 import { ChevronLeftIcon } from "@/components/ui/icons";
+import { MarkAnnouncementsRead } from "@/components/account/mark-announcements-read";
 import { formatJalaliDay } from "@/lib/utils/jalali";
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default async function AnnouncementsPage() {
 
   return (
     <div className="flex flex-1 flex-col px-4 pb-6 pt-2">
+      <MarkAnnouncementsRead />
       <ul className="flex flex-col divide-y divide-line">
         {result.data.map((a) => (
           <li key={a.id}>

@@ -3,11 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "./logo";
-import {
-  BellIcon,
-  ChevronRightIcon,
-  HeadphonesIcon,
-} from "@/components/ui/icons";
+import { ChevronRightIcon, HeadphonesIcon } from "@/components/ui/icons";
+import { NotificationBell } from "./notification-bell";
 import { HEADER_CONFIG, type HeaderConfig } from "./platform-nav";
 import { openSupportChat } from "@/components/support/goftino";
 
@@ -62,13 +59,7 @@ export function PlatformHeader() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Link
-          href="/account/announcements"
-          aria-label="اعلان‌ها"
-          className="flex size-11 items-center justify-center rounded-xl bg-surface text-muted transition-colors hover:bg-line"
-        >
-          <BellIcon size={20} />
-        </Link>
+        <NotificationBell />
         <button
           type="button"
           onClick={openSupportChat}
