@@ -49,7 +49,7 @@ export function OtpVerifyForm({
       <div className="flex w-full flex-col gap-4">
         <OtpInput length={length} onChange={setCode} />
         {state.error ? (
-          <p className="text-center text-[13px] text-red-500">{state.error}</p>
+          <p className="text-center text-[13px] text-loss">{state.error}</p>
         ) : null}
         <ResendTimer seconds={resendSeconds} phone={phone} />
       </div>
@@ -68,7 +68,7 @@ export function OtpVerifyForm({
         </Button>
         <Link
           href="/login"
-          className="text-[15px] font-semibold text-slate-500 transition-colors hover:text-slate-700"
+          className="text-[15px] font-semibold text-muted transition-colors hover:text-ink"
         >
           ویرایش شماره موبایل
         </Link>

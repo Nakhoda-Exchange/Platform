@@ -12,8 +12,8 @@ export const metadata: Metadata = {
  */
 export default function DeclinedPage() {
   return (
-    <main className="flex min-h-svh flex-col items-center justify-center gap-6 bg-white px-6 text-center">
-      <p className="max-w-[300px] text-[15px] leading-[1.9] text-slate-500">
+    <main className="flex min-h-svh flex-col items-center justify-center gap-6 bg-paper px-6 text-center">
+      <p className="max-w-[300px] text-[15px] leading-[1.9] text-muted">
         احراز هویت شما تأیید نشد.
       </p>
       <Link

@@ -15,10 +15,10 @@ export default function KycPage() {
         <Logo />
         <KycProgress step={1} />
         <div className="flex w-full flex-col gap-2 text-right">
-          <h1 className="text-[28px] font-extrabold leading-tight text-slate-900">
+          <h1 className="text-[28px] font-extrabold leading-tight text-ink">
             احراز هویت
           </h1>
-          <p className="text-[15px] leading-[1.7] text-slate-500">
+          <p className="text-[15px] leading-[1.7] text-muted">
             برای فعال‌سازی حساب، کد ملی و تاریخ تولد خود را وارد کنید.
           </p>
         </div>

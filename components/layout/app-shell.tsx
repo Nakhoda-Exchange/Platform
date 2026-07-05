@@ -5,7 +5,7 @@ import { BottomNav } from "./bottom-nav";
 /** Authenticated app chrome: sticky header, scrollable content, floating bottom nav. */
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-svh flex-col bg-white">
+    <div className="flex min-h-svh flex-col bg-paper">
       <PlatformHeader />
       <main className="flex flex-1 flex-col">{children}</main>
       <BottomNav />

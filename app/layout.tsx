@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
+import { ThemeWatcher } from "@/components/layout/theme-watcher";
+import { THEME_INIT_SCRIPT } from "@/lib/utils/theme";
 
 export const viewport: Viewport = {
   // viewport-fit=cover lets env(safe-area-inset-*) resolve (iOS notch / home bar).
@@ -26,7 +28,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl" className={`${vazirmatn.variable} h-full`}>
-      <body className="flex min-h-full flex-col bg-white text-ink">
+      <body className="flex min-h-full flex-col bg-paper text-ink">
+        {/* Sets .dark before first paint (system default or stored override). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <ThemeWatcher />
         {children}
       </body>
     </html>

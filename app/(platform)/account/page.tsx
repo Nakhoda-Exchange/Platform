@@ -37,7 +37,7 @@ export default async function AccountPage() {
             variant="ghost"
             size="lg"
             fullWidth
-            className="bg-surface text-red-600"
+            className="bg-surface text-loss"
           >
             خروج از حساب
           </Button>

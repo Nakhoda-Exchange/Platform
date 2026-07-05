@@ -41,7 +41,7 @@ export function KycConfirmForm({ identity }: { identity: Identity }) {
         </Button>
         <Link
           href="/kyc"
-          className="text-[15px] font-semibold text-slate-500 transition-colors hover:text-slate-700"
+          className="text-[15px] font-semibold text-muted transition-colors hover:text-ink"
         >
           بازگشت و ویرایش اطلاعات
         </Link>

@@ -14,7 +14,7 @@ export function BottomNav() {
 
   return (
     <nav className="sticky bottom-0 z-10 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <div className="mx-auto grid max-w-[420px] grid-cols-3 gap-1 rounded-3xl border border-gray-100 bg-white p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.1)]">
+      <div className="mx-auto grid max-w-[420px] grid-cols-3 gap-1 rounded-3xl border border-line bg-paper p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.1)]">
         {NAV_ITEMS.map(({ href, label, Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
@@ -29,12 +29,14 @@ export function BottomNav() {
             >
               <Icon
                 size={24}
-                className={active ? "text-brand" : "text-gray-400"}
+                className={active ? "text-brand" : "text-placeholder"}
               />
               <span
                 className={cn(
                   "text-[11px]",
-                  active ? "font-bold text-brand" : "font-medium text-gray-400",
+                  active
+                    ? "font-bold text-brand"
+                    : "font-medium text-placeholder",
                 )}
               >
                 {label}

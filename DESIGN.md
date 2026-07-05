@@ -6,6 +6,12 @@ sync: tokens live in `app/globals.css` (`@theme`), this file explains them,
 `doc/<feature>/` (e.g. `doc/kyc/PRD.md` + `doc/kyc/flow.md`).
 
 **Source of truth:** `app/globals.css` for token _values_, this file for _intent_.
+**Dark mode:** color tokens are `@theme inline` references to a `--tone-*`
+palette that `.dark` swaps wholesale — never hardcode neutrals (`bg-white`,
+`gray-*`, `slate-*`) or raw green/red; use `paper`/`ink`/`muted`/`surface`/
+`line`/`placeholder` and `gain`/`loss` (+`-soft`) tokens so both themes work.
+The theme is set pre-paint (system default, localStorage override via the
+account's «حالت نمایش» picker).
 Figma mirrors these values (the Figma file has no variables yet — raw values).
 
 > Editing `@theme` tokens needs a dev-server restart — HMR ignores them.

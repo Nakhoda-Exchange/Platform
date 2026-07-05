@@ -36,7 +36,7 @@ export function PlatformHeader() {
   const showTitle = Boolean(cfg.title || cfg.backHref);
 
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+    <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-paper px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
       <div className="flex items-center gap-1">
         {cfg.backHref ? (
           <Link
@@ -58,7 +58,7 @@ export function PlatformHeader() {
         type="button"
         onClick={openSupportChat}
         aria-label="پشتیبانی"
-        className="flex size-11 cursor-pointer items-center justify-center rounded-xl bg-surface text-gray-500 transition-colors hover:bg-gray-100"
+        className="flex size-11 cursor-pointer items-center justify-center rounded-xl bg-surface text-muted transition-colors hover:bg-line"
       >
         <HeadphonesIcon size={20} />
       </button>

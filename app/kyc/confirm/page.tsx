@@ -29,10 +29,10 @@ export default async function KycConfirmPage() {
         <Logo />
         <KycProgress step={2} />
         <div className="flex w-full flex-col gap-2 text-right">
-          <h1 className="text-[28px] font-extrabold leading-tight text-slate-900">
+          <h1 className="text-[28px] font-extrabold leading-tight text-ink">
             تأیید اطلاعات هویتی
           </h1>
-          <p className="text-[15px] leading-[1.7] text-slate-500">
+          <p className="text-[15px] leading-[1.7] text-muted">
             اطلاعات زیر از سامانه استعلام دریافت شد. در صورت درستی، تأیید کنید.
           </p>
         </div>

@@ -78,7 +78,7 @@ export function PriceChart({
               "h-10 flex-1 rounded-full text-[13px] font-bold transition-colors",
               r === range
                 ? "bg-brand text-white"
-                : "bg-surface text-muted hover:bg-gray-100",
+                : "bg-surface text-muted hover:bg-line",
             )}
           >
             {RANGE_LABELS[r]}

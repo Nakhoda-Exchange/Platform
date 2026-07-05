@@ -19,7 +19,7 @@ export function PhoneLoginForm() {
       <div className="flex w-full flex-col gap-2">
         <label
           htmlFor="mobile"
-          className="text-right text-[14px] font-semibold text-slate-500"
+          className="text-right text-[14px] font-semibold text-muted"
         >
           شماره موبایل
         </label>
@@ -33,12 +33,12 @@ export function PhoneLoginForm() {
           value={mobile}
           onChange={(e) => setMobile(e.target.value)}
           placeholder="۰۹۱۲۳۴۵۶۷۸۹"
-          className="h-[60px] w-full rounded-[14px] border-[1.5px] border-slate-200 bg-white px-4 text-center text-[18px] font-medium text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand"
+          className="h-[60px] w-full rounded-[14px] border-[1.5px] border-line bg-paper px-4 text-center text-[18px] font-medium text-ink outline-none transition-colors placeholder:text-placeholder focus:border-brand"
         />
       </div>
 
       {state.error ? (
-        <p className="text-right text-[13px] text-red-500">{state.error}</p>
+        <p className="text-right text-[13px] text-loss">{state.error}</p>
       ) : null}
 
       <Button

@@ -56,7 +56,7 @@ export function KycIdentityForm() {
       </div>
 
       {state.error ? (
-        <p className="text-right text-[13px] text-red-500">{state.error}</p>
+        <p className="text-right text-[13px] text-loss">{state.error}</p>
       ) : null}
 
       <Button

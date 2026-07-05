@@ -18,7 +18,7 @@ const STATUS: Record<
 > = {
   done: { label: "انجام شد", className: "text-muted" },
   pending: { label: "در انتظار", className: "font-bold text-brand" },
-  failed: { label: "ناموفق", className: "font-bold text-red-600" },
+  failed: { label: "ناموفق", className: "font-bold text-loss" },
 };
 
 /**
@@ -75,7 +75,7 @@ export function TransactionListItem({ tx }: { tx: Transaction }) {
         <span
           className={cn(
             "text-[14px] font-bold",
-            incoming ? "text-green-700" : "text-red-700",
+            incoming ? "text-gain" : "text-loss",
           )}
         >
           {incoming ? "+" : "−"}

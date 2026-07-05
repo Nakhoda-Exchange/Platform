@@ -25,6 +25,7 @@ npx tsc --noEmit     # type-check
 - `next` is **bun-patched** (`patches/next@16.2.10.patch`, applied via `patchedDependencies`) to fix a dev-only **infinite reload loop in Firefox** on streamed/Suspense pages ([vercel/next.js#94634](https://github.com/vercel/next.js/issues/94634): Firefox reports `transferSize === 0` for streamed documents, so the dev client thinks the page came from cache and calls `location.reload()` forever). Fixed upstream in 16.3 — **remove the patch when upgrading to ≥ 16.3**.
 - `params` and `searchParams` are **async** — `await` them (see `app/login/verify/page.tsx`).
 - A `"use server"` file may only export **async functions**. Keep state constants/types in a sibling module (see `app/actions/auth.ts` + `app/actions/auth-state.ts`).
+- **Dark mode**: tokens are `@theme inline` → `--tone-*` vars swapped by `.dark` (class set pre-paint by an inline script in the root layout; user override in localStorage via the account «حالت نمایش» picker). **Never hardcode neutrals or green/red** — use the `paper`/`ink`/`muted`/`surface`/`line`/`placeholder` and `gain`/`loss`(-`soft`) tokens.
 - Tailwind v4 is **CSS-first**: design tokens live in `app/globals.css` under `@theme` (e.g. `--color-brand`, `--color-ink`, `--radius-card`). **Editing `@theme` tokens requires a dev-server restart** — HMR does not pick them up, and the page renders unstyled until you restart.
 
 ## RTL notes

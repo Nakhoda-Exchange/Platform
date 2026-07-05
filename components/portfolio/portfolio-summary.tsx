@@ -22,7 +22,7 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
         <div
           className={cn(
             "inline-flex items-center gap-1.5 rounded-[10px] px-2.5 py-1",
-            up ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700",
+            up ? "bg-gain-soft text-gain" : "bg-loss-soft text-loss",
           )}
         >
           <span className="text-[12px] font-medium">امروز</span>

@@ -12,6 +12,7 @@ import {
   type IconProps,
 } from "@/components/ui/icons";
 import { openSupportChat } from "@/components/support/goftino";
+import { ThemeRow } from "./theme-row";
 import { cn } from "@/lib/utils/cn";
 
 /** One settings row: leading icon, label, trailing value + RTL-forward chevron. */
@@ -82,6 +83,9 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
               profile.twoFactorEnabled ? "font-bold text-brand" : undefined
             }
           />
+        </li>
+        <li>
+          <ThemeRow />
         </li>
         <li>
           <Row Icon={BellIcon} label="اعلان‌ها" />

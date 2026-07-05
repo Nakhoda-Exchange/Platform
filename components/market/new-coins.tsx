@@ -16,7 +16,7 @@ export function NewCoins({ coins }: { coins: Coin[] }) {
           <Link
             key={coin.id}
             href={`/market/${coin.symbol.toLowerCase()}`}
-            className="flex w-[150px] shrink-0 flex-col gap-2 rounded-2xl border border-line bg-white p-3.5 text-right"
+            className="flex w-[150px] shrink-0 flex-col gap-2 rounded-2xl border border-line bg-paper p-3.5 text-right"
           >
             <div className="flex items-center justify-between">
               <span className="rounded-lg bg-brand/10 px-2 py-0.5 text-[10px] font-bold text-brand">
