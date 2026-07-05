@@ -13,11 +13,14 @@ export function Sheet({
   onClose,
   title,
   children,
+  panelClassName,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
+  /** Extra classes for the panel, e.g. a fixed height like `h-[90vh]`. */
+  panelClassName?: string;
 }) {
   if (!open) return null;
   return (
@@ -35,8 +38,9 @@ export function Sheet({
       />
       <div
         className={cn(
-          "absolute inset-x-0 bottom-0 flex flex-col gap-4 rounded-t-card bg-white p-5",
+          "absolute inset-x-0 bottom-0 flex flex-col gap-4 rounded-t-card bg-paper p-5",
           "pb-[calc(1.25rem+env(safe-area-inset-bottom))]",
+          panelClassName,
         )}
       >
         <div className="mx-auto h-1 w-10 rounded-full bg-line" aria-hidden />
