@@ -8,12 +8,8 @@ import {
   CoinsIcon,
   type IconProps,
 } from "@/components/ui/icons";
-import {
-  formatChangePercent,
-  formatIrt,
-  formatIrtShort,
-} from "@/lib/utils/money";
-import { cn } from "@/lib/utils/cn";
+import { PortfolioDetails } from "./portfolio-details";
+import { formatIrt } from "@/lib/utils/money";
 
 const ACTIONS: {
   href: string;
@@ -26,28 +22,28 @@ const ACTIONS: {
   { href: "/wallet/history", label: "تاریخچه", Icon: ClockIcon },
 ];
 
-/** Total account value, today's P&L, and the icon quick actions. */
+/**
+ * The wallet-home summary, kept minimal: the total (cash + coins), ONE
+ * compact profit pill that opens the 90vh details sheet (cash/holdings/
+ * profit/today/pending breakdown), and the icon quick actions.
+ */
 export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
-  const up = portfolio.dayChangeIrt >= 0;
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-col items-center gap-1.5">
-        <span className="text-[14px] text-muted">موجودی کل</span>
+    <section className="flex flex-col gap-5">
+      <div className="flex flex-col items-center gap-2">
+        <span className="text-[14px] text-muted">دارایی کل</span>
         <span className="text-[32px] font-extrabold text-ink">
-          {formatIrt(portfolio.totalValueIrt)}
+          {formatIrt(portfolio.totalIrt)}
         </span>
-        <div
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-[10px] px-2.5 py-1",
-            up ? "bg-gain-soft text-gain" : "bg-loss-soft text-loss",
-          )}
-        >
-          <span className="text-[12px] font-medium">امروز</span>
-          <span dir="ltr" className="text-[13px] font-bold">
-            {up ? "▲" : "▼"} {formatIrtShort(Math.abs(portfolio.dayChangeIrt))}{" "}
-            ({formatChangePercent(portfolio.dayChangePercent)})
-          </span>
-        </div>
+        <PortfolioDetails
+          availableIrt={portfolio.availableIrt}
+          holdingsValueIrt={portfolio.holdingsValueIrt}
+          profitIrt={portfolio.profitIrt}
+          profitPercent={portfolio.profitPercent}
+          dayChangeIrt={portfolio.dayChangeIrt}
+          dayChangePercent={portfolio.dayChangePercent}
+          pendingWithdrawIrt={portfolio.pendingWithdrawIrt}
+        />
       </div>
 
       {/* Icon quick actions (Moonshot-style): circle icon + short label. */}

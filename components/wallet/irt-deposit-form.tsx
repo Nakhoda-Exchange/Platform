@@ -123,7 +123,7 @@ export function IrtDepositForm({ initialCards }: { initialCards: BankCard[] }) {
             aria-live="polite"
             className={cn(
               "text-[32px] font-extrabold",
-              secondsLeft > 60 ? "text-brand" : "text-red-600",
+              secondsLeft > 60 ? "text-brand" : "text-loss",
             )}
           >
             {toPersianDigits(`${mm}:${ss}`)}

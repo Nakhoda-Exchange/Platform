@@ -18,10 +18,13 @@ function delay(ms = 400): Promise<void> {
 export class MockPortfolioRepository implements PortfolioRepository {
   async getPortfolio(): Promise<Result<PortfolioSnapshot>> {
     await delay();
-    const totalValueIrt = wallet.holdings.reduce(
-      (sum, h) => sum + h.valueIrt,
-      0,
-    );
-    return ok({ totalValueIrt, holdings: wallet.holdings });
+    const pendingWithdrawIrt = wallet.transactions
+      .filter((t) => t.type === "withdraw" && t.status === "pending")
+      .reduce((sum, t) => sum + t.amountIrt, 0);
+    return ok({
+      availableIrt: wallet.irt,
+      pendingWithdrawIrt,
+      holdings: wallet.holdings,
+    });
   }
 }

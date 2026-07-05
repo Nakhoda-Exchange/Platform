@@ -33,6 +33,7 @@ export const wallet: MockWallet = {
       },
       amount: 0.0015,
       valueIrt: 5_850_000,
+      costIrt: 4_500_000,
     },
     {
       coin: {
@@ -44,6 +45,7 @@ export const wallet: MockWallet = {
       },
       amount: 0.02,
       valueIrt: 4_200_000,
+      costIrt: 4_000_000,
     },
     {
       coin: {
@@ -55,6 +57,7 @@ export const wallet: MockWallet = {
       },
       amount: 5,
       valueIrt: 1_600_000,
+      costIrt: 900_000,
     },
     {
       coin: {
@@ -66,6 +69,7 @@ export const wallet: MockWallet = {
       },
       amount: 0.1,
       valueIrt: 830_000,
+      costIrt: 850_000,
     },
     {
       coin: {
@@ -77,6 +81,7 @@ export const wallet: MockWallet = {
       },
       amount: 6,
       valueIrt: 358_800,
+      costIrt: 350_000,
     },
   ],
   // Seeded history (newest first not required — the use case sorts).
@@ -169,6 +174,7 @@ export function settleTrade(
     if (held) {
       held.amount += amountCoin;
       held.valueIrt = Math.round(held.amount * coin.priceIrt);
+      held.costIrt += Math.round(totalIrt); // cost basis grows by what was paid
     } else {
       wallet.holdings.push({
         coin: {
@@ -180,16 +186,20 @@ export function settleTrade(
         },
         amount: amountCoin,
         valueIrt: Math.round(totalIrt),
+        costIrt: Math.round(totalIrt),
       });
     }
   } else {
     wallet.irt += totalIrt;
     if (held) {
+      // Selling releases a proportional slice of the cost basis.
+      const soldShare = Math.min(1, amountCoin / held.amount);
       held.amount -= amountCoin;
       if (held.amount <= 1e-9) {
         wallet.holdings.splice(wallet.holdings.indexOf(held), 1);
       } else {
         held.valueIrt = Math.round(held.amount * coin.priceIrt);
+        held.costIrt = Math.round(held.costIrt * (1 - soldShare));
       }
     }
   }

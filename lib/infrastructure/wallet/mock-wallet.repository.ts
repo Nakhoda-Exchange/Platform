@@ -136,12 +136,14 @@ export class MockWalletRepository implements WalletRepository {
     const id = crypto.randomUUID();
     const held = wallet.holdings.find((h) => h.coin.id === coinId);
     if (held) {
+      const soldShare = Math.min(1, amountCoin / held.amount);
       held.amount -= amountCoin;
       const price = held.valueIrt / (held.amount + amountCoin);
       if (held.amount <= 1e-9) {
         wallet.holdings.splice(wallet.holdings.indexOf(held), 1);
       } else {
         held.valueIrt = Math.round(held.amount * price);
+        held.costIrt = Math.round(held.costIrt * (1 - soldShare));
       }
       wallet.transactions.push({
         id,
