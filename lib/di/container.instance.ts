@@ -21,6 +21,8 @@ import { TwoStepPasswordUseCase } from "@/lib/core/application/account/use-cases
 import { MockUserRepository } from "@/lib/infrastructure/account/mock-user.repository";
 import { MockAnnouncementsRepository } from "@/lib/infrastructure/account/mock-announcements.repository";
 import { ListAnnouncementsUseCase } from "@/lib/core/application/account/use-cases/list-announcements.use-case";
+import { GetReferralOverviewUseCase } from "@/lib/core/application/referral/use-cases/get-referral-overview.use-case";
+import { MockReferralRepository } from "@/lib/infrastructure/referral/mock-referral.repository";
 import { MockPortfolioRepository } from "@/lib/infrastructure/portfolio/mock-portfolio.repository";
 import { MockIdentityInquiryRepository } from "@/lib/infrastructure/kyc/mock-identity-inquiry.repository";
 import { MockKycSessionStore } from "@/lib/infrastructure/kyc/mock-kyc-session-store";
@@ -77,6 +79,10 @@ export function buildContainer(): Container {
   container.registerSingleton(
     TOKENS.AnnouncementsRepository,
     () => new MockAnnouncementsRepository(),
+  );
+  container.registerSingleton(
+    TOKENS.ReferralRepository,
+    () => new MockReferralRepository(),
   );
 
   // Application: construct use cases from their dependencies.
@@ -166,6 +172,10 @@ export function buildContainer(): Container {
     TOKENS.ListAnnouncementsUseCase,
     (c) =>
       new ListAnnouncementsUseCase(c.resolve(TOKENS.AnnouncementsRepository)),
+  );
+  container.register(
+    TOKENS.GetReferralOverviewUseCase,
+    (c) => new GetReferralOverviewUseCase(c.resolve(TOKENS.ReferralRepository)),
   );
   return container;
 }

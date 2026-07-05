@@ -1,6 +1,6 @@
 import type { Transaction } from "@/lib/core/domain/wallet/transaction";
 import { CoinIcon } from "@/components/market/coin-icon";
-import { ArrowDownIcon, ArrowUpIcon } from "@/components/ui/icons";
+import { ArrowDownIcon, ArrowUpIcon, GiftIcon } from "@/components/ui/icons";
 import { formatCoinAmount, formatIrtShort } from "@/lib/utils/money";
 import { formatTimeFa } from "@/lib/utils/jalali";
 import { cn } from "@/lib/utils/cn";
@@ -10,6 +10,7 @@ const TYPE_LABEL: Record<Transaction["type"], string> = {
   sell: "فروش",
   deposit: "واریز تومان",
   withdraw: "برداشت تومان",
+  reward: "پاداش دعوت",
 };
 
 const STATUS: Record<
@@ -55,7 +56,9 @@ export function TransactionListItem({ tx }: { tx: Transaction }) {
             aria-hidden
             className="flex size-[42px] shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand"
           >
-            {tx.type === "deposit" ? (
+            {tx.type === "reward" ? (
+              <GiftIcon size={20} />
+            ) : tx.type === "deposit" ? (
               <ArrowDownIcon size={20} />
             ) : (
               <ArrowUpIcon size={20} />

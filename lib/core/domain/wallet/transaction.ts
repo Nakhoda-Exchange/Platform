@@ -1,5 +1,6 @@
-/** What happened: money in/out (Toman) or a trade (coin bought/sold). */
-export type TransactionType = "deposit" | "withdraw" | "buy" | "sell";
+/** What happened: money in/out (Toman), a trade, or a referral reward. */
+export type TransactionType =
+  "deposit" | "withdraw" | "buy" | "sell" | "reward";
 
 export type TransactionStatus = "pending" | "done" | "failed";
 
@@ -22,4 +23,5 @@ export const TRANSACTION_TYPES: readonly TransactionType[] = [
   "sell",
   "deposit",
   "withdraw",
+  "reward",
 ];
