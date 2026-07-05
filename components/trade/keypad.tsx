@@ -11,9 +11,12 @@ const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 export function Keypad({
   onDigit,
   onBackspace,
+  decimal = false,
 }: {
   onDigit: (digit: string) => void;
   onBackspace: () => void;
+  /** Show a «٫» key (coin-unit entry needs fractions). */
+  decimal?: boolean;
 }) {
   const key =
     "h-14 rounded-field text-[22px] font-bold text-ink transition-colors hover:bg-surface active:bg-line";
@@ -29,7 +32,18 @@ export function Keypad({
           {toPersianDigits(d)}
         </button>
       ))}
-      <span aria-hidden />
+      {decimal ? (
+        <button
+          type="button"
+          onClick={() => onDigit(".")}
+          aria-label="ممیز"
+          className={key}
+        >
+          ٫
+        </button>
+      ) : (
+        <span aria-hidden />
+      )}
       <button type="button" onClick={() => onDigit("0")} className={key}>
         {toPersianDigits("0")}
       </button>
