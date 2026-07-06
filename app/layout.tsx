@@ -35,9 +35,7 @@ export default async function RootLayout({
   const units = await container
     .resolve(TOKENS.GetCurrencyUnitsUseCase)
     .execute();
-  const currencyUnits = units.ok
-    ? units.data
-    : { irt: "", usd: "", marketCap: "" };
+  const currencyUnits = units.ok ? units.data : { irt: "", usd: "" };
   setCurrencyUnits(currencyUnits);
 
   return (

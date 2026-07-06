@@ -6,7 +6,6 @@ import { ok, type Result } from "@/lib/core/domain/shared/result";
 const UNITS: CurrencyUnits = {
   irt: "تومان",
   usd: "دلار",
-  marketCap: "همت",
 };
 
 export class MockConfigRepository implements ConfigRepository {
