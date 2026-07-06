@@ -1,4 +1,26 @@
+import type { CurrencyUnits } from "@/lib/core/domain/config/currency-units";
 import { toPersianDigits } from "./digits";
+
+// Unit labels are SERVER CONFIG (ConfigRepository) — injected once by the
+// root layout (server) and CurrencyUnitsHydrator (client) before anything
+// renders amounts. Never hardcode a unit here.
+let UNITS: CurrencyUnits | null = null;
+
+export function setCurrencyUnits(units: CurrencyUnits): void {
+  UNITS = units;
+}
+
+const unit = (key: keyof CurrencyUnits): string => UNITS?.[key] ?? "";
+
+/**
+ * Unit visually LEFT of the number in every bidi context (RTL paragraphs and
+ * dir=ltr spans alike): number-first logical order wrapped in an RTL isolate
+ * (U+2067…U+2069) — Arabic-Indic digits are bidi class AN, so inside the RTL
+ * isolate the digits render rightmost and the unit lands on their left,
+ * regardless of the surrounding direction.
+ */
+const unitFirst = (label: string, number: string): string =>
+  label ? `\u2067${number} ${label}\u2069` : number;
 
 const irtFormat = new Intl.NumberFormat("fa-IR");
 const usdFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
@@ -15,19 +37,24 @@ function faNumber(toman: number): string {
   return irtFormat.format(Math.round(toman));
 }
 
-/** Toman amount → «۱۲٬۴۵۰٬۰۰۰ تومان» (spelled unit; for prominent single prices). */
+/** Toman amount → «تومان ۱۲٬۴۵۰٬۰۰۰» (unit left of the number; label from server config). */
 export function formatIrt(toman: number): string {
-  return `${faNumber(toman)} تومان`;
+  return unitFirst(unit("irt"), faNumber(toman));
 }
 
-/** Toman amount → «۱۲٬۴۵۰٬۰۰۰ ت» (short unit; for dense market rows/cards). */
-export function formatIrtShort(toman: number): string {
-  return `${faNumber(toman)} ت`;
-}
+/**
+ * Toman amount for dense rows/cards. Product decision: the «ت» abbreviation
+ * confused people — the unit is always spelled «تومان» now, so this is an
+ * alias kept for the many call sites.
+ */
+export const formatIrtShort = formatIrt;
 
-/** USD amount → «$4,120» (Latin digits, LTR). */
+/** USD amount → «دلار ۴٬۱۲۰» (unit left of the number; label from server config). */
 export function formatUsd(usd: number): string {
-  return `$${usdFormat.format(usd)}`;
+  const number = toPersianDigits(usdFormat.format(usd))
+    .replace(/,/g, "٬")
+    .replace(".", "٫");
+  return unitFirst(unit("usd"), number);
 }
 
 /** Signed 24h change → Persian percent, unsigned (the caller shows ▲/▼): 3.2 → «۳٫۲٪». */
@@ -35,9 +62,14 @@ export function formatChangePercent(change: number): string {
   return `${toPersianDigits(Math.abs(change).toFixed(1)).replace(".", "٫")}٪`;
 }
 
-/** Market cap in همت → «۸۵٬۰۰۰ همت». */
+/**
+ * Market cap → «۸۵٬۰۰۰ همت». «همت» is NOT a currency unit — it is the common
+ * shorthand for «هزار میلیارد تومان» (a scale word, like «میلیون»), so it is
+ * vocabulary here, not server config. Same RTL isolate as the money
+ * formatters so the word sits left of the digits everywhere.
+ */
 export function formatMarketCap(hemat: number): string {
-  return `${irtFormat.format(Math.round(hemat))} همت`;
+  return `\u2067${irtFormat.format(Math.round(hemat))} همت\u2069`;
 }
 
 /** Coin amount held → Persian digits, e.g. 0.0015 → «۰٫۰۰۱۵», 5 → «۵». */
