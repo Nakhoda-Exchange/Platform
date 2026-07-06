@@ -29,8 +29,8 @@ describe("formatIrt", () => {
 
 describe("formatIrtShort", () => {
   test("uses the short ت unit for dense rows", () => {
-    expect(formatIrtShort(4500)).toBe("۴٬۵۰۰ ت");
-    expect(formatIrtShort(0.18)).toBe("۰٫۱۸ ت");
+    expect(formatIrtShort(4500)).toBe("۴٬۵۰۰ تومان");
+    expect(formatIrtShort(0.18)).toBe("۰٫۱۸ تومان");
   });
 });
 
@@ -42,9 +42,9 @@ describe("formatMarketCap", () => {
 });
 
 describe("formatUsd", () => {
-  test("Latin digits with $ and grouping", () => {
-    expect(formatUsd(4120)).toBe("$4,120");
-    expect(formatUsd(0.07)).toBe("$0.07");
+  test("Persian digits with spelled دلار", () => {
+    expect(formatUsd(4120)).toBe("۴٬۱۲۰ دلار");
+    expect(formatUsd(0.07)).toBe("۰٫۰۷ دلار");
   });
 });
 
