@@ -12,6 +12,16 @@ export function setCurrencyUnits(units: CurrencyUnits): void {
 
 const unit = (key: keyof CurrencyUnits): string => UNITS?.[key] ?? "";
 
+/**
+ * Unit visually LEFT of the number in every bidi context (RTL paragraphs and
+ * dir=ltr spans alike): number-first logical order wrapped in an RTL isolate
+ * (U+2067…U+2069) — Arabic-Indic digits are bidi class AN, so inside the RTL
+ * isolate the digits render rightmost and the unit lands on their left,
+ * regardless of the surrounding direction.
+ */
+const unitFirst = (label: string, number: string): string =>
+  label ? `\u2067${number} ${label}\u2069` : number;
+
 const irtFormat = new Intl.NumberFormat("fa-IR");
 const usdFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 
@@ -27,9 +37,9 @@ function faNumber(toman: number): string {
   return irtFormat.format(Math.round(toman));
 }
 
-/** Toman amount → «۱۲٬۴۵۰٬۰۰۰ تومان» (unit label from server config). */
+/** Toman amount → «تومان ۱۲٬۴۵۰٬۰۰۰» (unit left of the number; label from server config). */
 export function formatIrt(toman: number): string {
-  return `${faNumber(toman)} ${unit("irt")}`.trim();
+  return unitFirst(unit("irt"), faNumber(toman));
 }
 
 /**
@@ -39,9 +49,12 @@ export function formatIrt(toman: number): string {
  */
 export const formatIrtShort = formatIrt;
 
-/** USD amount → «۴٬۱۲۰ دلار» (Persian digits; unit label from server config). */
+/** USD amount → «دلار ۴٬۱۲۰» (unit left of the number; label from server config). */
 export function formatUsd(usd: number): string {
-  return `${toPersianDigits(usdFormat.format(usd)).replace(/,/g, "٬").replace(".", "٫")} ${unit("usd")}`.trim();
+  const number = toPersianDigits(usdFormat.format(usd))
+    .replace(/,/g, "٬")
+    .replace(".", "٫");
+  return unitFirst(unit("usd"), number);
 }
 
 /** Signed 24h change → Persian percent, unsigned (the caller shows ▲/▼): 3.2 → «۳٫۲٪». */
@@ -49,9 +62,14 @@ export function formatChangePercent(change: number): string {
   return `${toPersianDigits(Math.abs(change).toFixed(1)).replace(".", "٫")}٪`;
 }
 
-/** Market cap → «۸۵٬۰۰۰ همت» (unit label from server config). */
+/**
+ * Market cap → «۸۵٬۰۰۰ همت». «همت» is NOT a currency unit — it is the common
+ * shorthand for «هزار میلیارد تومان» (a scale word, like «میلیون»), so it is
+ * vocabulary here, not server config. Same RTL isolate as the money
+ * formatters so the word sits left of the digits everywhere.
+ */
 export function formatMarketCap(hemat: number): string {
-  return `${irtFormat.format(Math.round(hemat))} ${unit("marketCap")}`.trim();
+  return `\u2067${irtFormat.format(Math.round(hemat))} همت\u2069`;
 }
 
 /** Coin amount held → Persian digits, e.g. 0.0015 → «۰٫۰۰۱۵», 5 → «۵». */

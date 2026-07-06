@@ -6,5 +6,4 @@
 export interface CurrencyUnits {
   irt: string; // e.g. «تومان»
   usd: string; // e.g. «دلار»
-  marketCap: string; // e.g. «همت»
 }
