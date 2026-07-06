@@ -6,7 +6,11 @@ import {
   formatIrtShort,
   formatMarketCap,
   formatUsd,
+  setCurrencyUnits,
 } from "./money";
+
+// Unit labels are server config; tests inject them like the root layout does.
+setCurrencyUnits({ irt: "تومان", usd: "دلار", marketCap: "همت" });
 
 describe("formatCoinAmount", () => {
   test("Persian digits, fractional and grouped", () => {

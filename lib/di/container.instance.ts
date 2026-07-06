@@ -24,6 +24,8 @@ import { MockAnnouncementsRepository } from "@/lib/infrastructure/account/mock-a
 import { ListAnnouncementsUseCase } from "@/lib/core/application/account/use-cases/list-announcements.use-case";
 import { GetReferralOverviewUseCase } from "@/lib/core/application/referral/use-cases/get-referral-overview.use-case";
 import { MockReferralRepository } from "@/lib/infrastructure/referral/mock-referral.repository";
+import { MockConfigRepository } from "@/lib/infrastructure/config/mock-config.repository";
+import { GetCurrencyUnitsUseCase } from "@/lib/core/application/config/use-cases/get-currency-units.use-case";
 import { MockPortfolioRepository } from "@/lib/infrastructure/portfolio/mock-portfolio.repository";
 import { MockIdentityInquiryRepository } from "@/lib/infrastructure/kyc/mock-identity-inquiry.repository";
 import { MockKycSessionStore } from "@/lib/infrastructure/kyc/mock-kyc-session-store";
@@ -84,6 +86,10 @@ export function buildContainer(): Container {
   container.registerSingleton(
     TOKENS.ReferralRepository,
     () => new MockReferralRepository(),
+  );
+  container.registerSingleton(
+    TOKENS.ConfigRepository,
+    () => new MockConfigRepository(),
   );
 
   // Application: construct use cases from their dependencies.
@@ -182,6 +188,10 @@ export function buildContainer(): Container {
   container.register(
     TOKENS.GetReferralOverviewUseCase,
     (c) => new GetReferralOverviewUseCase(c.resolve(TOKENS.ReferralRepository)),
+  );
+  container.register(
+    TOKENS.GetCurrencyUnitsUseCase,
+    (c) => new GetCurrencyUnitsUseCase(c.resolve(TOKENS.ConfigRepository)),
   );
   return container;
 }
