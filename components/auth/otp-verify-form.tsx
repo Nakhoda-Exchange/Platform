@@ -11,6 +11,7 @@ import { ResendTimer } from "./resend-timer";
 interface OtpVerifyFormProps {
   cid: string;
   phone: string;
+  nextPath?: string;
   length?: number;
   resendSeconds?: number;
 }
@@ -18,6 +19,7 @@ interface OtpVerifyFormProps {
 export function OtpVerifyForm({
   cid,
   phone,
+  nextPath,
   length = 6,
   resendSeconds = 120,
 }: OtpVerifyFormProps) {
@@ -56,6 +58,7 @@ export function OtpVerifyForm({
 
       <input type="hidden" name="cid" value={cid} />
       <input type="hidden" name="phone" value={phone} />
+      {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
 
       <div className="flex w-full flex-col items-center gap-4">
         <Button

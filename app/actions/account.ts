@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
 import { KYC_PENDING_COOKIE } from "./kyc-state";
+import { SESSION_COOKIE } from "./session-state";
 import type { TwoStepFormState } from "./account-state";
 
 /**
@@ -13,7 +14,9 @@ import type { TwoStepFormState } from "./account-state";
  * exists (the pending-KYC cookie); wire real session teardown when auth lands.
  */
 export async function logout(): Promise<void> {
-  (await cookies()).delete(KYC_PENDING_COOKIE);
+  const store = await cookies();
+  store.delete(KYC_PENDING_COOKIE);
+  store.delete(SESSION_COOKIE);
   redirect("/");
 }
 

@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 export default async function TwoStepLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ st?: string }>;
+  searchParams: Promise<{ st?: string; next?: string }>;
 }) {
-  const { st = "registration" } = await searchParams;
+  const { st = "registration", next } = await searchParams;
 
   return (
     <AuthShell>
@@ -22,7 +22,7 @@ export default async function TwoStepLoginPage({
         title="رمز دومرحله‌ای"
         subtitle="برای ورود، رمز دومرحله‌ای حساب خود را وارد کنید."
       />
-      <TwoStepLoginForm status={st} />
+      <TwoStepLoginForm status={st} nextPath={next} />
     </AuthShell>
   );
 }
