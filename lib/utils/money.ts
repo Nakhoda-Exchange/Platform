@@ -1,4 +1,16 @@
+import type { CurrencyUnits } from "@/lib/core/domain/config/currency-units";
 import { toPersianDigits } from "./digits";
+
+// Unit labels are SERVER CONFIG (ConfigRepository) — injected once by the
+// root layout (server) and CurrencyUnitsHydrator (client) before anything
+// renders amounts. Never hardcode a unit here.
+let UNITS: CurrencyUnits | null = null;
+
+export function setCurrencyUnits(units: CurrencyUnits): void {
+  UNITS = units;
+}
+
+const unit = (key: keyof CurrencyUnits): string => UNITS?.[key] ?? "";
 
 const irtFormat = new Intl.NumberFormat("fa-IR");
 const usdFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
@@ -15,9 +27,9 @@ function faNumber(toman: number): string {
   return irtFormat.format(Math.round(toman));
 }
 
-/** Toman amount → «۱۲٬۴۵۰٬۰۰۰ تومان» (spelled unit; for prominent single prices). */
+/** Toman amount → «۱۲٬۴۵۰٬۰۰۰ تومان» (unit label from server config). */
 export function formatIrt(toman: number): string {
-  return `${faNumber(toman)} تومان`;
+  return `${faNumber(toman)} ${unit("irt")}`.trim();
 }
 
 /**
@@ -27,9 +39,9 @@ export function formatIrt(toman: number): string {
  */
 export const formatIrtShort = formatIrt;
 
-/** USD amount → «۴٬۱۲۰ دلار» (Persian digits, spelled unit — no $ sign). */
+/** USD amount → «۴٬۱۲۰ دلار» (Persian digits; unit label from server config). */
 export function formatUsd(usd: number): string {
-  return `${toPersianDigits(usdFormat.format(usd)).replace(/,/g, "٬").replace(".", "٫")} دلار`;
+  return `${toPersianDigits(usdFormat.format(usd)).replace(/,/g, "٬").replace(".", "٫")} ${unit("usd")}`.trim();
 }
 
 /** Signed 24h change → Persian percent, unsigned (the caller shows ▲/▼): 3.2 → «۳٫۲٪». */
@@ -37,9 +49,9 @@ export function formatChangePercent(change: number): string {
   return `${toPersianDigits(Math.abs(change).toFixed(1)).replace(".", "٫")}٪`;
 }
 
-/** Market cap in همت → «۸۵٬۰۰۰ همت». */
+/** Market cap → «۸۵٬۰۰۰ همت» (unit label from server config). */
 export function formatMarketCap(hemat: number): string {
-  return `${irtFormat.format(Math.round(hemat))} همت`;
+  return `${irtFormat.format(Math.round(hemat))} ${unit("marketCap")}`.trim();
 }
 
 /** Coin amount held → Persian digits, e.g. 0.0015 → «۰٫۰۰۱۵», 5 → «۵». */

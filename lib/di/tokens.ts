@@ -29,6 +29,8 @@ import type { AnnouncementsRepository } from "@/lib/core/application/account/por
 import type { ListAnnouncementsUseCase } from "@/lib/core/application/account/use-cases/list-announcements.use-case";
 import type { ReferralRepository } from "@/lib/core/application/referral/ports/referral-repository.port";
 import type { GetReferralOverviewUseCase } from "@/lib/core/application/referral/use-cases/get-referral-overview.use-case";
+import type { ConfigRepository } from "@/lib/core/application/config/ports/config-repository.port";
+import type { GetCurrencyUnitsUseCase } from "@/lib/core/application/config/use-cases/get-currency-units.use-case";
 
 /** Central registry of injection tokens, grouped by layer. */
 export const TOKENS = {
@@ -48,6 +50,7 @@ export const TOKENS = {
     "AnnouncementsRepository",
   ),
   ReferralRepository: token<ReferralRepository>("ReferralRepository"),
+  ConfigRepository: token<ConfigRepository>("ConfigRepository"),
   // Application use cases
   RequestOtpUseCase: token<RequestOtpUseCase>("RequestOtpUseCase"),
   VerifyOtpUseCase: token<VerifyOtpUseCase>("VerifyOtpUseCase"),
@@ -85,5 +88,8 @@ export const TOKENS = {
   ),
   GetReferralOverviewUseCase: token<GetReferralOverviewUseCase>(
     "GetReferralOverviewUseCase",
+  ),
+  GetCurrencyUnitsUseCase: token<GetCurrencyUnitsUseCase>(
+    "GetCurrencyUnitsUseCase",
   ),
 } as const;
