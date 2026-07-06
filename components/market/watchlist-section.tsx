@@ -13,7 +13,13 @@ import { FAVORITES_EVENT, getFavorites } from "@/lib/utils/favorites";
  * as a filter). Renders nothing until at least one coin is starred, so new
  * users see the curated discovery sections untouched.
  */
-export function WatchlistSection({ coins }: { coins: Coin[] }) {
+export function WatchlistSection({
+  coins,
+  heldIds,
+}: {
+  coins: Coin[];
+  heldIds: string[];
+}) {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -32,7 +38,7 @@ export function WatchlistSection({ coins }: { coins: Coin[] }) {
       <ul className="flex flex-col divide-y divide-line">
         {watchlist.map((coin) => (
           <li key={coin.id}>
-            <CoinRow coin={coin} subtitle={coin.symbol} />
+            <CoinRow coin={coin} canSell={heldIds.includes(coin.id)} />
           </li>
         ))}
       </ul>
