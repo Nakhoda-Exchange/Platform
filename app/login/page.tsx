@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string }>;
+  searchParams: Promise<{ ref?: string; next?: string }>;
 }) {
-  const { ref } = await searchParams;
+  const { ref, next } = await searchParams;
   return (
     <AuthShell>
       <AuthHeader
@@ -20,7 +20,7 @@ export default async function LoginPage({
         subtitle="برای ورود یا ایجاد حساب، شماره موبایل خود را وارد کنید."
       />
 
-      <PhoneLoginForm refCode={ref} />
+      <PhoneLoginForm refCode={ref} nextPath={next} />
 
       <p className="text-center text-[13px] leading-[1.8] text-muted">
         با ادامه،{" "}

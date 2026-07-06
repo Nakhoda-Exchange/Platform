@@ -6,14 +6,35 @@ import { TOKENS } from "@/lib/di/tokens";
 import { cookies } from "next/headers";
 import type { AuthFormState } from "./auth-state";
 import { REFERRAL_COOKIE } from "./referral-state";
+import { SESSION_COOKIE, safeNextPath } from "./session-state";
 
-function verifyUrl(phone: string, cid: string, resendSeconds: number): string {
+function verifyUrl(
+  phone: string,
+  cid: string,
+  resendSeconds: number,
+  next?: string | null,
+): string {
   const params = new URLSearchParams({
     phone,
     cid,
     rs: String(resendSeconds),
   });
+  if (next) params.set("next", next);
   return `/login/verify?${params.toString()}`;
+}
+
+/**
+ * Start the login session (issue #78). Opaque presence cookie until full
+ * auth sessions land — set ONLY at true login success: OTP for users
+ * without a two-step password, the gate for users with one.
+ */
+async function startSession(): Promise<void> {
+  (await cookies()).set(SESSION_COOKIE, crypto.randomUUID(), {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
 }
 
 /**
@@ -47,7 +68,14 @@ export async function startLogin(
   }
 
   const { challengeId, mobile: normalized, resendAfterSeconds } = result.data;
-  redirect(verifyUrl(normalized, challengeId, resendAfterSeconds));
+  redirect(
+    verifyUrl(
+      normalized,
+      challengeId,
+      resendAfterSeconds,
+      safeNextPath(String(formData.get("next") ?? "")),
+    ),
+  );
 }
 
 /** Resend the OTP for a mobile number, then reload the verify screen. */
@@ -97,17 +125,26 @@ export async function verifyLogin(
     return { error: result.error.message };
   }
 
+  const next = safeNextPath(String(formData.get("next") ?? ""));
+
+  // Declined users never get a session and never see the gate — straight to
+  // the dead-end page.
+  if (result.data.status === "declined") redirect(DESTINATION.declined);
+
   // Second step: users who set a two-step password must enter it before the
-  // platform. Mock-only: the status travels in the URL like the OTP challenge
-  // does; a real backend keeps it in the session.
+  // platform — the session starts AFTER the gate, so it cannot be skipped.
+  // Mock-only: the status travels in the URL like the OTP challenge does; a
+  // real backend keeps it in the session.
   const profile = await container.resolve(TOKENS.GetProfileUseCase).execute();
   if (profile.ok && profile.data.twoFactorEnabled) {
     const phone = String(formData.get("phone") ?? "");
     const params = new URLSearchParams({ st: result.data.status, phone });
+    if (next) params.set("next", next);
     redirect(`/login/two-step?${params.toString()}`);
   }
 
-  redirect(DESTINATION[result.data.status]);
+  await startSession();
+  redirect(next ?? DESTINATION[result.data.status]);
 }
 
 /**
@@ -116,8 +153,13 @@ export async function verifyLogin(
  * NOT re-verified here — that is backend work once auth sessions land; this
  * action only performs the redirect the password path would.
  */
-export async function passTwoStepBiometric(status: string): Promise<void> {
-  redirect(DESTINATION[asStatus(status)]);
+export async function passTwoStepBiometric(
+  status: string,
+  next?: string,
+): Promise<void> {
+  const resolved = asStatus(status);
+  if (resolved !== "declined") await startSession();
+  redirect(safeNextPath(next) ?? DESTINATION[resolved]);
 }
 
 /**
@@ -137,5 +179,8 @@ export async function verifyTwoStepLogin(
     return { error: result.error.message };
   }
 
-  redirect(DESTINATION[asStatus(String(formData.get("st") ?? ""))]);
+  const resolved = asStatus(String(formData.get("st") ?? ""));
+  if (resolved !== "declined") await startSession();
+  const next = safeNextPath(String(formData.get("next") ?? ""));
+  redirect(next ?? DESTINATION[resolved]);
 }

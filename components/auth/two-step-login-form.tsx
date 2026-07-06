@@ -17,7 +17,13 @@ import {
  * enrolled WebAuthn credential get a biometric button first (issue #67); the
  * password stays as the universal fallback.
  */
-export function TwoStepLoginForm({ status }: { status: string }) {
+export function TwoStepLoginForm({
+  status,
+  nextPath,
+}: {
+  status: string;
+  nextPath?: string;
+}) {
   const [password, setPassword] = useState("");
   const [biometric, setBiometric] = useState(false);
   const [biometricError, setBiometricError] = useState<string | null>(null);
@@ -41,7 +47,7 @@ export function TwoStepLoginForm({ status }: { status: string }) {
         setBiometricError("تأیید بیومتریک انجام نشد. از رمز استفاده کنید.");
         return;
       }
-      await passTwoStepBiometric(status);
+      await passTwoStepBiometric(status, nextPath);
     });
 
   return (
@@ -76,6 +82,7 @@ export function TwoStepLoginForm({ status }: { status: string }) {
 
       <form action={formAction} className="flex w-full flex-col gap-8">
         <input type="hidden" name="st" value={status} />
+        {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
         <Field
           name="password"
           type="password"
