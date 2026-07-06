@@ -26,6 +26,9 @@ function roundCoin(amount: number): number {
 
 const SIDE_LABEL: Record<TradeSide, string> = { buy: "خرید", sell: "فروش" };
 
+/** Tappable slider shortcuts (also the native tick marks). */
+const SELL_PERCENT_POINTS = [10, 25, 50, 75, 100] as const;
+
 /**
  * Trade screen (Moonshot-style): side toggle, Toman amount entered on a
  * keypad with live coin conversion, then an inline confirm step → server
@@ -64,6 +67,28 @@ export function TradeScreen({
   );
   const maxIrt =
     side === "buy" ? availableIrt : Math.floor(availableCoin * coin.priceIrt);
+  // Sell slider (percent of holdings). Derived from the entry, so typing on
+  // the keypad moves the slider too; sliding writes the entry in the active
+  // unit. Sell-only — «چند درصد بفروشم؟» has no buy-side meaning.
+  const sellPercent =
+    maxIrt > 0 ? Math.min(100, Math.round((amountIrt / maxIrt) * 100)) : 0;
+  const applySellPercent = (percent: number) => {
+    if (percent <= 0) {
+      setDigits("");
+      return;
+    }
+    if (unit === "irt") {
+      setDigits(String(Math.floor((maxIrt * percent) / 100)));
+    } else {
+      setDigits(
+        String(
+          percent === 100
+            ? availableCoin
+            : roundCoin((availableCoin * percent) / 100),
+        ),
+      );
+    }
+  };
 
   const error =
     side === "sell" && availableCoin <= 0
@@ -275,6 +300,56 @@ export function TradeScreen({
           همه
         </button>
       </div>
+
+      {side === "sell" && availableCoin > 0 ? (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between text-[13px]">
+            <span className="text-muted">چند درصد از دارایی؟</span>
+            <span className="font-bold text-brand">
+              ٪{toPersianDigits(sellPercent)}
+            </span>
+          </div>
+          {/* dir=ltr: the slider grows left→right (۰ چپ، ۱۰۰ راست) like a
+              progress bar, not mirrored by the RTL page. 5% drag steps; the
+              named points below are tappable shortcuts + native ticks. */}
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            list="sell-percent-points"
+            value={sellPercent}
+            onChange={(e) => applySellPercent(Number(e.target.value))}
+            aria-label="درصد فروش از دارایی"
+            dir="ltr"
+            className="h-6 w-full cursor-pointer accent-brand"
+          />
+          <datalist id="sell-percent-points">
+            {SELL_PERCENT_POINTS.map((p) => (
+              <option key={p} value={p} />
+            ))}
+          </datalist>
+          <div dir="ltr" className="relative h-5">
+            {SELL_PERCENT_POINTS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => applySellPercent(p)}
+                style={{ left: `${p}%` }}
+                className={cn(
+                  "absolute top-0 px-1 text-[11px] transition-colors",
+                  p === 100 ? "-translate-x-full" : "-translate-x-1/2",
+                  sellPercent === p
+                    ? "font-bold text-brand"
+                    : "text-placeholder hover:text-muted",
+                )}
+              >
+                ٪{toPersianDigits(p)}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <Keypad
         decimal={unit === "coin"}
