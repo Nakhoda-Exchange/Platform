@@ -18,6 +18,7 @@ import {
 import { SVGRenderer } from "echarts/renderers";
 import type { ComposeOption } from "echarts/core";
 import { formatJalaliDay, formatTimeFa } from "@/lib/utils/jalali";
+import { readTones, subscribeToTheme, type Tones } from "./chart-theme";
 import { cn } from "@/lib/utils/cn";
 
 echarts.use([LineChart, GridComponent, TooltipComponent, SVGRenderer]);
@@ -48,41 +49,6 @@ export interface ChartRangeDef {
 const LIVE_TICK_MS = 1_600;
 const LIVE_STEP = 0.003; // per-tick nudge, ±0.3%
 const LIVE_MAX_DRIFT = 0.015; // hard leash, ±1.5% of the real value
-
-/** Concrete colors for ECharts — it can't consume `var(--x)` strings. */
-interface Tones {
-  brand: string;
-  brandSoft: string;
-  muted: string;
-  paper: string;
-  gain: string;
-  loss: string;
-}
-
-function readTones(): Tones {
-  const style = getComputedStyle(document.documentElement);
-  return {
-    brand: style.getPropertyValue("--color-brand").trim() || "#0023fb",
-    brandSoft:
-      style.getPropertyValue("--color-brand-soft").trim() ||
-      "rgba(0,35,251,0.05)",
-    muted: style.getPropertyValue("--color-muted").trim() || "#696969",
-    paper: style.getPropertyValue("--color-paper").trim() || "#ffffff",
-    gain: style.getPropertyValue("--color-gain").trim() || "#15803d",
-    loss: style.getPropertyValue("--color-loss").trim() || "#b91c1c",
-  };
-}
-
-// The root `.dark` class flips tokens (account picker or OS theme); watching
-// it as an external store re-renders the chart with freshly read tones.
-function subscribeToTheme(onChange: () => void): () => void {
-  const observer = new MutationObserver(onChange);
-  observer.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["class"],
-  });
-  return () => observer.disconnect();
-}
 
 /**
  * Event points wear a marker dot — gain green for value in, loss red for

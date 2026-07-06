@@ -3,10 +3,14 @@ import type { Coin } from "@/lib/core/domain/market/coin";
 import type {
   ChartRange,
   CoinDetail,
+  Candle,
   PricePoint,
 } from "@/lib/core/domain/market/coin-detail";
 import { ok, type Result } from "@/lib/core/domain/shared/result";
-import { seededSeries } from "@/lib/infrastructure/shared/seeded-series";
+import {
+  seededSeries,
+  toCandles,
+} from "@/lib/infrastructure/shared/seeded-series";
 
 function delay(ms = 400): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -207,6 +211,25 @@ export class MockMarketRepository implements MarketRepository {
         1_314_900_000, // ~15.2 days: 24 points spanning a year
       ),
     };
+    // Candles: the same walks at 4× resolution, bucketed into OHLC — the
+    // last close pins to the live price like the line series does.
+    const toRangeCandles = (
+      rangeSeed: number,
+      count: number,
+      drift: number,
+      stepMs: number,
+    ): Candle[] =>
+      toCandles(
+        seededSeries(rangeSeed, count * 4, coin.priceIrt, drift),
+        4,
+      ).map((c, i) => ({ at: end - (count - 1 - i) * stepMs, ...c }));
+    const candles: Record<ChartRange, Candle[]> = {
+      "24h": toRangeCandles(seed + 1, 24, d, 3_600_000),
+      "7d": toRangeCandles(seed + 7, 28, d * 1.8, 21_600_000),
+      "1m": toRangeCandles(seed + 30, 30, d * 3, 86_400_000),
+      "1y": toRangeCandles(seed + 365, 24, d * 6, 1_314_900_000),
+    };
+
     const prices24 = series["24h"].map((p) => p.priceIrt);
 
     return ok({
@@ -218,6 +241,7 @@ export class MockMarketRepository implements MarketRepository {
         DESCRIPTIONS[coin.id] ??
         `${coin.name} (${coin.symbol}) یکی از رمزارزهای قابل معامله در ناخداست. قیمت لحظه‌ای و نمودار آن را اینجا دنبال کنید.`,
       series,
+      candles,
     });
   }
 }

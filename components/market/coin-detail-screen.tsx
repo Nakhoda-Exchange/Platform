@@ -24,7 +24,7 @@ export function CoinDetailScreen({
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-8 pt-4">
-      <PriceChart coin={coin} series={detail.series} />
+      <PriceChart coin={coin} series={detail.series} candles={detail.candles} />
 
       <CoinStats detail={detail} />
 

@@ -23,7 +23,7 @@ Product context: [`PRD.md`](./PRD.md).
 - UI: `components/market/*` — `MarketScreen` (search + URL sync via
   `lib/utils/url-param.ts` → `history.replaceState`), `AllAssets` (filter
   chips), `CoinRow`, `CoinIcon` (logo w/ letter-badge fallback),
-  `PriceChart` (client range tabs), `CoinStats`, `CoinDetailScreen`.
+  `PriceChart` (client range tabs + area⇄candles toggle; `ui/candle-chart.tsx` renders OHLC from `CoinDetail.candles`), `CoinStats`, `CoinDetailScreen`.
 - Formatting: `lib/utils/money.ts` (IRT/USD/percent/market-cap/coin-amount).
 
 ## Notes
