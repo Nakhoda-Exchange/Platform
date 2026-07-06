@@ -1,9 +1,11 @@
 import Link from "next/link";
 import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
 import { summarizeIndicators } from "@/lib/core/domain/market/indicator-summary";
+import { pastPerformance } from "@/lib/core/domain/market/past-performance";
 import { PriceChart } from "./price-chart";
 import { CoinStats } from "./coin-stats";
 import { IndicatorSummaryCard } from "./indicator-summary-card";
+import { PastPerformanceCard } from "./past-performance-card";
 import { buttonClasses } from "@/components/ui/button";
 
 /**
@@ -31,6 +33,8 @@ export function CoinDetailScreen({
       <IndicatorSummaryCard
         summary={summarizeIndicators(coin.change24h, detail.series)}
       />
+
+      <PastPerformanceCard performance={pastPerformance(detail.series)} />
 
       <CoinStats detail={detail} />
 
