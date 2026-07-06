@@ -20,14 +20,16 @@ export function formatIrt(toman: number): string {
   return `${faNumber(toman)} تومان`;
 }
 
-/** Toman amount → «۱۲٬۴۵۰٬۰۰۰ ت» (short unit; for dense market rows/cards). */
-export function formatIrtShort(toman: number): string {
-  return `${faNumber(toman)} ت`;
-}
+/**
+ * Toman amount for dense rows/cards. Product decision: the «ت» abbreviation
+ * confused people — the unit is always spelled «تومان» now, so this is an
+ * alias kept for the many call sites.
+ */
+export const formatIrtShort = formatIrt;
 
-/** USD amount → «$4,120» (Latin digits, LTR). */
+/** USD amount → «۴٬۱۲۰ دلار» (Persian digits, spelled unit — no $ sign). */
 export function formatUsd(usd: number): string {
-  return `$${usdFormat.format(usd)}`;
+  return `${toPersianDigits(usdFormat.format(usd)).replace(/,/g, "٬").replace(".", "٫")} دلار`;
 }
 
 /** Signed 24h change → Persian percent, unsigned (the caller shows ▲/▼): 3.2 → «۳٫۲٪». */
