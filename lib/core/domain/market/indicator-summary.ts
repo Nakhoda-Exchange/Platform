@@ -2,10 +2,17 @@ import type { ChartRange, PricePoint } from "./coin-detail";
 
 export type IndicatorVerdict = "buy" | "hold" | "sell";
 
+/** One «is it heading up?» check, worded for the explain sheet. */
+export interface IndicatorSignal {
+  label: string; // what it checks, e.g. «قیمت بالاتر از میانگین ۷ روزه»
+  positive: boolean; // true → points up
+}
+
 export interface IndicatorSummary {
   verdict: IndicatorVerdict;
   positives: number; // how many signals point up
   total: number; // how many signals were counted
+  signals: IndicatorSignal[]; // each check, for the explain sheet
 }
 
 const mean = (points: PricePoint[]): number =>
@@ -33,22 +40,29 @@ export function summarizeIndicators(
   const week = series["7d"];
   const month = series["1m"];
   if (day.length < 2 || week.length < 2 || month.length < 2) {
-    return { verdict: "hold", positives: 0, total: 0 };
+    return { verdict: "hold", positives: 0, total: 0, signals: [] };
   }
 
   const price = day[day.length - 1].priceIrt;
-  const signals = [
-    change24h >= 0,
-    price >= mean(week),
-    price >= mean(month),
-    week[week.length - 1].priceIrt >= week[0].priceIrt,
-    month[month.length - 1].priceIrt >= month[0].priceIrt,
+  const signals: IndicatorSignal[] = [
+    { label: "رشد قیمت در ۲۴ ساعت گذشته", positive: change24h >= 0 },
+    { label: "قیمت بالاتر از میانگین ۷ روزه", positive: price >= mean(week) },
+    { label: "قیمت بالاتر از میانگین ۱ ماهه", positive: price >= mean(month) },
+    {
+      label: "پایان هفته بالاتر از ابتدای آن",
+      positive: week[week.length - 1].priceIrt >= week[0].priceIrt,
+    },
+    {
+      label: "پایان ماه بالاتر از ابتدای آن",
+      positive: month[month.length - 1].priceIrt >= month[0].priceIrt,
+    },
   ];
-  const positives = signals.filter(Boolean).length;
+  const positives = signals.filter((s) => s.positive).length;
 
   return {
     verdict: positives >= 4 ? "buy" : positives <= 1 ? "sell" : "hold",
     positives,
     total: signals.length,
+    signals,
   };
 }

@@ -15,7 +15,7 @@ export function TrendingList({
   return (
     <section className="flex flex-col gap-2">
       <SectionHeader title="پرطرفدارها" icon={<FlameIcon size={18} />} />
-      <ul className="flex flex-col divide-y divide-line">
+      <ul className="-mx-4 flex flex-col divide-y divide-line">
         {coins.map((coin) => (
           <li key={coin.id}>
             <CoinRow coin={coin} canSell={heldIds.includes(coin.id)} />

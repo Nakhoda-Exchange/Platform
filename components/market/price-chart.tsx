@@ -129,7 +129,7 @@ export function PriceChart({
             aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
             className={cn("font-bold", up ? "text-gain" : "text-loss")}
           >
-            {up ? "▲" : "▼"} {formatChangePercent(coin.change24h)}
+            {formatChangePercent(coin.change24h)}
           </span>
         </span>
       }

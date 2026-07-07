@@ -27,6 +27,9 @@ const usdFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 
 /** Persian grouped number; small fractional prices (memecoins) keep 2 decimals. */
 function faNumber(toman: number): string {
+  // Never render "NaN"/"∞" to a user — a non-finite amount (a bad mock state,
+  // a divide-by-zero upstream) formats as zero.
+  if (!Number.isFinite(toman)) toman = 0;
   if (
     Math.abs(toman) > 0 &&
     Math.abs(toman) < 1000 &&
@@ -57,8 +60,9 @@ export function formatUsd(usd: number): string {
   return unitFirst(unit("usd"), number);
 }
 
-/** Signed 24h change → Persian percent, unsigned (the caller shows ▲/▼): 3.2 → «۳٫۲٪». */
+/** Change → Persian percent, unsigned magnitude (caller shows +/− and color): 3.2 → «۳٫۲٪». */
 export function formatChangePercent(change: number): string {
+  if (!Number.isFinite(change)) change = 0;
   return `${toPersianDigits(Math.abs(change).toFixed(1)).replace(".", "٫")}٪`;
 }
 

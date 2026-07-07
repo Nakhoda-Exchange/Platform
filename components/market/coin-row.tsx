@@ -182,7 +182,7 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
           onClick={(e) => {
             if (dragged.current) e.preventDefault();
           }}
-          className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-3 transition-colors hover:bg-surface"
+          className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3 transition-colors hover:bg-surface"
         >
           {/* Right (RTL start): identity */}
           <div className="flex items-center gap-3">
@@ -204,7 +204,7 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
               up ? "text-gain" : "text-loss",
             )}
           >
-            {up ? "▲" : "▼"} {formatChangePercent(coin.change24h)}
+            {formatChangePercent(coin.change24h)}
           </span>
 
           {/* Left (RTL end): Toman price with the dollar price under it */}

@@ -22,8 +22,12 @@ export function TopGainers({ coins }: { coins: Coin[] }) {
             <span className="text-[13px] font-bold text-ink">
               {coin.symbol}
             </span>
-            <span dir="ltr" className="text-[12px] font-bold text-gain">
-              ▲ {formatChangePercent(coin.change24h)}
+            <span
+              dir="ltr"
+              aria-label={`رشد ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
+              className="text-[12px] font-bold text-gain"
+            >
+              {formatChangePercent(coin.change24h)}
             </span>
           </Link>
         ))}

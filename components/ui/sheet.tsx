@@ -27,6 +27,7 @@ export function Sheet({
   title,
   children,
   panelClassName,
+  manageBack = true,
 }: {
   open: boolean;
   onClose: () => void;
@@ -34,6 +35,12 @@ export function Sheet({
   children: ReactNode;
   /** Extra classes for the panel, e.g. a fixed height like `h-[90vh]`. */
   panelClassName?: string;
+  /**
+   * Whether the back gesture closes the sheet (default). Turn off when the
+   * opener drives its own navigation on close (e.g. the trade confirm sheet
+   * that redirects on success), so the two don't fight over history.
+   */
+  manageBack?: boolean;
 }) {
   const [mounted, setMounted] = useState(false);
   const [shown, setShown] = useState(false); // drives the slide in/out
@@ -86,7 +93,7 @@ export function Sheet({
   // closed via the UI (backdrop/drag/Esc), unwind our entry with history.back()
   // so no phantom entry is left behind.
   useEffect(() => {
-    if (!open) return;
+    if (!open || !manageBack) return;
     poppedRef.current = false;
     if (!pushedRef.current) {
       window.history.pushState({ nakhodaSheet: true }, "");
@@ -105,7 +112,7 @@ export function Sheet({
         window.history.back();
       }
     };
-  }, [open, onClose]);
+  }, [open, manageBack, onClose]);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     draggingRef.current = true;
