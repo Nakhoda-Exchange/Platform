@@ -118,6 +118,68 @@ body {
 }
 
 /*
+ * Designed range input (the sell-percent slider). A native range looks raw and
+ * differs per engine, so we style all three: a rounded surface track with a
+ * brand fill up to the thumb, and a brand thumb ringed in the page colour.
+ * WebKit/Blink have no track-progress pseudo, so their fill is a gradient
+ * driven by the inline `--pct` var; Firefox uses ::-moz-range-progress.
+ */
+input[type="range"].range-brand {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 1.5rem;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"].range-brand::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--color-brand) var(--pct, 0%),
+    var(--color-surface) var(--pct, 0%)
+  );
+}
+input[type="range"].range-brand::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-surface);
+}
+input[type="range"].range-brand::-moz-range-progress {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-brand);
+}
+input[type="range"].range-brand::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -0.3125rem; /* centre the 1.125rem thumb on the 0.5rem track */
+  height: 1.125rem;
+  width: 1.125rem;
+  border-radius: 9999px;
+  background: var(--color-brand);
+  border: 2px solid var(--color-paper);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+}
+input[type="range"].range-brand::-moz-range-thumb {
+  height: 1.125rem;
+  width: 1.125rem;
+  border: 2px solid var(--color-paper);
+  border-radius: 9999px;
+  background: var(--color-brand);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+}
+input[type="range"].range-brand:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+input[type="range"].range-brand:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/*
  * Branded splash — shown on load (web + PWA), faded out once SplashHider adds
  * `splash-done` to <html>. Brand background matches the manifest splash.
  */
