@@ -189,19 +189,19 @@ export function IrtDepositForm({
         error={belowMin ? "کمینه واریز ۱۰۰٬۰۰۰ تومان است." : error}
       />
 
+      {/* Additive top-up chips: each tap bumps the amount, so they stack. */}
       <div className="flex gap-2">
         {QUICK_AMOUNTS.map((q) => (
           <button
             key={q}
             type="button"
-            onClick={() => setDigits(String(q))}
-            className={cn(
-              "h-10 flex-1 rounded-full text-[13px] font-bold transition-colors",
-              amount === q
-                ? "bg-brand text-white"
-                : "bg-surface text-muted hover:text-ink",
-            )}
+            onClick={() => setDigits(String(amount + q))}
+            aria-label={`افزودن ${formatIrt(q)}`}
+            className="flex h-10 flex-1 items-center justify-center gap-1 rounded-full bg-surface text-[13px] font-bold text-muted transition-colors hover:text-ink"
           >
+            <span aria-hidden className="text-brand">
+              +
+            </span>
             {formatIrt(q)}
           </button>
         ))}

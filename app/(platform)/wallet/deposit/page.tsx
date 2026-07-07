@@ -20,6 +20,13 @@ export default async function DepositPage({
   const crypto = method === "crypto";
   const coinId = coin ?? "btc";
 
+  // A zero Toman balance means this is a first/fresh deposit — both tabs greet
+  // the user instead of dropping them into a bare form.
+  const portfolio = await container
+    .resolve(TOKENS.GetPortfolioUseCase)
+    .execute();
+  const firstDeposit = !portfolio.ok || portfolio.data.availableIrt <= 0;
+
   const tab = (selected: boolean) =>
     cn(
       "flex h-11 flex-1 items-center justify-center rounded-full text-[15px] font-bold transition-colors",
@@ -41,20 +48,18 @@ export default async function DepositPage({
         </Link>
       </nav>
 
-      {crypto ? <CryptoDeposit coinId={coinId} /> : <IrtDeposit />}
+      {crypto ? (
+        <CryptoDeposit coinId={coinId} firstDeposit={firstDeposit} />
+      ) : (
+        <IrtDeposit firstDeposit={firstDeposit} />
+      )}
     </div>
   );
 }
 
 /** Server wrapper: the user's saved cards feed the client flow. */
-async function IrtDeposit() {
-  const [cards, portfolio] = await Promise.all([
-    container.resolve(TOKENS.ManageCardsUseCase).list(),
-    container.resolve(TOKENS.GetPortfolioUseCase).execute(),
-  ]);
-  // A zero Toman balance means this is the user's first (or a fresh) deposit —
-  // greet them with a short reassurance instead of a bare form.
-  const firstDeposit = !portfolio.ok || portfolio.data.availableIrt <= 0;
+async function IrtDeposit({ firstDeposit }: { firstDeposit: boolean }) {
+  const cards = await container.resolve(TOKENS.ManageCardsUseCase).list();
   return (
     <IrtDepositForm
       initialCards={cards.ok ? cards.data : []}
@@ -64,7 +69,13 @@ async function IrtDeposit() {
 }
 
 /** Coin picker chips + the selected coin's address/QR. */
-async function CryptoDeposit({ coinId }: { coinId: string }) {
+async function CryptoDeposit({
+  coinId,
+  firstDeposit,
+}: {
+  coinId: string;
+  firstDeposit: boolean;
+}) {
   const result = await container
     .resolve(TOKENS.GetDepositAddressUseCase)
     .execute(coinId);
@@ -83,6 +94,18 @@ async function CryptoDeposit({ coinId }: { coinId: string }) {
 
   return (
     <div className="flex flex-col gap-5">
+      {firstDeposit ? (
+        <div className="flex flex-col gap-1.5 rounded-card bg-brand/5 p-4">
+          <span className="text-[15px] font-bold text-ink">
+            اولین واریز رمزارز
+          </span>
+          <p className="text-[13px] leading-[1.9] text-muted">
+            این آدرس مخصوص حساب توست و ثابت می‌ماند. رمزارز را روی شبکهٔ درست
+            بفرست تا پس از تأیید شبکه به موجودی‌ات اضافه شود.
+          </p>
+        </div>
+      ) : null}
+
       <nav aria-label="انتخاب رمزارز" className="flex gap-2 overflow-x-auto">
         {list.map((c) => (
           <Link

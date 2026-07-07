@@ -1,13 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 import type { BankCard } from "@/lib/core/domain/wallet/bank-card";
 import { MIN_WITHDRAW_IRT } from "@/lib/core/domain/wallet/withdraw";
 import { requestIrtWithdraw } from "@/app/actions/withdraw";
-import { Button, buttonClasses } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { WalletIcon } from "@/components/ui/icons";
 import { CardPicker } from "./card-picker";
+import { WalletEmpty } from "./wallet-empty";
 import { WithdrawResult } from "./withdraw-result";
 import { toEnglishDigits, toPersianDigits } from "@/lib/utils/digits";
 import { formatIrt } from "@/lib/utils/money";
@@ -45,15 +46,12 @@ export function IrtWithdrawForm({
   // where the user is actually trying to withdraw it.
   if (availableIrt <= 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="max-w-[300px] text-[15px] leading-[1.9] text-muted">
-          موجودی تومانی برای برداشت ندارید. برای برداشت تومان، ابتدا دارایی‌های
-          خود را بفروشید.
-        </p>
-        <Link href="/market" className={buttonClasses({ size: "lg" })}>
-          فروش دارایی‌ها
-        </Link>
-      </div>
+      <WalletEmpty
+        icon={<WalletIcon size={30} />}
+        title="موجودی تومانی برای برداشت نداری"
+        message="برای برداشت تومان، اول باید دارایی‌هایت را بفروشی تا به موجودی تومانی تبدیل شود."
+        cta={{ href: "/market", label: "فروش دارایی‌ها" }}
+      />
     );
   }
 
