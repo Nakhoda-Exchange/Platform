@@ -19,7 +19,7 @@ const ACTIONS: {
 }[] = [
   { href: "/wallet/deposit", label: "واریز", Icon: ArrowDownIcon },
   { href: "/wallet/withdraw", label: "برداشت", Icon: ArrowUpIcon },
-  { href: "/market", label: "خرید/فروش", Icon: CoinsIcon },
+  { href: "/market", label: "خرید", Icon: CoinsIcon },
   { href: "/wallet/history", label: "تاریخچه", Icon: ClockIcon },
 ];
 

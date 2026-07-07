@@ -10,6 +10,7 @@ import {
   formatIrtShort,
   formatUsd,
 } from "@/lib/utils/money";
+import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 
 // Swipe geometry: the row follows the finger up to MAX_PULL, and releasing
@@ -23,11 +24,11 @@ const ENGAGE_AT = 8; // px of movement before we commit to a direction
  * symbol) on the right, the 24h change centered, the Toman price on the
  * left. Tapping opens the coin detail page.
  *
- * Quick actions by swipe: sliding the row to the RIGHT reveals «خرید» and
- * releasing opens the buy screen; sliding LEFT opens the sell screen when
- * the user holds the coin, otherwise the coin page («جزئیات»). Vertical
- * panning stays with the browser (touch-action: pan-y); a horizontal drag
- * suppresses the row's own tap navigation.
+ * A visible «خرید» button makes buying discoverable without the gesture (the
+ * audit flagged buy/sell as hidden). Swipe stays as a shortcut: sliding RIGHT
+ * opens buy, sliding LEFT opens sell when the user holds the coin, otherwise
+ * the coin page («جزئیات»). Vertical panning stays with the browser
+ * (touch-action: pan-y); a horizontal drag suppresses tap navigation.
  */
 export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
   const router = useRouter();
@@ -116,7 +117,7 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
         onPointerCancel={onPointerEnd}
         style={{ transform: `translateX(${dx}px)` }}
         className={cn(
-          "relative touch-pan-y bg-paper",
+          "relative flex items-center gap-2 bg-paper touch-pan-y",
           !dragging && "transition-transform duration-200",
         )}
       >
@@ -126,7 +127,7 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
           onClick={(e) => {
             if (dragged.current) e.preventDefault();
           }}
-          className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-3 transition-colors hover:bg-surface"
+          className="grid flex-1 grid-cols-[1fr_auto_1fr] items-center gap-2 py-3 transition-colors hover:bg-surface"
         >
           {/* Right (RTL start): identity */}
           <div className="flex items-center gap-3">
@@ -160,6 +161,23 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
               {formatUsd(coin.priceUsd)}
             </span>
           </div>
+        </Link>
+
+        {/* Always-visible buy CTA (a swipe still works as a shortcut). Guarded
+            so a horizontal drag that ends over the button doesn't navigate. */}
+        <Link
+          href={buyHref}
+          draggable={false}
+          aria-label={`خرید ${coin.name}`}
+          onClick={(e) => {
+            if (dragged.current) e.preventDefault();
+          }}
+          className={buttonClasses({
+            size: "sm",
+            className: "shrink-0",
+          })}
+        >
+          خرید
         </Link>
       </div>
     </div>
