@@ -78,6 +78,18 @@ html {
   scroll-behavior: smooth;
 }
 
+/* One-shot celebration confetti (first trade). Pieces fall + spin, then fade. */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10vh) rotate(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
 /*
  * App-like, mobile-first: scrolling stays, scrollbars don't — neither the page
  * (y) nor the horizontal strips (x). Mobile already hides them; this makes

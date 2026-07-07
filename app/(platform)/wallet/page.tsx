@@ -5,14 +5,20 @@ import { TOKENS } from "@/lib/di/tokens";
 import { PortfolioSummary } from "@/components/portfolio/portfolio-summary";
 import { HoldingListItem } from "@/components/portfolio/holding-list-item";
 import { PortfolioEmpty } from "@/components/portfolio/portfolio-empty";
+import { TradePendingToast } from "@/components/portfolio/trade-pending-toast";
 import { buttonClasses } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "دارایی | ناخدا",
 };
 
-export default async function WalletPage() {
-  const [result, historyResult] = await Promise.all([
+export default async function WalletPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ traded?: string }>;
+}) {
+  const [{ traded }, result, historyResult] = await Promise.all([
+    searchParams,
     container.resolve(TOKENS.GetPortfolioUseCase).execute(),
     container.resolve(TOKENS.GetPortfolioHistoryUseCase).execute(),
   ]);
@@ -41,6 +47,7 @@ export default async function WalletPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-6 pt-4">
+      {traded ? <TradePendingToast /> : null}
       <PortfolioSummary
         portfolio={portfolio}
         history={historyResult.ok ? historyResult.data : null}

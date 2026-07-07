@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState, type CSSProperties } from "react";
 import {
   FEE_RATE,
   MIN_ORDER_IRT,
@@ -12,6 +13,8 @@ import { placeTradeOrder } from "@/app/actions/trade";
 import type { TradeFormState } from "@/app/actions/trade-state";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { CheckCircleIcon } from "@/components/ui/icons";
+import { Sheet } from "@/components/ui/sheet";
+import { Confetti } from "@/components/ui/confetti";
 import { LivePriceChip } from "./live-price-chip";
 import { Keypad } from "./keypad";
 import { toPersianDigits } from "@/lib/utils/digits";
@@ -28,6 +31,11 @@ const SIDE_LABEL: Record<TradeSide, string> = { buy: "خرید", sell: "فروش
 
 /** Tappable slider shortcuts (also the native tick marks). */
 const SELL_PERCENT_POINTS = [10, 25, 50, 75, 100] as const;
+
+/** How long the confirm sheet stays valid before it auto-closes. */
+const CONFIRM_SECONDS = 30;
+/** Per-device flag: the first trade earns the confetti welcome, once. */
+const FIRST_TRADE_KEY = "nakhoda_has_traded";
 
 /**
  * Trade screen (Moonshot-style): side toggle, Toman amount entered on a
@@ -52,10 +60,41 @@ export function TradeScreen({
   const [unit, setUnit] = useState<"irt" | "coin">("irt");
   const [digits, setDigits] = useState("");
   const [confirming, setConfirming] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(CONFIRM_SECONDS);
+  const [celebrate, setCelebrate] = useState(false);
+  const router = useRouter();
   const [state, formAction, pending] = useActionState<TradeFormState, FormData>(
     placeTradeOrder,
     { status: "idle" },
   );
+
+  // The confirm sheet is only valid for a short window; tick it down while open
+  // (paused during submission) and auto-close when it runs out.
+  useEffect(() => {
+    if (!confirming || pending || secondsLeft <= 0) return;
+    const id = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
+    return () => clearTimeout(id);
+  }, [confirming, pending, secondsLeft]);
+
+  useEffect(() => {
+    if (confirming && !pending && secondsLeft <= 0) {
+      const id = requestAnimationFrame(() => setConfirming(false));
+      return () => cancelAnimationFrame(id);
+    }
+  }, [confirming, pending, secondsLeft]);
+
+  // On a completed order: the very first trade on this device earns confetti +
+  // a welcome; every later trade just returns to the wallet, «در حال انجام».
+  useEffect(() => {
+    if (state.status !== "success") return;
+    const first = !localStorage.getItem(FIRST_TRADE_KEY);
+    if (first) {
+      localStorage.setItem(FIRST_TRADE_KEY, "1");
+      const id = requestAnimationFrame(() => setCelebrate(true));
+      return () => cancelAnimationFrame(id);
+    }
+    router.replace("/wallet?traded=1");
+  }, [state.status, router]);
 
   const entered = Number(digits || "0");
   // Coin entry converts to Toman at the current price; the order (and every
@@ -109,94 +148,52 @@ export function TradeScreen({
   const valid = amountIrt >= MIN_ORDER_IRT && amountIrt <= maxIrt;
 
   if (state.status === "success") {
+    // Non-first trade: the effect above is redirecting to the wallet.
+    if (!celebrate) {
+      return (
+        <div className="flex flex-1 items-center justify-center p-6 text-center">
+          <p className="text-[15px] text-muted">در حال انتقال به دارایی‌ها…</p>
+        </div>
+      );
+    }
     const o = state.order;
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 pb-8 text-center">
-        <CheckCircleIcon size={64} className="text-brand" />
-        <div className="flex flex-col gap-2">
-          <h1 className="text-[22px] font-extrabold text-ink">
-            {SIDE_LABEL[o.side]} شما انجام شد
-          </h1>
-          <p className="text-[16px] leading-7 text-muted">
-            {formatCoinAmount(roundCoin(o.amountCoin))} {o.symbol} به ارزش{" "}
-            {formatIrt(o.totalIrt)}
-          </p>
+      <>
+        <Confetti />
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 pb-8 text-center">
+          <CheckCircleIcon size={64} className="text-brand" />
+          <div className="flex flex-col gap-2">
+            <h1 className="text-[22px] font-extrabold text-ink">
+              اولین معامله انجام شد
+            </h1>
+            <p className="text-[17px] font-bold text-brand">
+              خوش آمدید، ناخدای جوان
+            </p>
+            <p className="text-[15px] leading-7 text-muted">
+              {formatCoinAmount(roundCoin(o.amountCoin))} {o.symbol} به ارزش{" "}
+              {formatIrt(o.totalIrt)}
+            </p>
+          </div>
+          <div className="flex w-full max-w-[360px] flex-col gap-3">
+            <Link
+              href="/wallet"
+              className={buttonClasses({ size: "lg", fullWidth: true })}
+            >
+              مشاهده دارایی‌ها
+            </Link>
+            <Link
+              href="/market"
+              className={buttonClasses({
+                variant: "ghost",
+                size: "lg",
+                fullWidth: true,
+              })}
+            >
+              بازگشت به بازار
+            </Link>
+          </div>
         </div>
-        <div className="flex w-full max-w-[360px] flex-col gap-3">
-          <Link
-            href="/wallet"
-            className={buttonClasses({ size: "lg", fullWidth: true })}
-          >
-            مشاهده دارایی‌ها
-          </Link>
-          <Link
-            href="/market"
-            className={buttonClasses({
-              variant: "ghost",
-              size: "lg",
-              fullWidth: true,
-            })}
-          >
-            بازگشت به بازار
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (confirming) {
-    return (
-      <form
-        action={formAction}
-        className="flex flex-1 flex-col gap-6 px-4 pb-8 pt-4"
-      >
-        <input type="hidden" name="coinId" value={coin.id} />
-        <input type="hidden" name="side" value={side} />
-        <input type="hidden" name="amountIrt" value={amountIrt} />
-
-        <h1 className="text-[18px] font-extrabold text-ink">
-          تأیید {SIDE_LABEL[side]} {coin.name}
-        </h1>
-
-        <dl className="flex flex-col divide-y divide-line rounded-card border border-line">
-          {[
-            ["نوع سفارش", `${SIDE_LABEL[side]} بازار`],
-            ["مقدار", `${formatCoinAmount(amountCoin)} ${coin.symbol}`],
-            ["قیمت واحد", formatIrt(coin.priceIrt)],
-            ["کارمزد (٪۰٫۳۵)", formatIrt(feeIrt)],
-            side === "sell"
-              ? ["دریافتی خالص", formatIrt(amountIrt - feeIrt)]
-              : ["مجموع پرداختی", formatIrt(amountIrt)],
-          ].map(([k, v]) => (
-            <div key={k} className="flex items-center justify-between p-4">
-              <dt className="text-[15px] text-muted">{k}</dt>
-              <dd className="text-[15px] font-bold text-ink">{v}</dd>
-            </div>
-          ))}
-        </dl>
-
-        {state.status === "error" ? (
-          <p role="alert" className="text-[14px] font-bold text-loss">
-            {state.message}
-          </p>
-        ) : null}
-
-        <div className="mt-auto flex flex-col gap-3">
-          <Button type="submit" size="xl" fullWidth disabled={pending}>
-            {pending ? "در حال ثبت سفارش…" : `تأیید ${SIDE_LABEL[side]}`}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="lg"
-            fullWidth
-            disabled={pending}
-            onClick={() => setConfirming(false)}
-          >
-            ویرایش سفارش
-          </Button>
-        </div>
-      </form>
+      </>
     );
   }
 
@@ -407,11 +404,72 @@ export function TradeScreen({
           size="xl"
           fullWidth
           disabled={!valid}
-          onClick={() => setConfirming(true)}
+          onClick={() => {
+            setSecondsLeft(CONFIRM_SECONDS);
+            setConfirming(true);
+          }}
         >
           ادامه
         </Button>
       )}
+
+      {/* Confirm as a bottom sheet (no page change); valid for CONFIRM_SECONDS
+          then it auto-closes. */}
+      <Sheet
+        open={confirming}
+        onClose={() => setConfirming(false)}
+        title={`تأیید ${SIDE_LABEL[side]} ${coin.name}`}
+        manageBack={false}
+      >
+        <form action={formAction} className="flex flex-col gap-4">
+          <input type="hidden" name="coinId" value={coin.id} />
+          <input type="hidden" name="side" value={side} />
+          <input type="hidden" name="amountIrt" value={amountIrt} />
+
+          <dl className="flex flex-col divide-y divide-line rounded-card border border-line">
+            {[
+              ["نوع سفارش", `${SIDE_LABEL[side]} بازار`],
+              ["مقدار", `${formatCoinAmount(amountCoin)} ${coin.symbol}`],
+              ["قیمت واحد", formatIrt(coin.priceIrt)],
+              ["کارمزد (٪۰٫۳۵)", formatIrt(feeIrt)],
+              side === "sell"
+                ? ["دریافتی خالص", formatIrt(amountIrt - feeIrt)]
+                : ["مجموع پرداختی", formatIrt(amountIrt)],
+            ].map(([k, v]) => (
+              <div key={k} className="flex items-center justify-between p-4">
+                <dt className="text-[15px] text-muted">{k}</dt>
+                <dd className="text-[15px] font-bold text-ink">{v}</dd>
+              </div>
+            ))}
+          </dl>
+
+          {state.status === "error" ? (
+            <p role="alert" className="text-[14px] font-bold text-loss">
+              {state.message}
+            </p>
+          ) : null}
+
+          <p className="text-center text-[12px] text-placeholder">
+            این تأیید تا {toPersianDigits(secondsLeft)} ثانیه دیگر معتبر است
+          </p>
+
+          <div className="flex flex-col gap-2">
+            <Button type="submit" size="xl" fullWidth disabled={pending}>
+              {pending ? "در حال ثبت سفارش…" : `تأیید ${SIDE_LABEL[side]}`}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="lg"
+              fullWidth
+              disabled={pending}
+              onClick={() => setConfirming(false)}
+            >
+              ویرایش سفارش
+            </Button>
+          </div>
+        </form>
+      </Sheet>
     </div>
   );
 }
