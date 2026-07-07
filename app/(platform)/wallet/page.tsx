@@ -6,6 +6,7 @@ import { PortfolioSummary } from "@/components/portfolio/portfolio-summary";
 import { HoldingListItem } from "@/components/portfolio/holding-list-item";
 import { PortfolioEmpty } from "@/components/portfolio/portfolio-empty";
 import { TradePendingToast } from "@/components/portfolio/trade-pending-toast";
+import { LoadError } from "@/components/ui/load-error";
 import { buttonClasses } from "@/components/ui/button";
 
 export const metadata: Metadata = {
@@ -24,13 +25,7 @@ export default async function WalletPage({
   ]);
 
   if (!result.ok) {
-    return (
-      <div className="flex flex-1 items-center justify-center p-6 text-center">
-        <p className="text-[15px] text-muted">
-          بارگذاری دارایی‌ها ناموفق بود. دوباره تلاش کنید.
-        </p>
-      </div>
-    );
+    return <LoadError message="بارگذاری دارایی‌ها ناموفق بود." />;
   }
 
   const portfolio = result.data;

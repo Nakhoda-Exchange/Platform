@@ -30,7 +30,7 @@ const WITHDRAW: Action = {
   label: "برداشت",
   Icon: ArrowUpIcon,
 };
-const BUY: Action = { href: "/market", label: "خرید/فروش", Icon: CoinsIcon };
+const BUY: Action = { href: "/market", label: "خرید", Icon: CoinsIcon };
 const HISTORY: Action = {
   href: "/wallet/history",
   label: "تاریخچه",

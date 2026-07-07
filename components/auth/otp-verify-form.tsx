@@ -9,17 +9,13 @@ import { OtpInput } from "./otp-input";
 import { ResendTimer } from "./resend-timer";
 
 interface OtpVerifyFormProps {
-  cid: string;
   phone: string;
-  nextPath?: string;
   length?: number;
   resendSeconds?: number;
 }
 
 export function OtpVerifyForm({
-  cid,
   phone,
-  nextPath,
   length = 6,
   resendSeconds = 120,
 }: OtpVerifyFormProps) {
@@ -56,9 +52,8 @@ export function OtpVerifyForm({
         <ResendTimer seconds={resendSeconds} phone={phone} />
       </div>
 
-      <input type="hidden" name="cid" value={cid} />
-      <input type="hidden" name="phone" value={phone} />
-      {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
+      {/* The OTP challenge id + next path live in the httpOnly login cookie —
+          verifyLogin reads them server-side, so the form posts only the code. */}
 
       <div className="flex w-full flex-col items-center gap-4">
         <Button
