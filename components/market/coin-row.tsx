@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils/cn";
 // scale in — so the gesture always previews what it will do, and firms up
 // ("armed") once you've pulled far enough to commit.
 const ENGAGE_AT = 10; // px of travel before we lock to a horizontal drag
+const REVEAL_AT = 44; // px by which the label is fully faded in (readable early)
 const COMMIT_AT = 96; // px past which releasing triggers the action
 const MAX_PULL = 132; // soft cap; further travel gets rubber-band resistance
 
@@ -111,22 +112,30 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
   const trailLabel = canSell ? "فروش" : "جزئیات";
   const TrailIcon = canSell ? WalletIcon : ChevronLeftIcon;
 
-  // Icon+label transform: scale in with progress, then a firm pop when armed.
-  const buyScale = buyArmed ? 1.14 : 0.7 + 0.3 * buyProgress;
-  const trailScale = trailArmed ? 1.14 : 0.7 + 0.3 * trailProgress;
+  // Label opacity fills in by REVEAL_AT so it's readable on a slight swipe;
+  // the icon+label scale in with progress, then firm up with a pop when armed.
+  const buyReveal = dx > 0 ? Math.min(dx / REVEAL_AT, 1) : 0;
+  const trailReveal = dx < 0 ? Math.min(-dx / REVEAL_AT, 1) : 0;
+  const buyScale = buyArmed ? 1.1 : 0.9 + 0.1 * buyProgress;
+  const trailScale = trailArmed ? 1.1 : 0.9 + 0.1 * trailProgress;
 
   return (
     <div className="relative overflow-hidden">
       {/* Action panels behind the row, revealed as it slides. خرید on the
           leading (rightward) edge, فروش/جزئیات on the trailing (leftward)
-          edge. The icon + label are the indicator: they fade and scale in with
-          the pull and firm up once armed. */}
+          edge. dir="ltr" pins each label to the PHYSICAL edge it's revealed
+          from (RTL would push it toward the center, out of the swipe's reach),
+          so even a small pull shows a readable icon + label — the indicator —
+          which firms up with a pop once armed. */}
       <div aria-hidden className="absolute inset-0">
-        <div className="absolute inset-y-0 left-0 flex w-40 items-center justify-start bg-gain pl-5 text-white">
+        <div
+          dir="ltr"
+          className="absolute inset-y-0 left-0 flex w-40 items-center justify-start bg-gain pl-4 text-white"
+        >
           <span
             className="flex items-center gap-1.5 text-[14px] font-bold"
             style={{
-              opacity: Math.min(buyProgress * 1.4, 1),
+              opacity: buyReveal,
               transform: `scale(${buyScale})`,
               transition: dragging ? undefined : FADE,
             }}
@@ -136,15 +145,16 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
           </span>
         </div>
         <div
+          dir="ltr"
           className={cn(
-            "absolute inset-y-0 right-0 flex w-40 items-center justify-end pr-5",
+            "absolute inset-y-0 right-0 flex w-40 items-center justify-end pr-4",
             canSell ? "bg-loss text-white" : "bg-surface text-ink",
           )}
         >
           <span
             className="flex items-center gap-1.5 text-[14px] font-bold"
             style={{
-              opacity: Math.min(trailProgress * 1.4, 1),
+              opacity: trailReveal,
               transform: `scale(${trailScale})`,
               transition: dragging ? undefined : FADE,
             }}
