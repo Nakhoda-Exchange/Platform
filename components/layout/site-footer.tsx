@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/container";
+import { SupportLink } from "@/components/support/support-link";
 import { Logo } from "./logo";
 
 const LINKS = [
-  { href: "#", label: "قوانین" },
-  { href: "#", label: "حریم خصوصی" },
-  { href: "#", label: "پشتیبانی" },
+  { href: "/terms", label: "قوانین" },
+  { href: "/privacy", label: "حریم خصوصی" },
 ];
+
+const linkClass = "text-[14px] transition-colors hover:text-ink";
 
 export function SiteFooter() {
   return (
@@ -21,14 +23,11 @@ export function SiteFooter() {
         {/* end (left) — links */}
         <nav className="flex items-center gap-6 order-1 sm:order-2">
           {LINKS.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="text-[14px] transition-colors hover:text-ink"
-            >
+            <Link key={link.label} href={link.href} className={linkClass}>
               {link.label}
             </Link>
           ))}
+          <SupportLink className={linkClass} />
         </nav>
       </Container>
     </footer>

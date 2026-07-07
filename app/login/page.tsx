@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { PhoneLoginForm } from "@/components/auth/phone-login-form";
+import { SupportLink } from "@/components/support/support-link";
 
 export const metadata: Metadata = {
   title: "ورود به ناخدا",
@@ -24,21 +26,19 @@ export default async function LoginPage({
 
       <p className="text-center text-[13px] leading-[1.8] text-muted">
         با ادامه،{" "}
-        <a href="#" className="font-semibold text-brand">
+        <Link href="/terms" className="font-semibold text-brand">
           قوانین
-        </a>{" "}
+        </Link>{" "}
         و{" "}
-        <a href="#" className="font-semibold text-brand">
+        <Link href="/privacy" className="font-semibold text-brand">
           حریم خصوصی
-        </a>{" "}
+        </Link>{" "}
         ناخدا را می‌پذیرید.
       </p>
 
       <p className="flex items-center justify-center gap-1 pt-5 text-[14px] text-muted">
         <span>مشکلی در ورود دارید؟</span>
-        <a href="#" className="font-bold text-brand">
-          پشتیبانی
-        </a>
+        <SupportLink className="font-bold text-brand" />
       </p>
     </AuthShell>
   );
