@@ -10,6 +10,7 @@ import {
   type IconProps,
 } from "@/components/ui/icons";
 import { PortfolioDetails } from "./portfolio-details";
+import { CashBalanceCard } from "./cash-balance-card";
 import { formatIrt } from "@/lib/utils/money";
 
 const ACTIONS: {
@@ -35,24 +36,47 @@ export function PortfolioSummary({
   portfolio: Portfolio;
   history: PortfolioHistory | null;
 }) {
+  // With no coins, «دارایی کل» IS the cash balance — so the hero becomes the
+  // Toman balance itself (and the separate cash line/profit breakdown, which
+  // only mean something once there are holdings, drop away).
+  const allCash = portfolio.holdingsValueIrt <= 0;
+
   return (
     <section className="flex flex-col gap-5">
       <div className="flex flex-col items-center gap-2">
-        <span className="text-[14px] text-muted">دارایی کل</span>
+        <span className="text-[14px] text-muted">
+          {allCash ? "موجودی تومانی" : "دارایی کل"}
+        </span>
         <span className="text-[32px] font-extrabold text-ink">
           {formatIrt(portfolio.totalIrt)}
         </span>
-        <PortfolioDetails
-          availableIrt={portfolio.availableIrt}
-          holdingsValueIrt={portfolio.holdingsValueIrt}
-          profitIrt={portfolio.profitIrt}
-          profitPercent={portfolio.profitPercent}
-          dayChangeIrt={portfolio.dayChangeIrt}
-          dayChangePercent={portfolio.dayChangePercent}
-          pendingWithdrawIrt={portfolio.pendingWithdrawIrt}
-          history={history}
-        />
+        {allCash ? (
+          portfolio.pendingWithdrawIrt > 0 ? (
+            <span className="text-[13px] text-placeholder">
+              {formatIrt(portfolio.pendingWithdrawIrt)} در حال برداشت
+            </span>
+          ) : null
+        ) : (
+          <PortfolioDetails
+            availableIrt={portfolio.availableIrt}
+            holdingsValueIrt={portfolio.holdingsValueIrt}
+            profitIrt={portfolio.profitIrt}
+            profitPercent={portfolio.profitPercent}
+            dayChangeIrt={portfolio.dayChangeIrt}
+            dayChangePercent={portfolio.dayChangePercent}
+            pendingWithdrawIrt={portfolio.pendingWithdrawIrt}
+            history={history}
+          />
+        )}
       </div>
+
+      {/* Spendable Toman, broken out from the total once coins are in the mix. */}
+      {!allCash ? (
+        <CashBalanceCard
+          availableIrt={portfolio.availableIrt}
+          pendingWithdrawIrt={portfolio.pendingWithdrawIrt}
+        />
+      ) : null}
 
       {/* Icon quick actions (Moonshot-style): circle icon + short label. */}
       <nav
