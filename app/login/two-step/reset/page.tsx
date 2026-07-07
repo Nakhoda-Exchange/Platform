@@ -7,13 +7,9 @@ export const metadata: Metadata = {
   title: "بازنشانی رمز دومرحله‌ای | ناخدا",
 };
 
-export default async function TwoStepLoginResetPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ st?: string }>;
-}) {
-  const { st = "registration" } = await searchParams;
-
+export default function TwoStepLoginResetPage() {
+  // The login status is held in the httpOnly cookie set at the OTP step, so the
+  // return trip to the gate needs no status in the URL.
   return (
     <AuthShell>
       <AuthHeader
@@ -21,7 +17,7 @@ export default async function TwoStepLoginResetPage({
         subtitle="هویت خود را تأیید کنید تا رمز تازه بسازید."
       />
       <ResetTwoStepForm
-        doneHref={`/login/two-step?st=${encodeURIComponent(st)}`}
+        doneHref="/login/two-step"
         doneLabel="ورود با رمز تازه"
       />
     </AuthShell>
