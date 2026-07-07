@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import * as echarts from "echarts/core";
 import { CandlestickChart, type CandlestickSeriesOption } from "echarts/charts";
 import {
@@ -31,22 +37,34 @@ export interface CandleRangeDef {
   showTime?: boolean;
 }
 
+/** Short OHLC labels for the readout above the chart. */
+const OHLC = [
+  { key: "open", label: "باز", tone: "text-ink" },
+  { key: "high", label: "اوج", tone: "text-gain" },
+  { key: "low", label: "کف", tone: "text-loss" },
+  { key: "close", label: "بسته", tone: "" }, // colored by direction
+] as const;
+
 /**
  * PDP candlestick view: OHLC candles in the house tones (gain up / loss
- * down), the same segmented range control as the area chart, and a tap/scrub
- * tooltip naming the candle's moment and its OHLC. Theme-aware like every
- * chart (re-renders on `.dark` flips).
+ * down), the same segmented range control as the area chart. Scrubbing writes
+ * the peeked candle's moment + OHLC into the readout ABOVE the chart (no popup
+ * — like the area chart's headline). Theme-aware (re-renders on `.dark` flips).
  */
 export function CandleChart({
   ranges,
   formatValue,
   ariaLabel,
+  toolbar,
 }: {
   ranges: CandleRangeDef[];
   formatValue: (value: number) => string;
   ariaLabel: string;
+  /** Rendered top-right inside the card (the area⇄candles toggle). */
+  toolbar?: ReactNode;
 }) {
   const [rangeKey, setRangeKey] = useState(ranges[0]?.key ?? "");
+  const [peek, setPeek] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
   const range = ranges.find((r) => r.key === rangeKey) ?? ranges[0];
@@ -66,63 +84,33 @@ export function CandleChart({
 
     const option: Option = {
       animation: false,
-      grid: { left: 4, right: 46, top: 8, bottom: 24 },
+      textStyle: { fontFamily: tones.font },
+      // Full-bleed like the area chart — no axis labels, the readout above
+      // names the moment and prices.
+      grid: { left: 0, right: 0, top: 8, bottom: 8 },
       xAxis: {
         type: "category",
         data: range.candles.map((c) => String(c.at)),
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: {
-          color: tones.muted,
-          fontSize: 10,
-          formatter: (value: string) => {
-            const at = new Date(Number(value));
-            return range.showTime
-              ? formatTimeFa(at)
-              : formatJalaliDay(at).split(" ").slice(0, 2).join(" ");
-          },
-        },
+        axisLabel: { show: false },
       },
       yAxis: {
         type: "value",
         scale: true,
-        position: "right",
-        splitLine: { lineStyle: { color: tones.brandSoft } },
-        axisLabel: {
-          color: tones.muted,
-          fontSize: 10,
-          formatter: (v: number) =>
-            v >= 1_000_000
-              ? `${Math.round(v / 1_000_000)}M`
-              : `${Math.round(v / 1_000)}K`,
-        },
+        axisLine: { show: false },
+        axisLabel: { show: false },
+        splitLine: { show: false },
       },
       tooltip: {
         trigger: "axis",
-        confine: true,
-        backgroundColor: tones.paper,
-        borderColor: tones.brandSoft,
-        textStyle: { color: tones.muted, fontSize: 12 },
-        formatter: (params) => {
-          const p = Array.isArray(params) ? params[0] : params;
-          const candle = range.candles[p.dataIndex as number];
-          if (!candle) return "";
-          const at = new Date(candle.at);
-          const when = range.showTime
-            ? `${formatJalaliDay(at)} — ${formatTimeFa(at)}`
-            : formatJalaliDay(at);
-          const row = (label: string, value: number) =>
-            `<div style="display:flex;justify-content:space-between;gap:12px">` +
-            `<span>${label}</span><b>${formatValue(value)}</b></div>`;
-          return (
-            `<div dir="rtl" style="min-width:190px">` +
-            `<div style="margin-bottom:4px">${when}</div>` +
-            row("باز شدن", candle.open) +
-            row("بیشترین", candle.high) +
-            row("کمترین", candle.low) +
-            row("بسته شدن", candle.close) +
-            `</div>`
-          );
+        // No popup: scrubbing feeds the readout above the chart. Only the
+        // crosshair remains, matching the area chart's peek behaviour.
+        showContent: false,
+        axisPointer: {
+          type: "line",
+          snap: true,
+          lineStyle: { color: tones.muted, width: 1 },
         },
       },
       series: [
@@ -141,6 +129,13 @@ export function CandleChart({
     };
     chart.setOption(option);
 
+    // Scrubbing writes the hovered candle index into the readout above.
+    chart.on("updateAxisPointer", (event) => {
+      const axis = (event as { axesInfo?: { value: number }[] }).axesInfo?.[0];
+      if (axis) setPeek(Math.round(axis.value));
+    });
+    chart.getZr().on("globalout", () => setPeek(null));
+
     const onResize = () => chart.resize();
     window.addEventListener("resize", onResize);
     return () => {
@@ -150,12 +145,48 @@ export function CandleChart({
     };
   }, [range, formatValue, theme]);
 
+  const candles = range.candles;
+  const active =
+    peek != null && candles[peek] ? candles[peek] : candles[candles.length - 1];
+  const when = active
+    ? range.showTime
+      ? `${formatJalaliDay(new Date(active.at))} — ${formatTimeFa(new Date(active.at))}`
+      : formatJalaliDay(new Date(active.at))
+    : "";
+  const closeUp = active ? active.close >= active.open : true;
+
   return (
     <section
       aria-label={ariaLabel}
-      className="flex flex-col gap-3 overflow-hidden rounded-card bg-surface p-4"
+      className="flex h-[360px] flex-col gap-3 overflow-hidden rounded-card bg-surface p-4"
     >
-      <div ref={containerRef} dir="ltr" className="h-[260px] w-full" />
+      <div className="flex items-start justify-between gap-2">
+        <div
+          aria-live="polite"
+          className="flex min-w-0 flex-1 flex-col gap-0.5"
+        >
+          <span className="text-[13px] text-muted">{when}</span>
+          {/* Full-width rows: a 10-digit toman price gets the whole card width
+              so it never truncates (2 columns clipped it on mobile). */}
+          {OHLC.map(({ key, label, tone }) => (
+            <div
+              key={key}
+              className="flex items-baseline justify-between gap-2 text-[13px]"
+            >
+              <span className="text-muted">{label}</span>
+              <b
+                className={cn(
+                  "tabular-nums",
+                  tone || (closeUp ? "text-gain" : "text-loss"),
+                )}
+              >
+                {active ? formatValue(active[key]) : "—"}
+              </b>
+            </div>
+          ))}
+        </div>
+        {toolbar}
+      </div>
 
       {/* iOS-style segmented control — identical to the area chart's. */}
       <div className="flex rounded-full bg-line p-1">
@@ -163,7 +194,10 @@ export function CandleChart({
           <button
             key={r.key}
             type="button"
-            onClick={() => setRangeKey(r.key)}
+            onClick={() => {
+              setRangeKey(r.key);
+              setPeek(null);
+            }}
             aria-pressed={r.key === range.key}
             className={cn(
               "h-10 flex-1 rounded-full text-[13px] font-bold transition-colors",
@@ -176,6 +210,12 @@ export function CandleChart({
           </button>
         ))}
       </div>
+
+      <div
+        ref={containerRef}
+        dir="ltr"
+        className="-mx-4 -mb-4 min-h-0 flex-1 touch-none"
+      />
     </section>
   );
 }

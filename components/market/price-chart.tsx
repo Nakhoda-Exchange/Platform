@@ -16,14 +16,14 @@ import { formatChangePercent, formatIrt, formatUsd } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 
 // echarts only downloads when a PDP is opened, not with the app shell.
-// The fallback is a plain empty card at the real card's height (300px)
+// The fallback is a plain empty card at the real card's height (360px)
 // so the chart swaps in with zero layout jump.
 const LiveAreaChart = dynamic(
   () => import("@/components/ui/live-area-chart").then((m) => m.LiveAreaChart),
   {
     ssr: false,
     loading: () => (
-      <div aria-hidden className="h-[300px] rounded-card bg-surface" />
+      <div aria-hidden className="h-[360px] rounded-card bg-surface" />
     ),
   },
 );
@@ -34,7 +34,7 @@ const CandleChart = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div aria-hidden className="h-[300px] rounded-card bg-surface" />
+      <div aria-hidden className="h-[360px] rounded-card bg-surface" />
     ),
   },
 );
@@ -78,11 +78,7 @@ export function PriceChart({
   }));
 
   const toggle = (
-    <div
-      role="radiogroup"
-      aria-label="نوع نمودار"
-      className="flex justify-end gap-1"
-    >
+    <div role="radiogroup" aria-label="نوع نمودار" className="flex gap-1">
       {(
         [
           { key: "area", label: "نمودار خطی", Icon: LineChartIcon },
@@ -111,36 +107,32 @@ export function PriceChart({
 
   if (view === "candles") {
     return (
-      <div className="flex flex-col gap-2">
-        {toggle}
-        <CandleChart
-          ranges={candleRanges}
-          formatValue={formatIrt}
-          ariaLabel={`نمودار شمعی ${coin.name}`}
-        />
-      </div>
+      <CandleChart
+        ranges={candleRanges}
+        formatValue={formatIrt}
+        ariaLabel={`نمودار شمعی ${coin.name}`}
+        toolbar={toggle}
+      />
     );
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      {toggle}
-      <LiveAreaChart
-        ranges={ranges}
-        formatValue={formatIrt}
-        ariaLabel={`نمودار قیمت ${coin.name}`}
-        idleSubhead={
-          <span dir="ltr" className="flex items-center gap-2">
-            <span className="text-muted">{formatUsd(coin.priceUsd)}</span>
-            <span
-              aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
-              className={cn("font-bold", up ? "text-gain" : "text-loss")}
-            >
-              {up ? "▲" : "▼"} {formatChangePercent(coin.change24h)}
-            </span>
+    <LiveAreaChart
+      ranges={ranges}
+      formatValue={formatIrt}
+      ariaLabel={`نمودار قیمت ${coin.name}`}
+      toolbar={toggle}
+      idleSubhead={
+        <span dir="ltr" className="flex items-center gap-2">
+          <span className="text-muted">{formatUsd(coin.priceUsd)}</span>
+          <span
+            aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
+            className={cn("font-bold", up ? "text-gain" : "text-loss")}
+          >
+            {up ? "▲" : "▼"} {formatChangePercent(coin.change24h)}
           </span>
-        }
-      />
-    </div>
+        </span>
+      }
+    />
   );
 }
