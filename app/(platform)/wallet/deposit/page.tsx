@@ -48,8 +48,19 @@ export default async function DepositPage({
 
 /** Server wrapper: the user's saved cards feed the client flow. */
 async function IrtDeposit() {
-  const cards = await container.resolve(TOKENS.ManageCardsUseCase).list();
-  return <IrtDepositForm initialCards={cards.ok ? cards.data : []} />;
+  const [cards, portfolio] = await Promise.all([
+    container.resolve(TOKENS.ManageCardsUseCase).list(),
+    container.resolve(TOKENS.GetPortfolioUseCase).execute(),
+  ]);
+  // A zero Toman balance means this is the user's first (or a fresh) deposit —
+  // greet them with a short reassurance instead of a bare form.
+  const firstDeposit = !portfolio.ok || portfolio.data.availableIrt <= 0;
+  return (
+    <IrtDepositForm
+      initialCards={cards.ok ? cards.data : []}
+      firstDeposit={firstDeposit}
+    />
+  );
 }
 
 /** Coin picker chips + the selected coin's address/QR. */

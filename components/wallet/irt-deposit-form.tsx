@@ -25,7 +25,13 @@ const POLL_MS = 3_000;
  *    with a countdown while we wait for the backend's deposit-submitted event;
  * 3. receipt.
  */
-export function IrtDepositForm({ initialCards }: { initialCards: BankCard[] }) {
+export function IrtDepositForm({
+  initialCards,
+  firstDeposit = false,
+}: {
+  initialCards: BankCard[];
+  firstDeposit?: boolean;
+}) {
   const [cards, setCards] = useState(initialCards);
   const [selectedId, setSelectedId] = useState(initialCards[0]?.id ?? "");
   const [digits, setDigits] = useState("");
@@ -156,6 +162,18 @@ export function IrtDepositForm({ initialCards }: { initialCards: BankCard[] }) {
   const canStart = amount >= MIN_DEPOSIT_IRT && selectedId !== "" && !pending;
   return (
     <div className="flex flex-1 flex-col gap-5">
+      {firstDeposit ? (
+        <div className="flex flex-col gap-1.5 rounded-card bg-brand/5 p-4">
+          <span className="text-[15px] font-bold text-ink">
+            اولین واریز شما
+          </span>
+          <p className="text-[13px] leading-[1.9] text-muted">
+            مبلغ را کارت‌به‌کارت واریز کنید؛ به‌محض تأیید، موجودی تومانی‌ات
+            آماده‌ی خرید رمزارز می‌شود. واریز و برداشت تومان رایگان است.
+          </p>
+        </div>
+      ) : null}
+
       <Field
         name="amountIrt"
         label="مبلغ واریز (تومان)"
@@ -188,6 +206,12 @@ export function IrtDepositForm({ initialCards }: { initialCards: BankCard[] }) {
           </button>
         ))}
       </div>
+
+      {!belowMin ? (
+        <p className="-mt-1 text-[12px] text-placeholder">
+          کمینه واریز: {formatIrt(MIN_DEPOSIT_IRT)}
+        </p>
+      ) : null}
 
       <CardPicker
         label="کارت مبدأ"
