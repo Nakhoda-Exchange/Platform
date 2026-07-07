@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
 import { MarketScreen } from "@/components/market/market-screen";
+import { LoadError } from "@/components/ui/load-error";
 
 export const metadata: Metadata = {
   title: "بازار | ناخدا",
@@ -19,13 +20,7 @@ export default async function MarketPage({
   ]);
 
   if (!result.ok) {
-    return (
-      <div className="flex flex-1 items-center justify-center p-6 text-center">
-        <p className="text-[15px] text-muted">
-          بارگذاری بازار ناموفق بود. دوباره تلاش کنید.
-        </p>
-      </div>
-    );
+    return <LoadError message="بارگذاری بازار ناموفق بود." />;
   }
 
   // Coins the user holds: their rows swipe-left to SELL instead of details.
