@@ -4,14 +4,20 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
-import { KYC_PENDING_COOKIE, type KycFormState } from "./kyc-state";
+import {
+  KYC_PENDING_COOKIE,
+  encodeIdentity,
+  type KycFormState,
+} from "./kyc-state";
 import { REFERRAL_COOKIE } from "./referral-state";
 
 /**
  * KYC step 1 — validate national code + Jalali birth date and run the identity
- * inquiry. The returned identity is stashed server-side under an opaque id; only
- * that id is sent to the client (httpOnly cookie), so the name/father fields are
- * never exposed or editable via the URL. Then move to the confirm screen.
+ * inquiry. The returned identity is carried to the confirm screen in an httpOnly
+ * cookie (base64 JSON), so the name/father fields are never exposed or editable
+ * via the URL and never readable by client JS. A cookie — not process memory —
+ * because Vercel serves the submit and confirm requests from different
+ * serverless instances, so an in-memory handoff would be lost between them.
  *
  * The invite code is optional and captured on the form; the mock inquiry does
  * not consume it yet — wire it through when the backend needs it.
@@ -31,11 +37,7 @@ export async function submitIdentity(
     return { error: result.error.message };
   }
 
-  const pendingId = await container
-    .resolve(TOKENS.KycSessionStore)
-    .save(result.data);
-
-  (await cookies()).set(KYC_PENDING_COOKIE, pendingId, {
+  (await cookies()).set(KYC_PENDING_COOKIE, encodeIdentity(result.data), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
@@ -50,11 +52,7 @@ export async function submitIdentity(
  */
 export async function confirmKyc(): Promise<void> {
   const store = await cookies();
-  const pendingId = store.get(KYC_PENDING_COOKIE)?.value;
-  if (pendingId) {
-    await container.resolve(TOKENS.KycSessionStore).clear(pendingId);
-    store.delete(KYC_PENDING_COOKIE);
-  }
+  store.delete(KYC_PENDING_COOKIE);
 
   // Referral attribution finalizes here: KYC passed with a stored ?ref code.
   const ref = store.get(REFERRAL_COOKIE)?.value;
