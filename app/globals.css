@@ -78,6 +78,19 @@ html {
   scroll-behavior: smooth;
 }
 
+/*
+ * App-like, mobile-first: scrolling stays, scrollbars don't — neither the page
+ * (y) nor the horizontal strips (x). Mobile already hides them; this makes
+ * desktop/WebKit match. Covers Firefox, old Edge/IE, and WebKit/Blink.
+ */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge/IE */
+}
+*::-webkit-scrollbar {
+  display: none; /* Chrome / Safari / WebKit */
+}
+
 body {
   background: var(--color-paper);
   color: var(--color-ink);
