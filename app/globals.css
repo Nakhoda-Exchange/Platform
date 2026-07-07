@@ -16,7 +16,7 @@
  */
 @theme inline {
   /* Brand (constant across themes — blue-only palette) */
-  --color-brand: #0023fb;
+  --color-brand: #2979ff;
   --color-brand-soft: var(--tone-brand-soft);
 
   /* Neutrals */
