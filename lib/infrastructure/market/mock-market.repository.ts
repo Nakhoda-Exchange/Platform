@@ -232,14 +232,45 @@ export class MockMarketRepository implements MarketRepository {
 
     const prices24 = series["24h"].map((p) => p.priceIrt);
 
+    // Mock-only stubs — a real backend replaces these. Seeded so a coin's
+    // numbers/articles stay stable between loads.
+    const holders = 8_000 + (seed % 120) * 750 + Math.round(coin.marketCap * 9);
+    const day = 86_400_000;
+    const blogPosts = [
+      {
+        id: `${coin.id}-weekly`,
+        title: `تحلیل هفتگی ${coin.name}`,
+        excerpt: `مرور روند قیمت ${coin.symbol} و سطوح مهم پیش رو.`,
+        source: "بلاگ ناخدا",
+        publishedAt: end - 2 * day,
+      },
+      {
+        id: `${coin.id}-guide`,
+        title: `${coin.name} چیست و چطور بخریم؟`,
+        excerpt: `راهنمای ساده برای آشنایی و خرید ${coin.name} در ناخدا.`,
+        source: "بلاگ ناخدا",
+        publishedAt: end - 9 * day,
+      },
+      {
+        id: `${coin.id}-onchain`,
+        title: `نگاهی به آمار آن‌چین ${coin.symbol}`,
+        excerpt: `چه چیزی در شبکه ${coin.name} در حال رخ دادن است؟`,
+        source: "بلاگ ناخدا",
+        publishedAt: end - 20 * day,
+      },
+    ];
+
     return ok({
       coin,
       high24h: Math.max(...prices24),
       low24h: Math.min(...prices24),
       volume24h: Math.round(coin.marketCap * 0.6) / 10, // همت, ~6% of market cap
+      holders,
       description:
         DESCRIPTIONS[coin.id] ??
         `${coin.name} (${coin.symbol}) یکی از رمزارزهای قابل معامله در ناخداست. قیمت لحظه‌ای و نمودار آن را اینجا دنبال کنید.`,
+      history: `${coin.name} از زمان عرضه تاکنون یکی از رمزارزهای شناخته‌شده بازار بوده و در سال‌های اخیر توجه معامله‌گران ایرانی را به خود جلب کرده است. آن‌چه در این صفحه می‌بینید تنها برای آشناییست و توصیه‌ی معاملاتی نیست.`,
+      blogPosts,
       series,
       candles,
     });

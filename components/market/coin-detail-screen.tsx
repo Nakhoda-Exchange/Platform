@@ -3,9 +3,10 @@ import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
 import { summarizeIndicators } from "@/lib/core/domain/market/indicator-summary";
 import { pastPerformance } from "@/lib/core/domain/market/past-performance";
 import { PriceChart } from "./price-chart";
-import { CoinStats } from "./coin-stats";
+import { CoinKeyStats } from "./coin-key-stats";
 import { IndicatorSummaryCard } from "./indicator-summary-card";
 import { PastPerformanceCard } from "./past-performance-card";
+import { CoinBlogPosts } from "./coin-blog-posts";
 import { buttonClasses } from "@/components/ui/button";
 
 /**
@@ -36,13 +37,16 @@ export function CoinDetailScreen({
 
       <PastPerformanceCard performance={pastPerformance(detail.series)} />
 
-      <CoinStats detail={detail} />
+      <CoinKeyStats detail={detail} />
 
-      {/* About */}
+      {/* About + history */}
       <section className="flex flex-col gap-2">
         <h2 className="text-[16px] font-bold text-ink">درباره‌ی {coin.name}</h2>
         <p className="text-[15px] leading-7 text-muted">{detail.description}</p>
+        <p className="text-[15px] leading-7 text-muted">{detail.history}</p>
       </section>
+
+      <CoinBlogPosts posts={detail.blogPosts} />
 
       {/* CTAs → Trade (#7), coin + side preselected. Sticky just above the
           bottom edge (this page has no bottom nav) so they stay reachable

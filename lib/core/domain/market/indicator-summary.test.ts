@@ -17,7 +17,10 @@ const seriesOf = (points: PricePoint[]): Record<ChartRange, PricePoint[]> => ({
 describe("summarizeIndicators", () => {
   test("everything rising → buy with all signals up", () => {
     const s = summarizeIndicators(3.2, seriesOf(rising(10)));
-    expect(s).toEqual({ verdict: "buy", positives: 5, total: 5 });
+    expect(s.verdict).toBe("buy");
+    expect(s.positives).toBe(5);
+    expect(s.total).toBe(5);
+    expect(s.signals.every((x) => x.positive)).toBe(true);
   });
 
   test("everything falling → sell", () => {
@@ -39,6 +42,6 @@ describe("summarizeIndicators", () => {
 
   test("too little data → hold, zero of zero (no fake confidence)", () => {
     const s = summarizeIndicators(1, seriesOf([{ at: 0, priceIrt: 100 }]));
-    expect(s).toEqual({ verdict: "hold", positives: 0, total: 0 });
+    expect(s).toEqual({ verdict: "hold", positives: 0, total: 0, signals: [] });
   });
 });

@@ -297,3 +297,22 @@ export function HeadphonesIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function InfoIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
+    </Icon>
+  );
+}
+
+export function TradingViewIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M7 4v4M7 16v4M7 8a2 2 0 0 1 2 2v4a2 2 0 0 1-4 0v-4a2 2 0 0 1 2-2Z" />
+      <path d="M17 3v3M17 18v3M17 6a2 2 0 0 1 2 2v8a2 2 0 0 1-4 0V8a2 2 0 0 1 2-2Z" />
+    </Icon>
+  );
+}

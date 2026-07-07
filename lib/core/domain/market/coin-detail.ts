@@ -22,13 +22,25 @@ export interface Candle {
   close: number; // Toman
 }
 
+/** A short article about a coin, shown on the PDP «مطالب مرتبط» list. */
+export interface BlogPost {
+  id: string;
+  title: string;
+  excerpt: string; // one-line teaser
+  source: string; // where it's from, e.g. «بلاگ ناخدا»
+  publishedAt: number; // epoch ms
+}
+
 /** A coin plus the extra data the detail page (PDP) needs: chart + stats + about. */
 export interface CoinDetail {
   coin: Coin;
   high24h: number; // 24h high price, Toman
   low24h: number; // 24h low price, Toman
   volume24h: number; // 24h traded volume, همت
+  holders: number; // how many people hold this coin on the platform
   description: string; // short Persian «about» blurb
+  history: string; // longer Persian background / history
+  blogPosts: BlogPost[]; // related articles
   series: Record<ChartRange, PricePoint[]>; // price points per range (oldest → newest)
   candles: Record<ChartRange, Candle[]>; // OHLC buckets per range (oldest → newest)
 }
