@@ -93,14 +93,19 @@ export function TradeScreen({
     }
   };
 
+  // Buying beyond the Toman balance isn't a dead end — it's a nudge to top up
+  // and come back with more to spend, so the CTA turns into a deposit link.
+  const needsDeposit = side === "buy" && amountIrt > maxIrt;
   const error =
     side === "sell" && availableCoin <= 0
       ? "از این رمزارز موجودی ندارید."
       : amountIrt > 0 && amountIrt < MIN_ORDER_IRT
         ? "کمینه هر سفارش ۵۰۰٬۰۰۰ تومان است."
-        : amountIrt > maxIrt
-          ? "موجودی شما کافی نیست."
-          : null;
+        : needsDeposit
+          ? "موجودی کافی نیست. برای خرید، حساب خود را شارژ کنید."
+          : amountIrt > maxIrt
+            ? "موجودی شما کافی نیست."
+            : null;
   const valid = amountIrt >= MIN_ORDER_IRT && amountIrt <= maxIrt;
 
   if (state.status === "success") {
@@ -250,29 +255,39 @@ export function TradeScreen({
             {coin.symbol}
           </span>
         )}
-        <button
-          type="button"
-          onClick={() => {
-            setUnit(unit === "irt" ? "coin" : "irt");
-            setDigits("");
-          }}
-          aria-label={
-            unit === "irt" ? "ورود مقدار بر حسب رمزارز" : "ورود مقدار به تومان"
-          }
-          className="flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-[14px] text-muted transition-colors hover:text-ink"
-        >
-          <span aria-hidden>⇅</span>
-          <span dir="ltr">
+        {/* Equivalent value — always shown as plain text so you see the amount
+            AND what it's worth in the other unit (selling BTC still shows the
+            Toman value); the ⇅ button just swaps which unit you type in. */}
+        <div className="flex items-center gap-2 text-muted">
+          <span dir="ltr" className="text-[15px]">
             {unit === "irt"
               ? `≈ ${formatCoinAmount(amountCoin)} ${coin.symbol}`
               : `≈ ${formatIrt(amountIrt)}`}
           </span>
-        </button>
-        {error ? (
-          <p role="alert" className="text-[13px] font-bold text-loss">
-            {error}
-          </p>
-        ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              setUnit(unit === "irt" ? "coin" : "irt");
+              setDigits("");
+            }}
+            aria-label={
+              unit === "irt"
+                ? "ورود مقدار بر حسب رمزارز"
+                : "ورود مقدار به تومان"
+            }
+            className="flex size-7 items-center justify-center rounded-full bg-surface transition-colors hover:text-ink"
+          >
+            <span aria-hidden>⇅</span>
+          </button>
+        </div>
+        {/* Always mounted with a reserved line so showing/clearing an error
+            doesn't shift the centred amount and jump the layout. */}
+        <p
+          role="alert"
+          className="min-h-[1.25rem] text-[13px] font-bold text-loss"
+        >
+          {error}
+        </p>
       </div>
 
       {/* Side toggle + sell slider + keypad read as one input cluster near the
@@ -379,15 +394,24 @@ export function TradeScreen({
         />
       </div>
 
-      <Button
-        type="button"
-        size="xl"
-        fullWidth
-        disabled={!valid}
-        onClick={() => setConfirming(true)}
-      >
-        ادامه
-      </Button>
+      {needsDeposit ? (
+        <Link
+          href="/wallet/deposit"
+          className={buttonClasses({ size: "xl", fullWidth: true })}
+        >
+          افزایش موجودی
+        </Link>
+      ) : (
+        <Button
+          type="button"
+          size="xl"
+          fullWidth
+          disabled={!valid}
+          onClick={() => setConfirming(true)}
+        >
+          ادامه
+        </Button>
+      )}
     </div>
   );
 }
