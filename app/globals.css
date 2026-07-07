@@ -46,7 +46,7 @@
 
 :root {
   color-scheme: light;
-  --tone-brand-soft: rgba(0, 35, 251, 0.05);
+  --tone-brand-soft: rgba(68, 138, 255, 0.05);
   --tone-paper: #ffffff;
   --tone-ink: #1a1b1e;
   --tone-muted: #696969;
@@ -61,7 +61,7 @@
 
 .dark {
   color-scheme: dark;
-  --tone-brand-soft: rgba(77, 104, 255, 0.14);
+  --tone-brand-soft: rgba(68, 138, 255, 0.14);
   --tone-paper: #0f1115;
   --tone-ink: #f3f4f6;
   --tone-muted: #9ca3af;
