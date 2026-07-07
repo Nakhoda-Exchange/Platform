@@ -10,6 +10,7 @@ import { setCurrencyUnits } from "@/lib/utils/money";
 import { SplashScreen } from "@/components/pwa/splash-screen";
 import { SplashHider } from "@/components/pwa/splash-hider";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { BuildInfoLogger } from "@/components/layout/build-info-logger";
 
 export const viewport: Viewport = {
   // viewport-fit=cover lets env(safe-area-inset-*) resolve (iOS notch / home bar).
@@ -32,6 +33,8 @@ export const metadata: Metadata = {
     "ناخدا تجربه‌ای مدرن برای معامله آلت‌کوین‌ها فراهم کرده است؛ با تمرکز بر سرعت، سادگی و دسترسی به رمزارزهای متنوع.",
   applicationName: "ناخدا",
   appleWebApp: { capable: true, title: "ناخدا", statusBarStyle: "default" },
+  // Demo site — no search engine or bot should index it (robots.ts + this meta).
+  robots: { index: false, follow: false },
 };
 
 export default async function RootLayout({
@@ -58,6 +61,7 @@ export default async function RootLayout({
         {children}
         <SplashHider />
         <ServiceWorkerRegister />
+        <BuildInfoLogger />
       </body>
     </html>
   );

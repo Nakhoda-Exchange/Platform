@@ -28,7 +28,6 @@ import { MockConfigRepository } from "@/lib/infrastructure/config/mock-config.re
 import { GetCurrencyUnitsUseCase } from "@/lib/core/application/config/use-cases/get-currency-units.use-case";
 import { MockPortfolioRepository } from "@/lib/infrastructure/portfolio/mock-portfolio.repository";
 import { MockIdentityInquiryRepository } from "@/lib/infrastructure/kyc/mock-identity-inquiry.repository";
-import { MockKycSessionStore } from "@/lib/infrastructure/kyc/mock-kyc-session-store";
 import { MockMarketRepository } from "@/lib/infrastructure/market/mock-market.repository";
 import { HttpClient } from "@/lib/infrastructure/http/http-client";
 import { authAndLocaleInterceptor } from "@/lib/infrastructure/http/interceptors";
@@ -72,12 +71,6 @@ function registerHttpAdapters(container: Container, baseUrl: string): void {
   container.registerSingleton(
     TOKENS.IdentityInquiryPort,
     () => new HttpIdentityInquiryRepository(http),
-  );
-  // KYC session store stays in-process either way: it is presentation-side
-  // plumbing between the inquiry and confirm steps, not backend state.
-  container.registerSingleton(
-    TOKENS.KycSessionStore,
-    () => new MockKycSessionStore(),
   );
   container.registerSingleton(
     TOKENS.MarketRepository,
@@ -134,11 +127,6 @@ export function buildContainer(): Container {
   container.registerSingleton(
     TOKENS.IdentityInquiryPort,
     () => new MockIdentityInquiryRepository(),
-  );
-  // Singleton: the pending-KYC map must survive between submit and confirm.
-  container.registerSingleton(
-    TOKENS.KycSessionStore,
-    () => new MockKycSessionStore(),
   );
   container.registerSingleton(
     TOKENS.MarketRepository,

@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
+import { version } from "./package.json";
 
 const nextConfig: NextConfig = {
+  // Baked into the client bundle at build so the app can log which build is
+  // running (see components/layout/build-info-logger.tsx). Commit sha comes
+  // from Vercel's build env; "dev" locally.
+  env: {
+    NEXT_PUBLIC_APP_VERSION: version,
+    NEXT_PUBLIC_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev",
+  },
   // Emit a self-contained server bundle (.next/standalone) for a small
   // production Docker image.
   output: "standalone",
