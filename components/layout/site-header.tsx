@@ -15,7 +15,7 @@ export function SiteHeader() {
         <Logo size={22} />
 
         <div className="flex items-center gap-3 text-muted">
-          <Link href="/market" className={buttonClasses({ size: "sm" })}>
+          <Link href="/login" className={buttonClasses({ size: "sm" })}>
             مشاهده پلتفرم
           </Link>
           <InstallAppButton />

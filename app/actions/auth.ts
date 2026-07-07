@@ -7,21 +7,14 @@ import { cookies } from "next/headers";
 import type { AuthFormState } from "./auth-state";
 import { REFERRAL_COOKIE } from "./referral-state";
 import { SESSION_COOKIE, safeNextPath } from "./session-state";
-
-function verifyUrl(
-  phone: string,
-  cid: string,
-  resendSeconds: number,
-  next?: string | null,
-): string {
-  const params = new URLSearchParams({
-    phone,
-    cid,
-    rs: String(resendSeconds),
-  });
-  if (next) params.set("next", next);
-  return `/login/verify?${params.toString()}`;
-}
+import {
+  clearLoginChallenge,
+  clearLoginStatus,
+  readLoginChallenge,
+  readLoginStatus,
+  setLoginChallenge,
+  setLoginStatus,
+} from "./login-flow-state";
 
 /**
  * Start the login session (issue #78). Opaque presence cookie until full
@@ -39,8 +32,8 @@ async function startSession(): Promise<void> {
 
 /**
  * Step 1 — request an OTP for the submitted mobile, then move to verification.
- * Note: for this mock the phone + challenge travel in the URL. A real backend
- * would keep the challenge in an httpOnly session cookie instead.
+ * The challenge (phone + challenge id + resend timer) is stashed in an httpOnly
+ * cookie, not the URL, so it can't be tampered with, shared, or lost on reload.
  */
 export async function startLogin(
   _prev: AuthFormState,
@@ -68,29 +61,34 @@ export async function startLogin(
   }
 
   const { challengeId, mobile: normalized, resendAfterSeconds } = result.data;
-  redirect(
-    verifyUrl(
-      normalized,
-      challengeId,
-      resendAfterSeconds,
-      safeNextPath(String(formData.get("next") ?? "")),
-    ),
-  );
+  await setLoginChallenge({
+    cid: challengeId,
+    phone: normalized,
+    rs: resendAfterSeconds,
+    next: safeNextPath(String(formData.get("next") ?? "")),
+  });
+  redirect("/login/verify");
 }
 
 /** Resend the OTP for a mobile number, then reload the verify screen. */
 export async function resendOtp(formData: FormData): Promise<void> {
   const mobile = String(formData.get("mobile") ?? "");
+  const existing = await readLoginChallenge();
   const result = await container
     .resolve(TOKENS.RequestOtpUseCase)
     .execute(mobile);
 
-  if (!result.ok) {
-    redirect(verifyUrl(mobile, "", 120));
+  // On failure keep the current challenge so the user can retry from verify.
+  if (result.ok) {
+    const { challengeId, mobile: normalized, resendAfterSeconds } = result.data;
+    await setLoginChallenge({
+      cid: challengeId,
+      phone: normalized,
+      rs: resendAfterSeconds,
+      next: existing?.next ?? null,
+    });
   }
-
-  const { challengeId, resendAfterSeconds } = result.data;
-  redirect(verifyUrl(mobile, challengeId, resendAfterSeconds));
+  redirect("/login/verify");
 }
 
 /** Post-login destination for each user status. */
@@ -101,7 +99,7 @@ const DESTINATION = {
 } as const;
 type LoginStatus = keyof typeof DESTINATION;
 
-/** Clamp an untrusted status param to a known value. */
+/** Clamp an untrusted status value to a known one. */
 function asStatus(raw: string): LoginStatus {
   return raw in DESTINATION ? (raw as LoginStatus) : "registration";
 }
@@ -109,40 +107,45 @@ function asStatus(raw: string): LoginStatus {
 /**
  * Step 2 — verify the submitted code. On success the login status decides where
  * the user goes: new users into KYC, approved users to the market, and declined
- * users to a dead-end page (they never reach the platform).
+ * users to the review screen. The challenge id comes from the httpOnly cookie,
+ * never the form/URL.
  */
 export async function verifyLogin(
   _prev: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const challengeId = String(formData.get("cid") ?? "");
+  const challenge = await readLoginChallenge();
+  if (!challenge) redirect("/login");
+
   const code = String(formData.get("code") ?? "");
   const result = await container
     .resolve(TOKENS.VerifyOtpUseCase)
-    .execute(challengeId, code);
+    .execute(challenge.cid, code);
 
   if (!result.ok) {
     return { error: result.error.message };
   }
 
-  const next = safeNextPath(String(formData.get("next") ?? ""));
+  const next = challenge.next;
 
   // Declined users never get a session and never see the gate — straight to
-  // the dead-end page.
-  if (result.data.status === "declined") redirect(DESTINATION.declined);
-
-  // Second step: users who set a two-step password must enter it before the
-  // platform — the session starts AFTER the gate, so it cannot be skipped.
-  // Mock-only: the status travels in the URL like the OTP challenge does; a
-  // real backend keeps it in the session.
-  const profile = await container.resolve(TOKENS.GetProfileUseCase).execute();
-  if (profile.ok && profile.data.twoFactorEnabled) {
-    const phone = String(formData.get("phone") ?? "");
-    const params = new URLSearchParams({ st: result.data.status, phone });
-    if (next) params.set("next", next);
-    redirect(`/login/two-step?${params.toString()}`);
+  // the review screen.
+  if (result.data.status === "declined") {
+    await clearLoginChallenge();
+    redirect(DESTINATION.declined);
   }
 
+  // Second step: users who set a two-step password must enter it before the
+  // platform — the session starts AFTER the gate, so it cannot be skipped. The
+  // resolved status is carried to the gate in an httpOnly cookie, not the URL.
+  const profile = await container.resolve(TOKENS.GetProfileUseCase).execute();
+  if (profile.ok && profile.data.twoFactorEnabled) {
+    await setLoginStatus({ status: result.data.status, next });
+    await clearLoginChallenge();
+    redirect("/login/two-step");
+  }
+
+  await clearLoginChallenge();
   await startSession();
   redirect(next ?? DESTINATION[result.data.status]);
 }
@@ -151,25 +154,30 @@ export async function verifyLogin(
  * Biometric variant of the gate: the device verified the user via WebAuthn
  * (client-side `navigator.credentials.get`). Mock: the assertion signature is
  * NOT re-verified here — that is backend work once auth sessions land; this
- * action only performs the redirect the password path would.
+ * action only performs the redirect the password path would. Status + next come
+ * from the httpOnly cookie set at the OTP step.
  */
-export async function passTwoStepBiometric(
-  status: string,
-  next?: string,
-): Promise<void> {
-  const resolved = asStatus(status);
+export async function passTwoStepBiometric(): Promise<void> {
+  const pending = await readLoginStatus();
+  if (!pending) redirect("/login");
+
+  const resolved = asStatus(pending.status);
+  await clearLoginStatus();
   if (resolved !== "declined") await startSession();
-  redirect(safeNextPath(next) ?? DESTINATION[resolved]);
+  redirect(pending.next ?? DESTINATION[resolved]);
 }
 
 /**
  * Step 3 (only when a two-step password is set) — verify it, then continue to
- * the status destination.
+ * the status destination read from the httpOnly cookie.
  */
 export async function verifyTwoStepLogin(
   _prev: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  const pending = await readLoginStatus();
+  if (!pending) redirect("/login");
+
   const password = String(formData.get("password") ?? "");
   const result = await container
     .resolve(TOKENS.TwoStepPasswordUseCase)
@@ -179,8 +187,8 @@ export async function verifyTwoStepLogin(
     return { error: result.error.message };
   }
 
-  const resolved = asStatus(String(formData.get("st") ?? ""));
+  const resolved = asStatus(pending.status);
+  await clearLoginStatus();
   if (resolved !== "declined") await startSession();
-  const next = safeNextPath(String(formData.get("next") ?? ""));
-  redirect(next ?? DESTINATION[resolved]);
+  redirect(pending.next ?? DESTINATION[resolved]);
 }

@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { TwoStepLoginForm } from "@/components/auth/two-step-login-form";
+import { readLoginStatus } from "@/app/actions/login-flow-state";
 
 export const metadata: Metadata = {
   title: "رمز دومرحله‌ای | ناخدا",
 };
 
-// Next.js 16: searchParams is async. The status travels in the URL like the
-// OTP challenge does — mock-only; a real backend keeps it in the session.
-export default async function TwoStepLoginPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ st?: string; next?: string }>;
-}) {
-  const { st = "registration", next } = await searchParams;
+export default async function TwoStepLoginPage() {
+  // Status + next travel in an httpOnly cookie, not the URL. No cookie means the
+  // user reached the gate without passing the OTP step — send them back.
+  const pending = await readLoginStatus();
+  if (!pending) redirect("/login");
 
   return (
     <AuthShell>
@@ -22,7 +21,7 @@ export default async function TwoStepLoginPage({
         title="رمز دومرحله‌ای"
         subtitle="برای ورود، رمز دومرحله‌ای حساب خود را وارد کنید."
       />
-      <TwoStepLoginForm status={st} nextPath={next} />
+      <TwoStepLoginForm />
     </AuthShell>
   );
 }

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { MarketOverview } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
 import { SearchIcon } from "@/components/ui/icons";
+import { Button } from "@/components/ui/button";
 import { toEnglishDigits } from "@/lib/utils/digits";
 import { replaceUrlParam } from "@/lib/utils/url-param";
 import { TopGainers } from "./top-gainers";
@@ -30,6 +31,11 @@ export function MarketScreen({
   const [query, setQuery] = useState(initialQuery);
   const searching = query.trim() !== "";
 
+  const clearSearch = () => {
+    setQuery("");
+    replaceUrlParam("q", null);
+  };
+
   const results = useMemo(() => {
     if (!searching) return overview.all;
     const q = toEnglishDigits(query).trim().toLowerCase();
@@ -56,12 +62,29 @@ export function MarketScreen({
       </label>
 
       {searching ? (
-        <AllAssets
-          coins={results}
-          heldIds={heldIds}
-          title="نتایج جستجو"
-          showFilters={false}
-        />
+        results.length === 0 ? (
+          <div className="flex flex-col items-center gap-4 py-12 text-center">
+            <p className="text-[15px] leading-[1.9] text-muted">
+              برای «{query.trim()}» رمزارزی پیدا نشد. املای نام یا نماد را بررسی
+              کنید.
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="md"
+              onClick={clearSearch}
+            >
+              پاک کردن جستجو
+            </Button>
+          </div>
+        ) : (
+          <AllAssets
+            coins={results}
+            heldIds={heldIds}
+            title="نتایج جستجو"
+            showFilters={false}
+          />
+        )
       ) : (
         <>
           <WatchlistSection coins={overview.all} heldIds={heldIds} />

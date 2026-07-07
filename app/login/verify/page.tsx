@@ -6,27 +6,17 @@ import { AuthHeader } from "@/components/auth/auth-header";
 import { OtpVerifyForm } from "@/components/auth/otp-verify-form";
 import { EditIcon } from "@/components/ui/icons";
 import { maskMobile } from "@/lib/utils/digits";
+import { readLoginChallenge } from "@/app/actions/login-flow-state";
 
 export const metadata: Metadata = {
   title: "تأیید شماره موبایل | ناخدا",
 };
 
-// Next.js 16: searchParams is async.
-export default async function VerifyPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    phone?: string;
-    cid?: string;
-    rs?: string;
-    next?: string;
-  }>;
-}) {
-  const { phone = "", cid = "", rs, next } = await searchParams;
-  const resendSeconds = Number(rs) > 0 ? Number(rs) : 120;
-
-  // No phone in the URL means the user landed here directly — send them back.
-  if (!phone) redirect("/login");
+export default async function VerifyPage() {
+  // The challenge lives in an httpOnly cookie, not the URL. No cookie means the
+  // user landed here directly (or it expired) — send them back to start.
+  const challenge = await readLoginChallenge();
+  if (!challenge) redirect("/login");
 
   return (
     <AuthShell>
@@ -39,7 +29,7 @@ export default async function VerifyPage({
             </p>
             <div className="flex items-center gap-2">
               <span dir="ltr" className="text-[16px] font-semibold text-ink">
-                {maskMobile(phone)}
+                {maskMobile(challenge.phone)}
               </span>
               <Link
                 href="/login"
@@ -53,12 +43,7 @@ export default async function VerifyPage({
         }
       />
 
-      <OtpVerifyForm
-        cid={cid}
-        phone={phone}
-        resendSeconds={resendSeconds}
-        nextPath={next}
-      />
+      <OtpVerifyForm phone={challenge.phone} resendSeconds={challenge.rs} />
     </AuthShell>
   );
 }
