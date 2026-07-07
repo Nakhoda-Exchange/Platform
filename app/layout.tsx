@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Vazirmatn } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeWatcher } from "@/components/layout/theme-watcher";
 import { THEME_INIT_SCRIPT } from "@/lib/utils/theme";
@@ -13,9 +13,12 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-const vazirmatn = Vazirmatn({
-  subsets: ["arabic", "latin"],
-  variable: "--font-vazir",
+// IRANYekanX ships as a single weight-variable file (wght 100–900), self-hosted
+// from public/fonts. woff2 alone covers every browser we target.
+const iranYekan = localFont({
+  src: "../public/fonts/iran-yekan/woff2/IRANYekanXVF.woff2",
+  variable: "--font-iranyekan",
+  weight: "100 900",
   display: "swap",
 });
 
@@ -39,7 +42,7 @@ export default async function RootLayout({
   setCurrencyUnits(currencyUnits);
 
   return (
-    <html lang="fa" dir="rtl" className={`${vazirmatn.variable} h-full`}>
+    <html lang="fa" dir="rtl" className={`${iranYekan.variable} h-full`}>
       <body className="flex min-h-full flex-col bg-paper text-ink">
         {/* Sets .dark before first paint (system default or stored override). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

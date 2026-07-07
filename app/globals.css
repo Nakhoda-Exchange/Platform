@@ -33,8 +33,8 @@
   --color-loss: var(--tone-loss);
   --color-loss-soft: var(--tone-loss-soft);
 
-  /* Typography — Vazirmatn is wired up in the root layout */
-  --font-sans: var(--font-vazir), ui-sans-serif, system-ui, sans-serif;
+  /* Typography — IRANYekanX is wired up in the root layout */
+  --font-sans: var(--font-iranyekan), ui-sans-serif, system-ui, sans-serif;
 
   /* Radii from the design */
   --radius-field: 0.75rem; /* 12px */
