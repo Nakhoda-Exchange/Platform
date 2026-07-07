@@ -224,6 +224,33 @@ export function TradeScreen({
         </div>
       ) : null}
 
+      {/* Balance — no separate max button; tapping the balance fills the
+          whole available amount into the entry. */}
+      <button
+        type="button"
+        onClick={() =>
+          setDigits(
+            unit === "irt"
+              ? String(maxIrt)
+              : String(
+                  side === "sell"
+                    ? availableCoin
+                    : roundCoin(maxIrt / coin.priceIrt),
+                ),
+          )
+        }
+        disabled={maxIrt <= 0}
+        aria-label="استفاده از کل موجودی"
+        className="mx-auto text-[14px] text-muted transition-colors hover:text-ink disabled:opacity-50"
+      >
+        موجودی:{" "}
+        <span className="font-bold text-ink">
+          {side === "buy"
+            ? formatIrt(availableIrt)
+            : `${formatCoinAmount(roundCoin(availableCoin))} ${coin.symbol}`}
+        </span>
+      </button>
+
       {/* Amount — big number in the active unit; tap ⇅ to swap (issue #69) */}
       <div className="flex flex-1 flex-col items-center justify-center gap-2 py-2 text-center">
         {unit === "irt" ? (
@@ -270,36 +297,6 @@ export function TradeScreen({
             {error}
           </p>
         ) : null}
-      </div>
-
-      {/* Available + max */}
-      <div className="flex items-center justify-between text-[14px]">
-        <span className="text-muted">
-          موجودی:{" "}
-          <span className="font-bold text-ink">
-            {side === "buy"
-              ? formatIrt(availableIrt)
-              : `${formatCoinAmount(roundCoin(availableCoin))} ${coin.symbol}`}
-          </span>
-        </span>
-        <button
-          type="button"
-          onClick={() =>
-            setDigits(
-              unit === "irt"
-                ? String(maxIrt)
-                : String(
-                    side === "sell"
-                      ? availableCoin
-                      : roundCoin(maxIrt / coin.priceIrt),
-                  ),
-            )
-          }
-          disabled={maxIrt <= 0}
-          className="rounded-full bg-brand/10 px-4 py-1.5 font-bold text-brand transition-colors hover:bg-brand/15 disabled:opacity-50"
-        >
-          همه
-        </button>
       </div>
 
       {/* Sell slider + keypad read as one input cluster — sitting flush, no
