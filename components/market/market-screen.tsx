@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { MarketOverview } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
-import { SearchIcon } from "@/components/ui/icons";
+import { SearchIcon, WalletIcon, ChevronLeftIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { toEnglishDigits } from "@/lib/utils/digits";
 import { formatIrt } from "@/lib/utils/money";
@@ -80,7 +80,27 @@ export function MarketScreen({
             واریز
           </span>
         </Link>
-      ) : null}
+      ) : (
+        // No spendable Toman — you can't buy anything, so lead with a bold
+        // deposit card instead of a balance strip.
+        <Link
+          href="/wallet/deposit"
+          className="flex items-center gap-4 rounded-card bg-brand p-5 text-white transition-opacity hover:opacity-95"
+        >
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white/15">
+            <WalletIcon size={26} />
+          </span>
+          <span className="flex flex-1 flex-col gap-0.5">
+            <span className="text-[16px] font-extrabold">
+              برای خرید، تومان واریز کن
+            </span>
+            <span className="text-[13px] leading-[1.7] text-white/80">
+              با واریز تومان می‌تونی اولین رمزارزت را بخری.
+            </span>
+          </span>
+          <ChevronLeftIcon size={22} className="shrink-0 text-white/80" />
+        </Link>
+      )}
 
       {searching ? (
         results.length === 0 ? (

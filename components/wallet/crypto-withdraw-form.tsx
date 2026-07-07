@@ -5,8 +5,9 @@ import type { Holding } from "@/lib/core/domain/portfolio/portfolio";
 import { requestCryptoWithdraw } from "@/app/actions/withdraw";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
-import { SearchIcon, ChevronLeftIcon } from "@/components/ui/icons";
+import { SearchIcon, ChevronLeftIcon, CoinsIcon } from "@/components/ui/icons";
 import { CoinIcon } from "@/components/market/coin-icon";
+import { WalletEmpty } from "./wallet-empty";
 import { WithdrawResult } from "./withdraw-result";
 import { toEnglishDigits } from "@/lib/utils/digits";
 import { formatCoinAmount } from "@/lib/utils/money";
@@ -65,9 +66,12 @@ export function CryptoWithdrawForm({
 
   if (holdings.length === 0) {
     return (
-      <p className="p-6 text-center text-[15px] leading-7 text-muted">
-        رمزارزی برای برداشت ندارید. اول از بازار خرید کنید.
-      </p>
+      <WalletEmpty
+        icon={<CoinsIcon size={30} />}
+        title="رمزارزی برای برداشت نداری"
+        message="برای برداشت، اول باید رمزارزی داشته باشی. از بازار خرید کن تا این‌جا قابل برداشت شود."
+        cta={{ href: "/market", label: "مشاهده بازار" }}
+      />
     );
   }
 

@@ -31,7 +31,13 @@ export default async function WalletPage() {
     portfolio.availableIrt <= 0 &&
     portfolio.pendingWithdrawIrt <= 0;
   if (hasNothing) {
-    return <PortfolioEmpty />;
+    // Suggest a few blue-chips (by market cap) so the empty wallet points at
+    // something to buy, not just two buttons.
+    const coins = await container.resolve(TOKENS.ListCoinsUseCase).execute();
+    const suggestions = coins.ok
+      ? [...coins.data].sort((a, b) => b.marketCap - a.marketCap).slice(0, 4)
+      : [];
+    return <PortfolioEmpty suggestions={suggestions} />;
   }
 
   return (
