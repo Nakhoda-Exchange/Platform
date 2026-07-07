@@ -5,30 +5,47 @@ import { useRef, useState, type PointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Coin } from "@/lib/core/domain/market/coin";
 import { CoinIcon } from "./coin-icon";
+import { ChevronLeftIcon, CoinsIcon, WalletIcon } from "@/components/ui/icons";
 import {
   formatChangePercent,
   formatIrtShort,
   formatUsd,
 } from "@/lib/utils/money";
-import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 
-// Swipe geometry: the row follows the finger up to MAX_PULL, and releasing
-// past ACT_AT fires the revealed action.
-const MAX_PULL = 112;
-const ACT_AT = 72;
-const ENGAGE_AT = 8; // px of movement before we commit to a direction
+// Swipe-action geometry, modelled on Apple's row swipe actions. The row tracks
+// the finger with rubber-band resistance past MAX_PULL; releasing past
+// COMMIT_AT fires the revealed action, otherwise the row springs back. As the
+// row slides, the action panel behind it grows and its icon + label fade and
+// scale in — so the gesture always previews what it will do, and firms up
+// ("armed") once you've pulled far enough to commit.
+const ENGAGE_AT = 10; // px of travel before we lock to a horizontal drag
+const COMMIT_AT = 96; // px past which releasing triggers the action
+const MAX_PULL = 132; // soft cap; further travel gets rubber-band resistance
+
+// One spring curve for the snap-back and for the icon fade, so they settle
+// together. Applied only when NOT actively dragging (drag tracks 1:1).
+const SNAP = "transform 340ms cubic-bezier(0.22, 1, 0.36, 1)";
+const FADE =
+  "opacity 340ms ease, transform 340ms cubic-bezier(0.22, 1, 0.36, 1)";
+
+/** Rubber-band the drag past the soft cap so it never runs away. */
+function resist(dx: number): number {
+  const abs = Math.abs(dx);
+  if (abs <= MAX_PULL) return dx;
+  return Math.sign(dx) * (MAX_PULL + (abs - MAX_PULL) * 0.3);
+}
 
 /**
  * A market list row. RTL, three zones: coin identity (icon + Persian name +
- * symbol) on the right, the 24h change centered, the Toman price on the
- * left. Tapping opens the coin detail page.
+ * symbol) on the right, the 24h change centered, the Toman price on the left.
+ * Tapping opens the coin detail page.
  *
- * A visible «خرید» button makes buying discoverable without the gesture (the
- * audit flagged buy/sell as hidden). Swipe stays as a shortcut: sliding RIGHT
- * opens buy, sliding LEFT opens sell when the user holds the coin, otherwise
- * the coin page («جزئیات»). Vertical panning stays with the browser
- * (touch-action: pan-y); a horizontal drag suppresses tap navigation.
+ * Quick trade by swipe (the primary way to buy/sell): drag the row RIGHT to
+ * reveal «خرید» and release to open the buy screen; drag LEFT to reveal «فروش»
+ * (when the user holds the coin) or «جزئیات» otherwise. Vertical panning stays
+ * with the browser (touch-action: pan-y); a horizontal drag suppresses the
+ * row's own tap navigation.
  */
 export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
   const router = useRouter();
@@ -37,8 +54,8 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
 
   const start = useRef<{ x: number; y: number } | null>(null);
   const dragged = useRef(false);
-  // Gesture truth lives in refs: pointer events can outrun React renders,
-  // so the release handler must not read (possibly stale) state.
+  // Gesture truth lives in refs: pointer events can outrun React renders, so
+  // the release handler must not read (possibly stale) state.
   const dxRef = useRef(0);
   const engagedRef = useRef(false);
   const [dx, setDx] = useState(0);
@@ -46,6 +63,13 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
 
   const buyHref = `/trade/${symbol}?side=buy`;
   const leftHref = canSell ? `/trade/${symbol}?side=sell` : `/market/${symbol}`;
+
+  // Reveal progress toward the commit point, per side (0…1), and whether the
+  // pull is far enough that a release will fire ("armed").
+  const buyProgress = dx > 0 ? Math.min(dx / COMMIT_AT, 1) : 0;
+  const trailProgress = dx < 0 ? Math.min(-dx / COMMIT_AT, 1) : 0;
+  const buyArmed = dx >= COMMIT_AT;
+  const trailArmed = dx <= -COMMIT_AT;
 
   function onPointerDown(e: PointerEvent<HTMLDivElement>) {
     if (!e.isPrimary) return;
@@ -68,46 +92,67 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
       setDragging(true);
       e.currentTarget.setPointerCapture(e.pointerId);
     }
-    dxRef.current = Math.max(-MAX_PULL, Math.min(MAX_PULL, ddx));
+    dxRef.current = resist(ddx);
     setDx(dxRef.current);
   }
 
   function onPointerEnd() {
     if (engagedRef.current) {
-      if (dxRef.current >= ACT_AT) router.push(buyHref);
-      else if (dxRef.current <= -ACT_AT) router.push(leftHref);
+      if (dxRef.current >= COMMIT_AT) router.push(buyHref);
+      else if (dxRef.current <= -COMMIT_AT) router.push(leftHref);
     }
     start.current = null;
     engagedRef.current = false;
     dxRef.current = 0;
     setDragging(false);
-    setDx(0);
+    setDx(0); // spring back to rest
   }
+
+  const trailLabel = canSell ? "فروش" : "جزئیات";
+  const TrailIcon = canSell ? WalletIcon : ChevronLeftIcon;
+
+  // Icon+label transform: scale in with progress, then a firm pop when armed.
+  const buyScale = buyArmed ? 1.14 : 0.7 + 0.3 * buyProgress;
+  const trailScale = trailArmed ? 1.14 : 0.7 + 0.3 * trailProgress;
 
   return (
     <div className="relative overflow-hidden">
-      {/* Action underlay: خرید behind the left edge (revealed by a rightward
-          slide), فروش/جزئیات behind the right edge (leftward slide). */}
-      <div aria-hidden className="absolute inset-0 flex justify-between">
-        <span
-          dir="ltr"
+      {/* Action panels behind the row, revealed as it slides. خرید on the
+          leading (rightward) edge, فروش/جزئیات on the trailing (leftward)
+          edge. The icon + label are the indicator: they fade and scale in with
+          the pull and firm up once armed. */}
+      <div aria-hidden className="absolute inset-0">
+        <div className="absolute inset-y-0 left-0 flex w-40 items-center justify-start bg-gain pl-5 text-white">
+          <span
+            className="flex items-center gap-1.5 text-[14px] font-bold"
+            style={{
+              opacity: Math.min(buyProgress * 1.4, 1),
+              transform: `scale(${buyScale})`,
+              transition: dragging ? undefined : FADE,
+            }}
+          >
+            <CoinsIcon size={20} />
+            خرید
+          </span>
+        </div>
+        <div
           className={cn(
-            "flex w-28 items-center justify-start bg-gain pl-5 text-[14px] font-bold text-white transition-opacity",
-            dx > 0 ? "opacity-100" : "opacity-0",
-          )}
-        >
-          خرید
-        </span>
-        <span
-          dir="ltr"
-          className={cn(
-            "flex w-28 items-center justify-end pr-5 text-[14px] font-bold transition-opacity",
+            "absolute inset-y-0 right-0 flex w-40 items-center justify-end pr-5",
             canSell ? "bg-loss text-white" : "bg-surface text-ink",
-            dx < 0 ? "opacity-100" : "opacity-0",
           )}
         >
-          {canSell ? "فروش" : "جزئیات"}
-        </span>
+          <span
+            className="flex items-center gap-1.5 text-[14px] font-bold"
+            style={{
+              opacity: Math.min(trailProgress * 1.4, 1),
+              transform: `scale(${trailScale})`,
+              transition: dragging ? undefined : FADE,
+            }}
+          >
+            <TrailIcon size={20} />
+            {trailLabel}
+          </span>
+        </div>
       </div>
 
       <div
@@ -115,11 +160,11 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerEnd}
         onPointerCancel={onPointerEnd}
-        style={{ transform: `translateX(${dx}px)` }}
-        className={cn(
-          "relative flex items-center gap-2 bg-paper touch-pan-y",
-          !dragging && "transition-transform duration-200",
-        )}
+        style={{
+          transform: `translateX(${dx}px)`,
+          transition: dragging ? undefined : SNAP,
+        }}
+        className="relative touch-pan-y select-none bg-paper"
       >
         <Link
           href={`/market/${symbol}`}
@@ -127,7 +172,7 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
           onClick={(e) => {
             if (dragged.current) e.preventDefault();
           }}
-          className="grid flex-1 grid-cols-[1fr_auto_1fr] items-center gap-2 py-3 transition-colors hover:bg-surface"
+          className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-3 transition-colors hover:bg-surface"
         >
           {/* Right (RTL start): identity */}
           <div className="flex items-center gap-3">
@@ -161,23 +206,6 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
               {formatUsd(coin.priceUsd)}
             </span>
           </div>
-        </Link>
-
-        {/* Always-visible buy CTA (a swipe still works as a shortcut). Guarded
-            so a horizontal drag that ends over the button doesn't navigate. */}
-        <Link
-          href={buyHref}
-          draggable={false}
-          aria-label={`خرید ${coin.name}`}
-          onClick={(e) => {
-            if (dragged.current) e.preventDefault();
-          }}
-          className={buttonClasses({
-            size: "sm",
-            className: "shrink-0",
-          })}
-        >
-          خرید
         </Link>
       </div>
     </div>

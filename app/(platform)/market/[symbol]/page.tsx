@@ -20,10 +20,9 @@ export default async function CoinDetailPage({
   params: Promise<{ symbol: string }>;
 }) {
   const { symbol } = await params;
-  const [result, portfolioResult] = await Promise.all([
-    container.resolve(TOKENS.GetCoinDetailUseCase).execute(symbol),
-    container.resolve(TOKENS.GetPortfolioUseCase).execute(),
-  ]);
+  const result = await container
+    .resolve(TOKENS.GetCoinDetailUseCase)
+    .execute(symbol);
 
   if (!result.ok) {
     return (
@@ -35,13 +34,5 @@ export default async function CoinDetailPage({
   }
   if (!result.data) notFound();
 
-  // Sell only makes sense when the user actually holds this coin.
-  const coinId = result.data.coin.id;
-  const canSell =
-    portfolioResult.ok &&
-    portfolioResult.data.holdings.some(
-      (h) => h.coin.id === coinId && h.amount > 0,
-    );
-
-  return <CoinDetailScreen detail={result.data} canSell={canSell} />;
+  return <CoinDetailScreen detail={result.data} />;
 }
