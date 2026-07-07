@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState, type CSSProperties } from "react";
 import {
   FEE_RATE,
@@ -62,7 +61,6 @@ export function TradeScreen({
   const [confirming, setConfirming] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(CONFIRM_SECONDS);
   const [celebrate, setCelebrate] = useState(false);
-  const router = useRouter();
   const [state, formAction, pending] = useActionState<TradeFormState, FormData>(
     placeTradeOrder,
     { status: "idle" },
@@ -83,18 +81,15 @@ export function TradeScreen({
     }
   }, [confirming, pending, secondsLeft]);
 
-  // On a completed order: the very first trade on this device earns confetti +
-  // a welcome; every later trade just returns to the wallet, «در حال انجام».
+  // Every completed order lands on the same «submitted, awaiting fulfilment»
+  // screen. The very first trade on this device also earns confetti + a welcome.
   useEffect(() => {
     if (state.status !== "success") return;
-    const first = !localStorage.getItem(FIRST_TRADE_KEY);
-    if (first) {
-      localStorage.setItem(FIRST_TRADE_KEY, "1");
-      const id = requestAnimationFrame(() => setCelebrate(true));
-      return () => cancelAnimationFrame(id);
-    }
-    router.replace("/wallet?traded=1");
-  }, [state.status, router]);
+    if (localStorage.getItem(FIRST_TRADE_KEY)) return;
+    localStorage.setItem(FIRST_TRADE_KEY, "1");
+    const id = requestAnimationFrame(() => setCelebrate(true));
+    return () => cancelAnimationFrame(id);
+  }, [state.status]);
 
   const entered = Number(digits || "0");
   // Coin entry converts to Toman at the current price; the order (and every
@@ -148,30 +143,33 @@ export function TradeScreen({
   const valid = amountIrt >= MIN_ORDER_IRT && amountIrt <= maxIrt;
 
   if (state.status === "success") {
-    // Non-first trade: the effect above is redirecting to the wallet.
-    if (!celebrate) {
-      return (
-        <div className="flex flex-1 items-center justify-center p-6 text-center">
-          <p className="text-[15px] text-muted">در حال انتقال به دارایی‌ها…</p>
-        </div>
-      );
-    }
     const o = state.order;
     return (
       <>
-        <Confetti />
+        {celebrate ? <Confetti /> : null}
         <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 pb-8 text-center">
           <CheckCircleIcon size={64} className="text-brand" />
           <div className="flex flex-col gap-2">
-            <h1 className="text-[22px] font-extrabold text-ink">
-              اولین معامله انجام شد
-            </h1>
-            <p className="text-[17px] font-bold text-brand">
-              خوش آمدید، ناخدای جوان
-            </p>
+            {celebrate ? (
+              <>
+                <h1 className="text-[22px] font-extrabold text-ink">
+                  اولین معامله ثبت شد
+                </h1>
+                <p className="text-[17px] font-bold text-brand">
+                  خوش آمدید، ناخدای جوان
+                </p>
+              </>
+            ) : (
+              <h1 className="text-[22px] font-extrabold text-ink">
+                سفارش شما ثبت شد
+              </h1>
+            )}
             <p className="text-[15px] leading-7 text-muted">
               {formatCoinAmount(roundCoin(o.amountCoin))} {o.symbol} به ارزش{" "}
               {formatIrt(o.totalIrt)}
+            </p>
+            <p className="text-[14px] text-placeholder">
+              در انتظار تکمیل معامله…
             </p>
           </div>
           <div className="flex w-full max-w-[360px] flex-col gap-3">

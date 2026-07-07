@@ -78,14 +78,20 @@ html {
   scroll-behavior: smooth;
 }
 
-/* One-shot celebration confetti (first trade). Pieces fall + spin, then fade. */
-@keyframes confetti-fall {
+/* One-shot celebration confetti (first trade): emoji pieces pop inward from the
+   two side edges, arc up, then fall away spinning. Per-piece trajectory comes
+   from the --dx / --peak / --rot custom properties set inline. */
+@keyframes confetti-pop {
   0% {
-    transform: translateY(-10vh) rotate(0);
+    transform: translate(0, 0) rotate(0);
+    opacity: 1;
+  }
+  40% {
+    transform: translate(calc(var(--dx) * 0.6), var(--peak)) rotate(180deg);
     opacity: 1;
   }
   100% {
-    transform: translateY(110vh) rotate(720deg);
+    transform: translate(var(--dx), 45vh) rotate(var(--rot));
     opacity: 0;
   }
 }

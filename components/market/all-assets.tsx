@@ -6,13 +6,14 @@ import { CoinRow } from "./coin-row";
 import { cn } from "@/lib/utils/cn";
 import { replaceUrlParam } from "@/lib/utils/url-param";
 
-type FilterKey = "all" | "gainers" | "losers" | "mcap";
+// «همه» already lists coins in market-cap order, so a separate «ارزش بازار»
+// filter would be identical — dropped.
+type FilterKey = "all" | "gainers" | "losers";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "همه" },
   { key: "gainers", label: "بیشترین رشد" },
   { key: "losers", label: "بیشترین ضرر" },
-  { key: "mcap", label: "ارزش بازار" },
 ];
 
 /**
@@ -45,7 +46,6 @@ export function AllAssets({
     if (filter === "gainers") list.sort((a, b) => b.change24h - a.change24h);
     else if (filter === "losers")
       list.sort((a, b) => a.change24h - b.change24h);
-    else if (filter === "mcap") list.sort((a, b) => b.marketCap - a.marketCap);
     return list;
   }, [coins, filter]);
 

@@ -1,28 +1,34 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { cn } from "@/lib/utils/cn";
 
-// On-palette celebration: brand blues + a gain-green accent (a first trade is a
-// positive state, so green is allowed alongside the blues).
-const COLORS = ["bg-brand", "bg-brand/60", "bg-gain", "bg-brand/30"];
+// Celebration emojis, with a couple of naval ones for «ناخدای جوان».
+const EMOJIS = ["🎉", "🎊", "⚓", "🚢", "✨", "🥳", "🎈"];
 
 /**
- * A one-shot confetti burst — a fixed overlay of pieces that fall, spin, and
- * fade out. No dependency, no canvas. Purely decorative (aria-hidden) and
- * silent under `prefers-reduced-motion`. Pieces are randomised once on mount
- * (client-only, so no hydration mismatch).
+ * A one-shot emoji confetti burst — pieces pop inward from the two side edges,
+ * arc up, then fall away. No dependency, no canvas. Purely decorative
+ * (aria-hidden) and silent under `prefers-reduced-motion`. Pieces are
+ * randomised once on mount (client-only, so no hydration mismatch).
  */
-export function Confetti({ count = 44 }: { count?: number }) {
+export function Confetti({ count = 30 }: { count?: number }) {
   const [pieces] = useState(() =>
-    Array.from({ length: count }, (_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      delay: Math.random() * 0.4,
-      duration: 1.8 + Math.random() * 1.4,
-      size: 6 + Math.round(Math.random() * 6),
-      color: COLORS[i % COLORS.length],
-    })),
+    Array.from({ length: count }, (_, i) => {
+      const fromLeft = i % 2 === 0; // alternate the two side cannons
+      const mag = 28 + Math.random() * 56; // vw travelled inward
+      return {
+        id: i,
+        fromLeft,
+        emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
+        dx: `${fromLeft ? mag : -mag}vw`,
+        peak: `${-(16 + Math.random() * 24)}vh`,
+        rot: `${(Math.random() * 2 - 1) * 540}deg`,
+        top: `${46 + Math.random() * 22}%`,
+        size: 20 + Math.round(Math.random() * 14),
+        delay: Math.random() * 0.25,
+        duration: 1.6 + Math.random() * 1,
+      };
+    }),
   );
 
   return (
@@ -33,16 +39,21 @@ export function Confetti({ count = 44 }: { count?: number }) {
       {pieces.map((p) => (
         <span
           key={p.id}
-          className={cn("absolute top-0 rounded-[2px]", p.color)}
+          className="absolute leading-none"
           style={
             {
-              left: `${p.left}%`,
-              width: p.size,
-              height: p.size,
-              animation: `confetti-fall ${p.duration}s linear ${p.delay}s forwards`,
+              [p.fromLeft ? "left" : "right"]: 0,
+              top: p.top,
+              fontSize: p.size,
+              animation: `confetti-pop ${p.duration}s cubic-bezier(0.2, 0.7, 0.3, 1) ${p.delay}s forwards`,
+              "--dx": p.dx,
+              "--peak": p.peak,
+              "--rot": p.rot,
             } as CSSProperties
           }
-        />
+        >
+          {p.emoji}
+        </span>
       ))}
     </div>
   );
