@@ -3,33 +3,49 @@ import type { Coin } from "@/lib/core/domain/market/coin";
 import { CoinIcon } from "./coin-icon";
 import { SectionHeader } from "./section-header";
 import { SparklesIcon } from "@/components/ui/icons";
-import { formatIrtShort } from "@/lib/utils/money";
+import { formatChangePercent, formatIrtShort } from "@/lib/utils/money";
+import { cn } from "@/lib/utils/cn";
 
-/** «ارزهای جدید» — a horizontal strip of recently listed coins. */
+/**
+ * «ارزهای جدید» — a horizontal strip of recently listed coins as compact chips
+ * (icon + symbol + price + 24h change). No per-card «جدید» badge: the section
+ * header already says these are new, so each chip spends its space on the
+ * signal that actually helps — how the listing is moving.
+ */
 export function NewCoins({ coins }: { coins: Coin[] }) {
   if (coins.length === 0) return null;
   return (
     <section className="flex flex-col gap-3">
       <SectionHeader title="ارزهای جدید" icon={<SparklesIcon size={18} />} />
       <div className="-mx-4 flex gap-3 overflow-x-auto px-4">
-        {coins.map((coin) => (
-          <Link
-            key={coin.id}
-            href={`/market/${coin.symbol.toLowerCase()}`}
-            className="flex w-[150px] shrink-0 flex-col gap-2 rounded-2xl border border-line bg-paper p-3.5 text-right"
-          >
-            <div className="flex items-center justify-between">
-              <span className="rounded-lg bg-brand/10 px-2 py-0.5 text-[10px] font-bold text-brand">
-                جدید
+        {coins.map((coin) => {
+          const up = coin.change24h >= 0;
+          return (
+            <Link
+              key={coin.id}
+              href={`/market/${coin.symbol.toLowerCase()}`}
+              className="flex shrink-0 items-center gap-2 rounded-full border border-line bg-paper px-3 py-2"
+            >
+              <CoinIcon coin={coin} size={24} />
+              <span className="text-[13px] font-bold text-ink">
+                {coin.symbol}
               </span>
-              <CoinIcon coin={coin} size={34} />
-            </div>
-            <span className="text-[15px] font-bold text-ink">{coin.name}</span>
-            <span className="text-[13px] text-muted">
-              {formatIrtShort(coin.priceIrt)}
-            </span>
-          </Link>
-        ))}
+              <span className="text-[12px] text-muted">
+                {formatIrtShort(coin.priceIrt)}
+              </span>
+              <span
+                dir="ltr"
+                aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
+                className={cn(
+                  "text-[12px] font-bold",
+                  up ? "text-gain" : "text-loss",
+                )}
+              >
+                {up ? "▲" : "▼"} {formatChangePercent(coin.change24h)}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );
