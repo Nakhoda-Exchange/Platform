@@ -1,0 +1,45 @@
+"use client";
+
+/** Concrete colors for ECharts — it can't consume `var(--x)` strings. */
+export interface Tones {
+  brand: string;
+  brandSoft: string;
+  ink: string;
+  muted: string;
+  line: string;
+  paper: string;
+  gain: string;
+  loss: string;
+  /** Real font stack — echarts renders Persian in its default sans otherwise. */
+  font: string;
+}
+
+export function readTones(): Tones {
+  const style = getComputedStyle(document.documentElement);
+  return {
+    brand: style.getPropertyValue("--color-brand").trim() || "#0023fb",
+    brandSoft:
+      style.getPropertyValue("--color-brand-soft").trim() ||
+      "rgba(0,35,251,0.05)",
+    ink: style.getPropertyValue("--color-ink").trim() || "#0a0a0a",
+    muted: style.getPropertyValue("--color-muted").trim() || "#696969",
+    line: style.getPropertyValue("--color-line").trim() || "#e5e5e5",
+    paper: style.getPropertyValue("--color-paper").trim() || "#ffffff",
+    gain: style.getPropertyValue("--color-gain").trim() || "#15803d",
+    loss: style.getPropertyValue("--color-loss").trim() || "#b91c1c",
+    font:
+      style.getPropertyValue("--font-sans").trim() ||
+      "ui-sans-serif, system-ui, sans-serif",
+  };
+}
+
+// The root `.dark` class flips tokens (account picker or OS theme); watching
+// it as an external store re-renders the chart with freshly read tones.
+export function subscribeToTheme(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  return () => observer.disconnect();
+}

@@ -18,6 +18,7 @@ import {
 import { SVGRenderer } from "echarts/renderers";
 import type { ComposeOption } from "echarts/core";
 import { formatJalaliDay, formatTimeFa } from "@/lib/utils/jalali";
+import { readTones, subscribeToTheme, type Tones } from "./chart-theme";
 import { cn } from "@/lib/utils/cn";
 
 echarts.use([LineChart, GridComponent, TooltipComponent, SVGRenderer]);
@@ -48,41 +49,6 @@ export interface ChartRangeDef {
 const LIVE_TICK_MS = 1_600;
 const LIVE_STEP = 0.003; // per-tick nudge, ±0.3%
 const LIVE_MAX_DRIFT = 0.015; // hard leash, ±1.5% of the real value
-
-/** Concrete colors for ECharts — it can't consume `var(--x)` strings. */
-interface Tones {
-  brand: string;
-  brandSoft: string;
-  muted: string;
-  paper: string;
-  gain: string;
-  loss: string;
-}
-
-function readTones(): Tones {
-  const style = getComputedStyle(document.documentElement);
-  return {
-    brand: style.getPropertyValue("--color-brand").trim() || "#0023fb",
-    brandSoft:
-      style.getPropertyValue("--color-brand-soft").trim() ||
-      "rgba(0,35,251,0.05)",
-    muted: style.getPropertyValue("--color-muted").trim() || "#696969",
-    paper: style.getPropertyValue("--color-paper").trim() || "#ffffff",
-    gain: style.getPropertyValue("--color-gain").trim() || "#15803d",
-    loss: style.getPropertyValue("--color-loss").trim() || "#b91c1c",
-  };
-}
-
-// The root `.dark` class flips tokens (account picker or OS theme); watching
-// it as an external store re-renders the chart with freshly read tones.
-function subscribeToTheme(onChange: () => void): () => void {
-  const observer = new MutationObserver(onChange);
-  observer.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["class"],
-  });
-  return () => observer.disconnect();
-}
 
 /**
  * Event points wear a marker dot — gain green for value in, loss red for
@@ -196,6 +162,7 @@ function buildOption(
         showSymbol: true,
         silent: true,
         lineStyle: { type: "dotted", width: 2, color: tones.brand },
+        areaStyle: { color: tones.brandSoft }, // fill under the dotted tail too
         emphasis: { disabled: true },
         animationDurationUpdate: LIVE_TICK_MS * 0.75,
         animationEasingUpdate: "linear",
@@ -218,12 +185,15 @@ export function LiveAreaChart({
   formatValue,
   ariaLabel,
   idleSubhead,
+  toolbar,
 }: {
   ranges: ChartRangeDef[];
   formatValue: (value: number) => string;
   ariaLabel: string;
   /** Shown in the subhead while idle (no peek); default is the moment. */
   idleSubhead?: ReactNode;
+  /** Rendered top-right inside the card (the area⇄candles toggle). */
+  toolbar?: ReactNode;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
@@ -312,27 +282,30 @@ export function LiveAreaChart({
   return (
     <section
       aria-label={ariaLabel}
-      className="flex flex-col gap-3 overflow-hidden rounded-card bg-surface p-4"
+      className="flex h-[360px] flex-col gap-3 overflow-hidden rounded-card bg-surface p-4"
     >
-      <div aria-live="polite" className="flex flex-col gap-0.5">
-        <span className="text-[20px] font-extrabold tabular-nums text-ink">
-          {formatValue(displayValue)}
-        </span>
-        {/* Subhead: the peeked moment + its event, if any.
-            Fixed height so the chart never jumps while scrubbing. */}
-        <div className="flex h-5 items-center gap-2 text-[13px]">
-          {isLatest && idleSubhead && !point.event ? idleSubhead : moment}
-          {point.event ? (
-            <span
-              className={cn(
-                "font-bold",
-                point.event.direction === "out" ? "text-loss" : "text-gain",
-              )}
-            >
-              {point.event.label}
-            </span>
-          ) : null}
+      <div className="flex items-start justify-between gap-2">
+        <div aria-live="polite" className="flex flex-col gap-0.5">
+          <span className="text-[20px] font-extrabold tabular-nums text-ink">
+            {formatValue(displayValue)}
+          </span>
+          {/* Subhead: the peeked moment + its event, if any.
+              Fixed height so the chart never jumps while scrubbing. */}
+          <div className="flex h-5 items-center gap-2 text-[13px]">
+            {isLatest && idleSubhead && !point.event ? idleSubhead : moment}
+            {point.event ? (
+              <span
+                className={cn(
+                  "font-bold",
+                  point.event.direction === "out" ? "text-loss" : "text-gain",
+                )}
+              >
+                {point.event.label}
+              </span>
+            ) : null}
+          </div>
         </div>
+        {toolbar}
       </div>
 
       {/* iOS-style segmented control: sliding paper thumb on a line track. */}
@@ -363,7 +336,7 @@ export function LiveAreaChart({
         ref={el}
         role="img"
         aria-label={`${ariaLabel} — ${range.label}`}
-        className="-mx-4 -mb-4 h-[160px] touch-none"
+        className="-mx-4 -mb-4 min-h-0 flex-1 touch-none"
       />
     </section>
   );

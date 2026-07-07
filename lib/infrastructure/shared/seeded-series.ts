@@ -23,3 +23,26 @@ export function seededSeries(
   out[points - 1] = end;
   return out;
 }
+
+/**
+ * Bucket a fine-grained walk into OHLC candles: every `size` consecutive
+ * values become one candle (open = first, close = last, high/low = extremes).
+ * The invariants high ≥ max(open, close) and low ≤ min(open, close) hold by
+ * construction.
+ */
+export function toCandles(
+  values: number[],
+  size: number,
+): Array<{ open: number; high: number; low: number; close: number }> {
+  const candles = [];
+  for (let i = 0; i + size <= values.length; i += size) {
+    const bucket = values.slice(i, i + size);
+    candles.push({
+      open: bucket[0],
+      high: Math.max(...bucket),
+      low: Math.min(...bucket),
+      close: bucket[bucket.length - 1],
+    });
+  }
+  return candles;
+}
