@@ -61,10 +61,15 @@ export function TradeScreen({
   const [confirming, setConfirming] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(CONFIRM_SECONDS);
   const [celebrate, setCelebrate] = useState(false);
+  const [ackedOrderId, setAckedOrderId] = useState<string | null>(null);
   const [state, formAction, pending] = useActionState<TradeFormState, FormData>(
     placeTradeOrder,
     { status: "idle" },
   );
+
+  // The just-placed order (once), and whether its status sheet is still showing.
+  const order = state.status === "success" ? state.order : null;
+  const successOpen = order !== null && order.id !== ackedOrderId;
 
   // The confirm sheet is only valid for a short window; tick it down while open
   // (paused during submission) and auto-close when it runs out.
@@ -81,15 +86,28 @@ export function TradeScreen({
     }
   }, [confirming, pending, secondsLeft]);
 
-  // Every completed order lands on the same «submitted, awaiting fulfilment»
-  // screen. The very first trade on this device also earns confetti + a welcome.
+  // When an order completes: swap the confirm sheet for the status sheet, and —
+  // once, on this device's first trade — arm the confetti. Keyed on the order
+  // id so it fires per order (the action status stays "success" between them).
   useEffect(() => {
-    if (state.status !== "success") return;
-    if (localStorage.getItem(FIRST_TRADE_KEY)) return;
-    localStorage.setItem(FIRST_TRADE_KEY, "1");
-    const id = requestAnimationFrame(() => setCelebrate(true));
+    if (!order) return;
+    const id = requestAnimationFrame(() => {
+      setConfirming(false);
+      if (!localStorage.getItem(FIRST_TRADE_KEY)) {
+        localStorage.setItem(FIRST_TRADE_KEY, "1");
+        setCelebrate(true);
+      }
+    });
     return () => cancelAnimationFrame(id);
-  }, [state.status]);
+  }, [order]);
+
+  // Dismiss the status sheet → ready for another order (keep the form as it is).
+  const startAnother = () => {
+    if (order) setAckedOrderId(order.id);
+    setCelebrate(false);
+    setConfirming(false);
+    setDigits("");
+  };
 
   const entered = Number(digits || "0");
   // Coin entry converts to Toman at the current price; the order (and every
@@ -141,59 +159,6 @@ export function TradeScreen({
             ? "موجودی شما کافی نیست."
             : null;
   const valid = amountIrt >= MIN_ORDER_IRT && amountIrt <= maxIrt;
-
-  if (state.status === "success") {
-    const o = state.order;
-    return (
-      <>
-        {celebrate ? <Confetti /> : null}
-        <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 pb-8 text-center">
-          <CheckCircleIcon size={64} className="text-brand" />
-          <div className="flex flex-col gap-2">
-            {celebrate ? (
-              <>
-                <h1 className="text-[22px] font-extrabold text-ink">
-                  اولین معامله ثبت شد
-                </h1>
-                <p className="text-[17px] font-bold text-brand">
-                  خوش آمدید، ناخدای جوان
-                </p>
-              </>
-            ) : (
-              <h1 className="text-[22px] font-extrabold text-ink">
-                سفارش شما ثبت شد
-              </h1>
-            )}
-            <p className="text-[15px] leading-7 text-muted">
-              {formatCoinAmount(roundCoin(o.amountCoin))} {o.symbol} به ارزش{" "}
-              {formatIrt(o.totalIrt)}
-            </p>
-            <p className="text-[14px] text-placeholder">
-              در انتظار تکمیل معامله…
-            </p>
-          </div>
-          <div className="flex w-full max-w-[360px] flex-col gap-3">
-            <Link
-              href="/wallet"
-              className={buttonClasses({ size: "lg", fullWidth: true })}
-            >
-              مشاهده دارایی‌ها
-            </Link>
-            <Link
-              href="/market"
-              className={buttonClasses({
-                variant: "ghost",
-                size: "lg",
-                fullWidth: true,
-              })}
-            >
-              بازگشت به بازار
-            </Link>
-          </div>
-        </div>
-      </>
-    );
-  }
 
   return (
     <div className="flex flex-1 flex-col gap-5 px-4 pb-6 pt-4">
@@ -467,6 +432,53 @@ export function TradeScreen({
             </Button>
           </div>
         </form>
+      </Sheet>
+
+      {/* Status sheet — the order is placed; the user can track it in the
+          wallet or dismiss and place another. First trade rains confetti. */}
+      {successOpen && celebrate ? <Confetti /> : null}
+      <Sheet
+        open={successOpen}
+        onClose={startAnother}
+        title={celebrate ? "اولین معامله ثبت شد" : "سفارش شما ثبت شد"}
+        manageBack={false}
+      >
+        <div className="flex flex-col items-center gap-2 text-center">
+          <CheckCircleIcon size={56} className="text-brand" />
+          {celebrate ? (
+            <p className="text-[16px] font-bold text-brand">
+              خوش آمدید، ناخدای جوان
+            </p>
+          ) : null}
+          {order ? (
+            <p className="text-[15px] leading-7 text-muted">
+              {formatCoinAmount(roundCoin(order.amountCoin))} {order.symbol} به
+              ارزش {formatIrt(order.totalIrt)}
+            </p>
+          ) : null}
+          <p className="text-[14px] text-placeholder">
+            سفارش ثبت شد و در حال انجام است. می‌توانید آن را در «دارایی» دنبال
+            کنید.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Link
+            href="/wallet"
+            className={buttonClasses({ size: "xl", fullWidth: true })}
+          >
+            پیگیری در دارایی
+          </Link>
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            fullWidth
+            onClick={startAnother}
+          >
+            سفارش جدید
+          </Button>
+        </div>
       </Sheet>
     </div>
   );
