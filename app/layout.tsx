@@ -7,10 +7,14 @@ import { CurrencyUnitsHydrator } from "@/components/layout/currency-units-hydrat
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
 import { setCurrencyUnits } from "@/lib/utils/money";
+import { SplashScreen } from "@/components/pwa/splash-screen";
+import { SplashHider } from "@/components/pwa/splash-hider";
+import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 
 export const viewport: Viewport = {
   // viewport-fit=cover lets env(safe-area-inset-*) resolve (iOS notch / home bar).
   viewportFit: "cover",
+  themeColor: "#0023fb",
 };
 
 // IRANYekanX ships as a single weight-variable file (wght 100–900), self-hosted
@@ -26,6 +30,8 @@ export const metadata: Metadata = {
   title: "ناخدا | دنیای آلت‌کوین‌ها، زیر نظر ناخدا",
   description:
     "ناخدا تجربه‌ای مدرن برای معامله آلت‌کوین‌ها فراهم کرده است؛ با تمرکز بر سرعت، سادگی و دسترسی به رمزارزهای متنوع.",
+  applicationName: "ناخدا",
+  appleWebApp: { capable: true, title: "ناخدا", statusBarStyle: "default" },
 };
 
 export default async function RootLayout({
@@ -46,9 +52,12 @@ export default async function RootLayout({
       <body className="flex min-h-full flex-col bg-paper text-ink">
         {/* Sets .dark before first paint (system default or stored override). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <SplashScreen />
         <CurrencyUnitsHydrator units={currencyUnits} />
         <ThemeWatcher />
         {children}
+        <SplashHider />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
