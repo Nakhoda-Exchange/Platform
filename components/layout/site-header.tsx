@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/container";
 import { buttonClasses } from "@/components/ui/button";
-import { SmartphoneIcon } from "@/components/ui/icons";
+import { InstallAppButton } from "./install-app-button";
 import { Logo } from "./logo";
 
 /**
@@ -18,7 +18,7 @@ export function SiteHeader() {
           <Link href="/market" className={buttonClasses({ size: "sm" })}>
             مشاهده پلتفرم
           </Link>
-          <SmartphoneIcon size={20} className="shrink-0" />
+          <InstallAppButton />
         </div>
       </Container>
     </header>
