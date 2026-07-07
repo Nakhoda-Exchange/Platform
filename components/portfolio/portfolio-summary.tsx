@@ -109,6 +109,9 @@ export function PortfolioSummary({
           ))}
         </nav>
       ) : (
+        // No spendable Toman: deposit is the headline action. Withdraw stays —
+        // it still works for crypto (you don't need Toman to withdraw a coin) —
+        // and a hint explains that withdrawing Toman means selling first.
         <div className="flex flex-col gap-4">
           <Link
             href="/wallet/deposit"
@@ -118,12 +121,15 @@ export function PortfolioSummary({
           </Link>
           <nav
             aria-label="عملیات کیف پول"
-            className="flex items-start justify-center gap-12"
+            className="flex items-start justify-between px-2"
           >
-            {[BUY, HISTORY].map((a) => (
+            {[WITHDRAW, BUY, HISTORY].map((a) => (
               <ActionIcon key={a.href} {...a} />
             ))}
           </nav>
+          <p className="text-center text-[13px] leading-6 text-muted">
+            برای برداشت تومان، ابتدا دارایی‌های خود را بفروشید.
+          </p>
         </div>
       )}
     </section>
