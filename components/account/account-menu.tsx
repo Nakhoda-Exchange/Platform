@@ -26,7 +26,7 @@ function Row({
   value,
   valueClassName,
   onClick,
-  href = "#",
+  href,
 }: {
   Icon: ComponentType<IconProps>;
   label: string;
@@ -58,21 +58,28 @@ function Row({
   );
   const rowClass =
     "flex w-full items-center justify-between gap-3 py-3 text-right transition-colors hover:bg-surface";
-  return onClick ? (
-    <button type="button" onClick={onClick} className={rowClass}>
-      {inner}
-    </button>
-  ) : (
-    <Link href={href} className={rowClass}>
-      {inner}
-    </Link>
-  );
+  // A row is either an action (onClick) or a link (href). With neither it
+  // renders as a static row, never a dead `#` link.
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={rowClass}>
+        {inner}
+      </button>
+    );
+  }
+  if (href) {
+    return (
+      <Link href={href} className={rowClass}>
+        {inner}
+      </Link>
+    );
+  }
+  return <div className={rowClass}>{inner}</div>;
 }
 
 /**
  * The account settings list. A client leaf only because the support row opens
- * the Goftino widget; every other row is a plain link (placeholders until
- * their screens land).
+ * the Goftino widget; every other row navigates to its settings screen.
  */
 export function AccountMenu({ profile }: { profile: UserProfile }) {
   // Enrollment is device-local — readable only after mount.
