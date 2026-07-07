@@ -13,6 +13,15 @@ export interface PricePoint {
   priceIrt: number; // Toman
 }
 
+/** One OHLC candle for the PDP candlestick view. `at` is epoch ms. */
+export interface Candle {
+  at: number; // epoch ms (bucket open time)
+  open: number;
+  high: number;
+  low: number;
+  close: number; // Toman
+}
+
 /** A coin plus the extra data the detail page (PDP) needs: chart + stats + about. */
 export interface CoinDetail {
   coin: Coin;
@@ -21,4 +30,5 @@ export interface CoinDetail {
   volume24h: number; // 24h traded volume, همت
   description: string; // short Persian «about» blurb
   series: Record<ChartRange, PricePoint[]>; // price points per range (oldest → newest)
+  candles: Record<ChartRange, Candle[]>; // OHLC buckets per range (oldest → newest)
 }

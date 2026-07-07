@@ -28,7 +28,7 @@ export function CoinDetailScreen({
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-8 pt-4">
-      <PriceChart coin={coin} series={detail.series} />
+      <PriceChart coin={coin} series={detail.series} candles={detail.candles} />
 
       <IndicatorSummaryCard
         summary={summarizeIndicators(coin.change24h, detail.series)}
@@ -45,9 +45,10 @@ export function CoinDetailScreen({
       </section>
 
       {/* CTAs → Trade (#7), coin + side preselected. Sticky just above the
-          floating bottom nav so they stay reachable while reading; فروش
-          only exists when the user actually holds this coin. */}
-      <div className="sticky bottom-[calc(6.75rem+env(safe-area-inset-bottom))] z-10 flex gap-3">
+          bottom edge (this page has no bottom nav) so they stay reachable
+          while reading; فروش only exists when the user actually holds this
+          coin. */}
+      <div className="sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] z-10 flex gap-3">
         <Link
           href={`/trade/${trade}?side=buy`}
           className={buttonClasses({

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useState, type CSSProperties } from "react";
 import {
   FEE_RATE,
   MIN_ORDER_IRT,
@@ -12,7 +12,7 @@ import { placeTradeOrder } from "@/app/actions/trade";
 import type { TradeFormState } from "@/app/actions/trade-state";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { CheckCircleIcon } from "@/components/ui/icons";
-import { CoinIcon } from "@/components/market/coin-icon";
+import { LivePriceChip } from "./live-price-chip";
 import { Keypad } from "./keypad";
 import { toPersianDigits } from "@/lib/utils/digits";
 import { formatCoinAmount, formatIrt } from "@/lib/utils/money";
@@ -43,7 +43,10 @@ export function TradeScreen({
   initialSide: TradeSide;
 }) {
   const { coin, availableIrt, availableCoin } = context;
-  const [side, setSide] = useState<TradeSide>(initialSide);
+  // No holdings of this coin → selling is impossible, so the sell button never
+  // appears and the side is pinned to buy (even if arrived at with ?side=sell).
+  const canSell = availableCoin > 0;
+  const [side, setSide] = useState<TradeSide>(canSell ? initialSide : "buy");
   // Entry mode (issue #69): the big number is Toman OR coin units; `digits`
   // holds the raw entry in the ACTIVE unit ("." allowed only in coin mode).
   const [unit, setUnit] = useState<"irt" | "coin">("irt");
@@ -90,14 +93,19 @@ export function TradeScreen({
     }
   };
 
+  // Buying beyond the Toman balance isn't a dead end — it's a nudge to top up
+  // and come back with more to spend, so the CTA turns into a deposit link.
+  const needsDeposit = side === "buy" && amountIrt > maxIrt;
   const error =
     side === "sell" && availableCoin <= 0
       ? "از این رمزارز موجودی ندارید."
       : amountIrt > 0 && amountIrt < MIN_ORDER_IRT
         ? "کمینه هر سفارش ۵۰۰٬۰۰۰ تومان است."
-        : amountIrt > maxIrt
-          ? "موجودی شما کافی نیست."
-          : null;
+        : needsDeposit
+          ? "موجودی کافی نیست. برای خرید، حساب خود را شارژ کنید."
+          : amountIrt > maxIrt
+            ? "موجودی شما کافی نیست."
+            : null;
   const valid = amountIrt >= MIN_ORDER_IRT && amountIrt <= maxIrt;
 
   if (state.status === "success") {
@@ -194,34 +202,35 @@ export function TradeScreen({
 
   return (
     <div className="flex flex-1 flex-col gap-5 px-4 pb-6 pt-4">
-      {/* Buy/Sell toggle */}
-      <div className="grid grid-cols-2 gap-1 rounded-full bg-surface p-1">
-        {(["buy", "sell"] as const).map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setSide(s)}
-            aria-pressed={s === side}
-            className={cn(
-              "h-11 rounded-full text-[15px] font-bold transition-colors",
-              s === side ? "bg-brand text-white" : "text-muted hover:text-ink",
-            )}
-          >
-            {SIDE_LABEL[s]}
-          </button>
-        ))}
-      </div>
+      {/* Live market price — centered, green, pulsing (display only). */}
+      <LivePriceChip basePrice={coin.priceIrt} />
 
-      {/* Coin */}
-      <div className="flex items-center gap-3">
-        <CoinIcon coin={coin} size={44} />
-        <div className="flex flex-col">
-          <span className="text-[15px] font-bold text-ink">{coin.name}</span>
-          <span className="text-[13px] text-muted" dir="ltr">
-            {formatIrt(coin.priceIrt)}
-          </span>
-        </div>
-      </div>
+      {/* Balance — no separate max button; tapping the balance fills the
+          whole available amount into the entry. */}
+      <button
+        type="button"
+        onClick={() =>
+          setDigits(
+            unit === "irt"
+              ? String(maxIrt)
+              : String(
+                  side === "sell"
+                    ? availableCoin
+                    : roundCoin(maxIrt / coin.priceIrt),
+                ),
+          )
+        }
+        disabled={maxIrt <= 0}
+        aria-label="استفاده از کل موجودی"
+        className="mx-auto text-[14px] text-muted transition-colors hover:text-ink disabled:opacity-50"
+      >
+        موجودی:{" "}
+        <span className="font-bold text-ink">
+          {side === "buy"
+            ? formatIrt(availableIrt)
+            : `${formatCoinAmount(roundCoin(availableCoin))} ${coin.symbol}`}
+        </span>
+      </button>
 
       {/* Amount — big number in the active unit; tap ⇅ to swap (issue #69) */}
       <div className="flex flex-1 flex-col items-center justify-center gap-2 py-2 text-center">
@@ -246,138 +255,163 @@ export function TradeScreen({
             {coin.symbol}
           </span>
         )}
-        <button
-          type="button"
-          onClick={() => {
-            setUnit(unit === "irt" ? "coin" : "irt");
-            setDigits("");
-          }}
-          aria-label={
-            unit === "irt" ? "ورود مقدار بر حسب رمزارز" : "ورود مقدار به تومان"
-          }
-          className="flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-[14px] text-muted transition-colors hover:text-ink"
-        >
-          <span aria-hidden>⇅</span>
-          <span dir="ltr">
+        {/* Equivalent value — always shown as plain text so you see the amount
+            AND what it's worth in the other unit (selling BTC still shows the
+            Toman value); the ⇅ button just swaps which unit you type in. */}
+        <div className="flex items-center gap-2 text-muted">
+          <span dir="ltr" className="text-[15px]">
             {unit === "irt"
               ? `≈ ${formatCoinAmount(amountCoin)} ${coin.symbol}`
               : `≈ ${formatIrt(amountIrt)}`}
           </span>
-        </button>
-        {error ? (
-          <p role="alert" className="text-[13px] font-bold text-loss">
-            {error}
-          </p>
-        ) : null}
-      </div>
-
-      {/* Available + max */}
-      <div className="flex items-center justify-between text-[14px]">
-        <span className="text-muted">
-          موجودی:{" "}
-          <span className="font-bold text-ink">
-            {side === "buy"
-              ? formatIrt(availableIrt)
-              : `${formatCoinAmount(roundCoin(availableCoin))} ${coin.symbol}`}
-          </span>
-        </span>
-        <button
-          type="button"
-          onClick={() =>
-            setDigits(
+          <button
+            type="button"
+            onClick={() => {
+              setUnit(unit === "irt" ? "coin" : "irt");
+              setDigits("");
+            }}
+            aria-label={
               unit === "irt"
-                ? String(maxIrt)
-                : String(
-                    side === "sell"
-                      ? availableCoin
-                      : roundCoin(maxIrt / coin.priceIrt),
-                  ),
-            )
-          }
-          disabled={maxIrt <= 0}
-          className="rounded-full bg-brand/10 px-4 py-1.5 font-bold text-brand transition-colors hover:bg-brand/15 disabled:opacity-50"
+                ? "ورود مقدار بر حسب رمزارز"
+                : "ورود مقدار به تومان"
+            }
+            className="flex size-7 items-center justify-center rounded-full bg-surface transition-colors hover:text-ink"
+          >
+            <span aria-hidden>⇅</span>
+          </button>
+        </div>
+        {/* Always mounted with a reserved line so showing/clearing an error
+            doesn't shift the centred amount and jump the layout. */}
+        <p
+          role="alert"
+          className="min-h-[1.25rem] text-[13px] font-bold text-loss"
         >
-          همه
-        </button>
+          {error}
+        </p>
       </div>
 
-      {side === "sell" && availableCoin > 0 ? (
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-[13px]">
-            <span className="text-muted">چند درصد از دارایی؟</span>
-            <span className="font-bold text-brand">
-              ٪{toPersianDigits(sellPercent)}
-            </span>
-          </div>
-          {/* dir=ltr: the slider grows left→right (۰ چپ، ۱۰۰ راست) like a
-              progress bar, not mirrored by the RTL page. 5% drag steps; the
-              named points below are tappable shortcuts + native ticks. */}
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            list="sell-percent-points"
-            value={sellPercent}
-            onChange={(e) => applySellPercent(Number(e.target.value))}
-            aria-label="درصد فروش از دارایی"
-            dir="ltr"
-            className="h-6 w-full cursor-pointer accent-brand"
-          />
-          <datalist id="sell-percent-points">
-            {SELL_PERCENT_POINTS.map((p) => (
-              <option key={p} value={p} />
-            ))}
-          </datalist>
-          <div dir="ltr" className="relative h-5">
-            {SELL_PERCENT_POINTS.map((p) => (
+      {/* Side toggle + sell slider + keypad read as one input cluster near the
+          thumb — compact, centered, no gap between the parts. Sell only when
+          the user holds this coin. */}
+      <div className="flex flex-col gap-2">
+        {canSell ? (
+          <div className="mx-auto grid w-fit grid-cols-2 gap-1 rounded-full bg-surface p-1">
+            {(["buy", "sell"] as const).map((s) => (
               <button
-                key={p}
+                key={s}
                 type="button"
-                onClick={() => applySellPercent(p)}
-                style={{ left: `${p}%` }}
+                onClick={() => setSide(s)}
+                aria-pressed={s === side}
                 className={cn(
-                  "absolute top-0 px-1 text-[11px] transition-colors",
-                  p === 100 ? "-translate-x-full" : "-translate-x-1/2",
-                  sellPercent === p
-                    ? "font-bold text-brand"
-                    : "text-placeholder hover:text-muted",
+                  "rounded-full px-6 py-1.5 text-[13px] font-bold transition-colors",
+                  s === side
+                    ? "bg-brand text-white"
+                    : "text-muted hover:text-ink",
                 )}
               >
-                ٪{toPersianDigits(p)}
+                {SIDE_LABEL[s]}
               </button>
             ))}
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      <Keypad
-        decimal={unit === "coin"}
-        onDigit={(d) =>
-          setDigits((cur) => {
-            if (cur.length >= 12) return cur;
-            if (d === ".") {
-              // one separator, coin mode only; leading "." becomes "0."
-              if (unit !== "coin" || cur.includes(".")) return cur;
-              return cur === "" ? "0." : cur + ".";
-            }
-            if (cur === "" && d === "0" && unit === "irt") return cur;
-            if (cur === "0" && d !== "." && unit === "coin") return cur;
-            return cur + d;
-          })
-        }
-        onBackspace={() => setDigits((cur) => cur.slice(0, -1))}
-      />
+        {/* Kept mounted (not toggled) so switching buy⇄sell doesn't change the
+            cluster height and jump the layout — just hidden on buy. */}
+        {canSell ? (
+          <div
+            className={cn(
+              "flex flex-col gap-1.5",
+              side !== "sell" && "invisible",
+            )}
+            aria-hidden={side !== "sell"}
+          >
+            <div className="flex items-center justify-between text-[13px]">
+              <span className="text-muted">چند درصد از دارایی؟</span>
+              <span className="font-bold text-brand">
+                ٪{toPersianDigits(sellPercent)}
+              </span>
+            </div>
+            {/* dir=ltr: the slider grows left→right (۰ چپ، ۱۰۰ راست) like a
+                progress bar, not mirrored by the RTL page. 5% drag steps; the
+                named points below are tappable shortcuts + native ticks.
+                --pct drives the WebKit/Blink track fill. */}
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              list="sell-percent-points"
+              value={sellPercent}
+              onChange={(e) => applySellPercent(Number(e.target.value))}
+              aria-label="درصد فروش از دارایی"
+              dir="ltr"
+              style={{ "--pct": `${sellPercent}%` } as CSSProperties}
+              className="range-brand"
+            />
+            <datalist id="sell-percent-points">
+              {SELL_PERCENT_POINTS.map((p) => (
+                <option key={p} value={p} />
+              ))}
+            </datalist>
+            <div dir="ltr" className="relative h-5">
+              {SELL_PERCENT_POINTS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => applySellPercent(p)}
+                  style={{ left: `${p}%` }}
+                  className={cn(
+                    "absolute top-0 px-1 text-[11px] transition-colors",
+                    p === 100 ? "-translate-x-full" : "-translate-x-1/2",
+                    sellPercent === p
+                      ? "font-bold text-brand"
+                      : "text-placeholder hover:text-muted",
+                  )}
+                >
+                  ٪{toPersianDigits(p)}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
-      <Button
-        type="button"
-        size="xl"
-        fullWidth
-        disabled={!valid}
-        onClick={() => setConfirming(true)}
-      >
-        ادامه
-      </Button>
+        <Keypad
+          decimal={unit === "coin"}
+          onDigit={(d) =>
+            setDigits((cur) => {
+              if (cur.length >= 12) return cur;
+              if (d === ".") {
+                // one separator, coin mode only; leading "." becomes "0."
+                if (unit !== "coin" || cur.includes(".")) return cur;
+                return cur === "" ? "0." : cur + ".";
+              }
+              if (cur === "" && d === "0" && unit === "irt") return cur;
+              if (cur === "0" && d !== "." && unit === "coin") return cur;
+              return cur + d;
+            })
+          }
+          onBackspace={() => setDigits((cur) => cur.slice(0, -1))}
+        />
+      </div>
+
+      {needsDeposit ? (
+        <Link
+          href="/wallet/deposit"
+          className={buttonClasses({ size: "xl", fullWidth: true })}
+        >
+          افزایش موجودی
+        </Link>
+      ) : (
+        <Button
+          type="button"
+          size="xl"
+          fullWidth
+          disabled={!valid}
+          onClick={() => setConfirming(true)}
+        >
+          ادامه
+        </Button>
+      )}
     </div>
   );
 }

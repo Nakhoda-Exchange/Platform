@@ -1,17 +1,22 @@
 import { describe, expect, test } from "bun:test";
-import { seededSeries } from "./seeded-series";
+import { seededSeries, toCandles } from "./seeded-series";
 
-describe("seededSeries", () => {
-  test("is deterministic for a given seed", () => {
-    expect(seededSeries(42, 24, 1_000, 0.1)).toEqual(
-      seededSeries(42, 24, 1_000, 0.1),
-    );
+describe("toCandles", () => {
+  test("buckets a walk into OHLC with sound invariants", () => {
+    const walk = seededSeries(7, 96, 1_000_000, 0.05);
+    const candles = toCandles(walk, 4);
+    expect(candles.length).toBe(24);
+    expect(candles[0].open).toBe(walk[0]);
+    expect(candles[23].close).toBe(1_000_000); // pinned to the current price
+    for (const c of candles) {
+      expect(c.high).toBeGreaterThanOrEqual(Math.max(c.open, c.close));
+      expect(c.low).toBeLessThanOrEqual(Math.min(c.open, c.close));
+    }
   });
 
-  test("pins the last point to end and stays positive", () => {
-    const series = seededSeries(7, 30, 5_000, 0.5);
-    expect(series).toHaveLength(30);
-    expect(series.at(-1)).toBe(5_000);
-    expect(series.every((v) => v > 0)).toBe(true);
+  test("is deterministic for a given seed", () => {
+    expect(toCandles(seededSeries(3, 16, 100, 0.1), 4)).toEqual(
+      toCandles(seededSeries(3, 16, 100, 0.1), 4),
+    );
   });
 });

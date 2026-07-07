@@ -196,6 +196,28 @@ export function FileTextIcon(props: IconProps) {
   );
 }
 
+export function LineChartIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+      <path d="m7 14 4-4 4 3 5-6" />
+    </Icon>
+  );
+}
+
+export function CandlestickIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M7 4v3" />
+      <rect x="5" y="7" width="4" height="8" rx="1" />
+      <path d="M7 15v3" />
+      <path d="M17 6v3" />
+      <rect x="15" y="9" width="4" height="8" rx="1" />
+      <path d="M17 17v2" />
+    </Icon>
+  );
+}
+
 export function StarIcon(props: IconProps) {
   return (
     <Icon {...props}>

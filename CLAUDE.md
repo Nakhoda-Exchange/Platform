@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 @AGENTS.md
 
-Nakhoda (ناخدا) is a mobile-first, **RTL Persian** altcoin-trading platform. `<html dir="rtl">`, Vazirmatn font. It must work on **both mobile Safari and Chrome** — verify UI changes against WebKit and Chromium, not Chrome alone.
+Nakhoda (ناخدا) is a mobile-first, **RTL Persian** altcoin-trading platform. `<html dir="rtl">`, IRANYekanX font (self-hosted variable woff2 via `next/font/local`). It must work on **both mobile Safari and Chrome** — verify UI changes against WebKit and Chromium, not Chrome alone.
 
 ## Commands
 
