@@ -45,9 +45,10 @@ export function CoinDetailScreen({
       </section>
 
       {/* CTAs → Trade (#7), coin + side preselected. Sticky just above the
-          floating bottom nav so they stay reachable while reading; فروش
-          only exists when the user actually holds this coin. */}
-      <div className="sticky bottom-[calc(6.75rem+env(safe-area-inset-bottom))] z-10 flex gap-3">
+          bottom edge (this page has no bottom nav) so they stay reachable
+          while reading; فروش only exists when the user actually holds this
+          coin. */}
+      <div className="sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] z-10 flex gap-3">
         <Link
           href={`/trade/${trade}?side=buy`}
           className={buttonClasses({
