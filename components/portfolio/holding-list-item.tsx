@@ -30,10 +30,10 @@ export function HoldingListItem({ holding }: { holding: Holding }) {
       {/* Balance: units held + their Toman value */}
       <div className="flex flex-col items-start gap-0.5" dir="ltr">
         <span className="text-[14px] font-bold text-ink">
-          {formatCoinAmount(amount)} {coin.symbol}
+          {formatIrtShort(valueIrt)}
         </span>
         <span className="text-[13px] text-muted">
-          {formatIrtShort(valueIrt)}
+          {coin.symbol} {formatCoinAmount(amount)}
         </span>
       </div>
     </Link>
