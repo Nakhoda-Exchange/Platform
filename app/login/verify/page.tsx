@@ -15,9 +15,14 @@ export const metadata: Metadata = {
 export default async function VerifyPage({
   searchParams,
 }: {
-  searchParams: Promise<{ phone?: string; cid?: string; rs?: string }>;
+  searchParams: Promise<{
+    phone?: string;
+    cid?: string;
+    rs?: string;
+    next?: string;
+  }>;
 }) {
-  const { phone = "", cid = "", rs } = await searchParams;
+  const { phone = "", cid = "", rs, next } = await searchParams;
   const resendSeconds = Number(rs) > 0 ? Number(rs) : 120;
 
   // No phone in the URL means the user landed here directly — send them back.
@@ -48,7 +53,12 @@ export default async function VerifyPage({
         }
       />
 
-      <OtpVerifyForm cid={cid} phone={phone} resendSeconds={resendSeconds} />
+      <OtpVerifyForm
+        cid={cid}
+        phone={phone}
+        resendSeconds={resendSeconds}
+        nextPath={next}
+      />
     </AuthShell>
   );
 }
