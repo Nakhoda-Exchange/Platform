@@ -200,30 +200,6 @@ export function TradeScreen({
       {/* Live market price — centered, green, pulsing (display only). */}
       <LivePriceChip basePrice={coin.priceIrt} />
 
-      {/* Buy/Sell toggle — only when the user holds this coin (has both sides
-          to choose). With no holdings it's buy-only, so a lone pill would just
-          be noise: drop it entirely. */}
-      {canSell ? (
-        <div className="grid grid-cols-2 gap-1 rounded-full bg-surface p-1">
-          {(["buy", "sell"] as const).map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setSide(s)}
-              aria-pressed={s === side}
-              className={cn(
-                "h-11 rounded-full text-[15px] font-bold transition-colors",
-                s === side
-                  ? "bg-brand text-white"
-                  : "text-muted hover:text-ink",
-              )}
-            >
-              {SIDE_LABEL[s]}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       {/* Balance — no separate max button; tapping the balance fills the
           whole available amount into the entry. */}
       <button
@@ -299,9 +275,31 @@ export function TradeScreen({
         ) : null}
       </div>
 
-      {/* Sell slider + keypad read as one input cluster — sitting flush, no
-          gap between them. */}
+      {/* Side toggle + sell slider + keypad read as one input cluster near the
+          thumb — compact, centered, no gap between the parts. Sell only when
+          the user holds this coin. */}
       <div className="flex flex-col gap-2">
+        {canSell ? (
+          <div className="mx-auto grid w-fit grid-cols-2 gap-1 rounded-full bg-surface p-1">
+            {(["buy", "sell"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSide(s)}
+                aria-pressed={s === side}
+                className={cn(
+                  "rounded-full px-6 py-1.5 text-[13px] font-bold transition-colors",
+                  s === side
+                    ? "bg-brand text-white"
+                    : "text-muted hover:text-ink",
+                )}
+              >
+                {SIDE_LABEL[s]}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         {side === "sell" && availableCoin > 0 ? (
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-[13px]">
