@@ -14,11 +14,16 @@ export function AppShell({
   header: ReactNode;
   children: ReactNode;
 }) {
+  // The platform is a phone app: on desktop we cap it to a phone-width column
+  // centred on a plain backdrop, rather than stretching the mobile UI wide.
+  // On an actual phone (≤440px) the column just fills the screen — no change.
   return (
-    <div className="flex min-h-svh flex-col bg-paper">
-      {header}
-      <main className="flex flex-1 flex-col">{children}</main>
-      <BottomNav />
+    <div className="flex min-h-svh justify-center bg-surface">
+      <div className="relative flex min-h-svh w-full max-w-[440px] flex-col bg-paper">
+        {header}
+        <main className="flex flex-1 flex-col">{children}</main>
+        <BottomNav />
+      </div>
     </div>
   );
 }
