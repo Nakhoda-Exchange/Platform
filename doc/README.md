@@ -18,5 +18,10 @@ implementation notes). Keep them in sync with the code they describe.
 | Dark/light theme (حالت نمایش)      | [`theme/`](./theme/)         |
 | Referral program (کد دعوت)         | [`referral/`](./referral/)   |
 
+Backend integration: every feature also has an **`api.md`** — the endpoint
+contract its HTTP adapter implements (shared rules in
+[`api-conventions.md`](./api-conventions.md)). With `API_BASE_URL` set the
+app binds to those endpoints; without it, the in-memory mocks serve.
+
 Conventions for all features: `CLAUDE.md` (architecture), `DESIGN.md`
 (tokens/visual), `COMPONENTS.md` (component catalog).

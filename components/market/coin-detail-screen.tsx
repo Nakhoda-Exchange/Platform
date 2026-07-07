@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
+import { summarizeIndicators } from "@/lib/core/domain/market/indicator-summary";
 import { PriceChart } from "./price-chart";
 import { CoinStats } from "./coin-stats";
+import { IndicatorSummaryCard } from "./indicator-summary-card";
 import { buttonClasses } from "@/components/ui/button";
 
 /**
@@ -25,6 +27,10 @@ export function CoinDetailScreen({
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-8 pt-4">
       <PriceChart coin={coin} series={detail.series} candles={detail.candles} />
+
+      <IndicatorSummaryCard
+        summary={summarizeIndicators(coin.change24h, detail.series)}
+      />
 
       <CoinStats detail={detail} />
 

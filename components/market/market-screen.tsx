@@ -18,10 +18,12 @@ import { AllAssets } from "./all-assets";
  */
 export function MarketScreen({
   overview,
+  heldIds,
   initialQuery = "",
   initialFilter,
 }: {
   overview: MarketOverview;
+  heldIds: string[];
   initialQuery?: string;
   initialFilter?: string;
 }) {
@@ -54,15 +56,21 @@ export function MarketScreen({
       </label>
 
       {searching ? (
-        <AllAssets coins={results} title="نتایج جستجو" showFilters={false} />
+        <AllAssets
+          coins={results}
+          heldIds={heldIds}
+          title="نتایج جستجو"
+          showFilters={false}
+        />
       ) : (
         <>
-          <WatchlistSection coins={overview.all} />
+          <WatchlistSection coins={overview.all} heldIds={heldIds} />
           <TopGainers coins={overview.topGainers} />
-          <TrendingList coins={overview.trending} />
+          <TrendingList coins={overview.trending} heldIds={heldIds} />
           <NewCoins coins={overview.newCoins} />
           <AllAssets
             coins={overview.all}
+            heldIds={heldIds}
             initialFilter={initialFilter}
             urlSync
           />

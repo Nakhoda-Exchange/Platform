@@ -2,10 +2,15 @@ import type { Coin } from "@/lib/core/domain/market/coin";
 import { CoinRow } from "./coin-row";
 import { SectionHeader } from "./section-header";
 import { FlameIcon } from "@/components/ui/icons";
-import { formatMarketCap } from "@/lib/utils/money";
 
 /** «پرطرفدارها» — the most popular coins, with market cap as the subtitle. */
-export function TrendingList({ coins }: { coins: Coin[] }) {
+export function TrendingList({
+  coins,
+  heldIds,
+}: {
+  coins: Coin[];
+  heldIds: string[];
+}) {
   if (coins.length === 0) return null;
   return (
     <section className="flex flex-col gap-2">
@@ -13,10 +18,7 @@ export function TrendingList({ coins }: { coins: Coin[] }) {
       <ul className="flex flex-col divide-y divide-line">
         {coins.map((coin) => (
           <li key={coin.id}>
-            <CoinRow
-              coin={coin}
-              subtitle={`ارزش بازار ${formatMarketCap(coin.marketCap)}`}
-            />
+            <CoinRow coin={coin} canSell={heldIds.includes(coin.id)} />
           </li>
         ))}
       </ul>

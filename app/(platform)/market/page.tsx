@@ -12,9 +12,10 @@ export default async function MarketPage({
 }: {
   searchParams: Promise<{ q?: string; f?: string }>;
 }) {
-  const [{ q, f }, result] = await Promise.all([
+  const [{ q, f }, result, portfolioResult] = await Promise.all([
     searchParams,
     container.resolve(TOKENS.GetMarketOverviewUseCase).execute(),
+    container.resolve(TOKENS.GetPortfolioUseCase).execute(),
   ]);
 
   if (!result.ok) {
@@ -27,9 +28,17 @@ export default async function MarketPage({
     );
   }
 
+  // Coins the user holds: their rows swipe-left to SELL instead of details.
+  const heldIds = portfolioResult.ok
+    ? portfolioResult.data.holdings
+        .filter((h) => h.amount > 0)
+        .map((h) => h.coin.id)
+    : [];
+
   return (
     <MarketScreen
       overview={result.data}
+      heldIds={heldIds}
       initialQuery={q ?? ""}
       initialFilter={f}
     />
