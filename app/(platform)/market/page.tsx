@@ -34,11 +34,16 @@ export default async function MarketPage({
         .filter((h) => h.amount > 0)
         .map((h) => h.coin.id)
     : [];
+  // Spendable Toman, so shoppers see what they have to buy with.
+  const availableIrt = portfolioResult.ok
+    ? portfolioResult.data.availableIrt
+    : 0;
 
   return (
     <MarketScreen
       overview={result.data}
       heldIds={heldIds}
+      availableIrt={availableIrt}
       initialQuery={q ?? ""}
       initialFilter={f}
     />

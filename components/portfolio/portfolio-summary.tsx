@@ -86,16 +86,7 @@ export function PortfolioSummary({
             </span>
           ) : null
         ) : (
-          <PortfolioDetails
-            availableIrt={portfolio.availableIrt}
-            holdingsValueIrt={portfolio.holdingsValueIrt}
-            profitIrt={portfolio.profitIrt}
-            profitPercent={portfolio.profitPercent}
-            dayChangeIrt={portfolio.dayChangeIrt}
-            dayChangePercent={portfolio.dayChangePercent}
-            pendingWithdrawIrt={portfolio.pendingWithdrawIrt}
-            history={history}
-          />
+          <PortfolioDetails portfolio={portfolio} history={history} />
         )}
       </div>
 

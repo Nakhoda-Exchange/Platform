@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import type { MarketOverview } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
 import { SearchIcon } from "@/components/ui/icons";
 import { toEnglishDigits } from "@/lib/utils/digits";
+import { formatIrt } from "@/lib/utils/money";
 import { replaceUrlParam } from "@/lib/utils/url-param";
 import { TopGainers } from "./top-gainers";
 import { WatchlistSection } from "./watchlist-section";
@@ -14,16 +16,18 @@ import { AllAssets } from "./all-assets";
 /**
  * Market/discover screen. Discovery-first: search → gainers → trending → new →
  * all-assets. Typing in search hides the curated sections and shows matches.
- * (Portfolio balance lives on the Holdings tab, not here.)
+ * When there's spendable Toman, a strip up top shows what's on hand to buy with.
  */
 export function MarketScreen({
   overview,
   heldIds,
+  availableIrt = 0,
   initialQuery = "",
   initialFilter,
 }: {
   overview: MarketOverview;
   heldIds: string[];
+  availableIrt?: number;
   initialQuery?: string;
   initialFilter?: string;
 }) {
@@ -54,6 +58,23 @@ export function MarketScreen({
           className="w-full bg-transparent text-right text-[16px] text-ink outline-none placeholder:text-placeholder"
         />
       </label>
+
+      {availableIrt > 0 ? (
+        <Link
+          href="/wallet/deposit"
+          className="flex items-center justify-between rounded-card bg-surface px-4 py-3 transition-colors hover:bg-line"
+        >
+          <span className="flex items-center gap-2 text-[14px]">
+            <span className="text-muted">موجودی تومانی</span>
+            <span dir="ltr" className="font-extrabold text-ink">
+              {formatIrt(availableIrt)}
+            </span>
+          </span>
+          <span className="rounded-full bg-brand/10 px-3 py-1.5 text-[13px] font-bold text-brand">
+            واریز
+          </span>
+        </Link>
+      ) : null}
 
       {searching ? (
         <AllAssets
