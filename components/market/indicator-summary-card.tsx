@@ -2,34 +2,46 @@ import type { IndicatorSummary } from "@/lib/core/domain/market/indicator-summar
 import { toPersianDigits } from "@/lib/utils/digits";
 import { cn } from "@/lib/utils/cn";
 
-const VERDICTS: Record<
-  IndicatorSummary["verdict"],
-  { label: string; tone: string; aria: string }
-> = {
-  buy: {
-    label: "خرید",
-    tone: "text-gain",
-    aria: "بیشتر نشانه‌ها رو به بالاست؛ نزدیک به سمت خرید.",
-  },
-  hold: {
-    label: "نگه‌داری",
-    tone: "text-ink",
-    aria: "بازار هنوز تصمیمش را نگرفته؛ میانه‌ی خط.",
-  },
-  sell: {
-    label: "فروش",
-    tone: "text-loss",
-    aria: "بیشتر نشانه‌ها رو به پایین است؛ نزدیک به سمت فروش.",
-  },
+/** The five rungs, strong-sell → strong-buy (LTR: red left, green right). */
+const STEPS = [
+  { label: "فروش قوی", tone: "loss" },
+  { label: "فروش", tone: "loss" },
+  { label: "خنثی", tone: "neutral" },
+  { label: "خرید", tone: "gain" },
+  { label: "خرید قوی", tone: "gain" },
+] as const;
+
+const BAR_ACTIVE: Record<string, string> = {
+  loss: "bg-loss",
+  neutral: "bg-muted",
+  gain: "bg-gain",
+};
+const BAR_IDLE: Record<string, string> = {
+  loss: "bg-loss/20",
+  neutral: "bg-line",
+  gain: "bg-gain/20",
+};
+const TEXT_ACTIVE: Record<string, string> = {
+  loss: "text-loss",
+  neutral: "text-ink",
+  gain: "text-gain",
 };
 
+/** positives 0..total → one of the five rungs (the middle counts share «خنثی»). */
+function stepIndex({ positives, total }: IndicatorSummary): number {
+  if (total <= 0) return 2;
+  if (positives <= 0) return 0;
+  if (positives === 1) return 1;
+  if (positives >= total) return 4;
+  if (positives === total - 1) return 3;
+  return 2;
+}
+
 /**
- * «راهنمای معامله» — one glance, no reading: a red→green strength line
- * (far LEFT = strong sell, far RIGHT = strong buy) with a needle showing
- * where this coin's simple signals land. The verdict word + signal count
- * sit under the needle for anyone who wants it in words, and an honest
- * «تصمیم با شماست» line closes the card. Colors echo the words, never
- * replace them.
+ * «راهنمای معامله» — the simple signals boiled down to a five-rung scale
+ * (فروش قوی → خرید قوی) with the current rung lit up. The headline names the
+ * rung, the count says how many signals point up, and an honest «تصمیم با
+ * شماست» closes it. Colour echoes the words for direction, never replaces them.
  */
 export function IndicatorSummaryCard({
   summary,
@@ -38,34 +50,55 @@ export function IndicatorSummaryCard({
 }) {
   if (summary.total === 0) return null; // not enough data — say nothing
 
-  const { verdict, positives, total } = summary;
-  const v = VERDICTS[verdict];
-  // 0% = strong sell … 100% = strong buy; clamped so the needle never clips.
-  const position = Math.min(96, Math.max(4, (positives / total) * 100));
+  const idx = stepIndex(summary);
+  const active = STEPS[idx];
 
   return (
     <section aria-label="راهنمای معامله" className="flex flex-col gap-2">
       <h2 className="text-[16px] font-bold text-ink">راهنمای معامله</h2>
-      <div className="flex flex-col gap-3 rounded-card bg-surface p-4">
-        {/* The strength line: sell-red on the left → buy-green on the right. */}
-        <div dir="ltr" role="img" aria-label={v.aria} className="relative pt-1">
-          <div className="h-2 rounded-full bg-gradient-to-r from-loss via-line to-gain" />
+      <div className="flex flex-col gap-4 rounded-card bg-surface p-4">
+        <div className="flex flex-col items-center gap-0.5">
           <span
-            aria-hidden
-            className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/4 rounded-full border-[3px] border-paper bg-ink shadow-sm"
-            style={{ left: `${position}%` }}
-          />
-        </div>
-        <div className="flex items-baseline justify-between text-[14px] font-bold">
-          <span className="text-gain">خرید</span>
-          <span className={cn("text-[15px]", v.tone)}>
-            {v.label}{" "}
-            <span className="text-[12px] font-medium text-muted">
-              ({toPersianDigits(positives)} از {toPersianDigits(total)} نشانه
-              مثبت)
-            </span>
+            className={cn(
+              "text-[20px] font-extrabold",
+              TEXT_ACTIVE[active.tone],
+            )}
+          >
+            {active.label}
           </span>
-          <span className="text-loss">فروش</span>
+          <span className="text-[12px] text-muted">
+            {toPersianDigits(summary.positives)} از{" "}
+            {toPersianDigits(summary.total)} نشانه مثبت
+          </span>
+        </div>
+
+        {/* Five rungs, sell-red on the left → buy-green on the right. */}
+        <div
+          dir="ltr"
+          role="img"
+          aria-label={`${active.label}؛ ${toPersianDigits(summary.positives)} از ${toPersianDigits(summary.total)} نشانه مثبت`}
+          className="grid grid-cols-5 gap-1.5"
+        >
+          {STEPS.map((s, i) => (
+            <div key={s.label} className="flex flex-col items-center gap-2">
+              <div
+                className={cn(
+                  "h-2 w-full rounded-full transition-colors",
+                  i === idx ? BAR_ACTIVE[s.tone] : BAR_IDLE[s.tone],
+                )}
+              />
+              <span
+                className={cn(
+                  "text-center text-[10px] leading-tight",
+                  i === idx
+                    ? cn("font-bold", TEXT_ACTIVE[s.tone])
+                    : "text-placeholder",
+                )}
+              >
+                {s.label}
+              </span>
+            </div>
+          ))}
         </div>
 
         <p className="text-[13px] text-muted">
