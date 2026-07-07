@@ -300,8 +300,16 @@ export function TradeScreen({
           </div>
         ) : null}
 
-        {side === "sell" && availableCoin > 0 ? (
-          <div className="flex flex-col gap-1.5">
+        {/* Kept mounted (not toggled) so switching buy⇄sell doesn't change the
+            cluster height and jump the layout — just hidden on buy. */}
+        {canSell ? (
+          <div
+            className={cn(
+              "flex flex-col gap-1.5",
+              side !== "sell" && "invisible",
+            )}
+            aria-hidden={side !== "sell"}
+          >
             <div className="flex items-center justify-between text-[13px]">
               <span className="text-muted">چند درصد از دارایی؟</span>
               <span className="font-bold text-brand">
