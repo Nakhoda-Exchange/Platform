@@ -8,9 +8,14 @@ import { cn } from "@/lib/utils/cn";
 /**
  * Floating bottom tab bar for the authenticated platform. Active tab (by route)
  * gets a soft-brand pill. Sticky with iOS safe-area padding; RTL order.
+ *
+ * Only the three top-level tabs (/market, /wallet, /account) show it — a
+ * second-level page (a coin, a deposit form, an account sub-screen) is a
+ * focused task with its own back button, so the nav would just be noise.
  */
 export function BottomNav() {
   const pathname = usePathname();
+  if (!NAV_ITEMS.some((item) => item.href === pathname)) return null;
 
   return (
     <nav className="sticky bottom-0 z-10 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
