@@ -14,7 +14,7 @@ export function HoldingListItem({ holding }: { holding: Holding }) {
   return (
     <Link
       href={`/market/${coin.symbol.toLowerCase()}`}
-      className="flex items-center justify-between gap-3 py-3 transition-colors hover:bg-surface"
+      className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-surface"
     >
       {/* Identity */}
       <div className="flex items-center gap-3">

@@ -12,8 +12,8 @@ const PERIOD_LABELS: Record<ChartRange, string> = {
 
 /**
  * «عملکرد گذشته» — how the price moved over each period, one glance per
- * cell: period label on top, the signed move under it (▲ gain-green /
- * ▼ loss-red, direction worded in the aria-label — never color alone).
+ * cell: period label on top, the move under it (gain-green / loss-red;
+ * direction is worded in the aria-label for screen readers).
  */
 export function PastPerformanceCard({
   performance,
@@ -47,7 +47,7 @@ export function PastPerformanceCard({
                   up ? "text-gain" : "text-loss",
                 )}
               >
-                {up ? "▲" : "▼"} {formatChangePercent(changePercent)}
+                {formatChangePercent(changePercent)}
               </dd>
             </div>
           );

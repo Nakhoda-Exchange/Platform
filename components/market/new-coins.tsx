@@ -41,7 +41,7 @@ export function NewCoins({ coins }: { coins: Coin[] }) {
                   up ? "text-gain" : "text-loss",
                 )}
               >
-                {up ? "▲" : "▼"} {formatChangePercent(coin.change24h)}
+                {formatChangePercent(coin.change24h)}
               </span>
             </Link>
           );

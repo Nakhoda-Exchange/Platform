@@ -31,12 +31,15 @@ const PortfolioHistoryChart = dynamic(
   },
 );
 
-/** «▲ +۱٬۲۳۴ ت (٪۵/۶)» gain/loss colored — sign and words, never color alone. */
+/** «۱٬۲۳۴ ت (٪۵/۶)» — colour carries gain/loss; aria says it for screen readers. */
 function SignedIrt({ amount, percent }: { amount: number; percent: number }) {
   const up = amount >= 0;
   return (
-    <span dir="ltr" className={cn("font-bold", up ? "text-gain" : "text-loss")}>
-      {up ? "▲ +" : "▼ −"}
+    <span
+      dir="ltr"
+      aria-label={`${up ? "سود" : "زیان"} ${formatIrtShort(Math.abs(amount))}، ${formatChangePercent(percent)}`}
+      className={cn("font-bold", up ? "text-gain" : "text-loss")}
+    >
       {formatIrtShort(Math.abs(amount))} ({formatChangePercent(percent)})
     </span>
   );

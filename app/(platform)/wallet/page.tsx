@@ -48,7 +48,7 @@ export default async function WalletPage() {
       {portfolio.holdings.length > 0 ? (
         <section className="flex flex-col gap-2">
           <h2 className="text-[17px] font-bold text-ink">دارایی‌های من</h2>
-          <ul className="flex flex-col divide-y divide-line">
+          <ul className="-mx-4 flex flex-col divide-y divide-line">
             {portfolio.holdings.map((holding) => (
               <li key={holding.coin.id}>
                 <HoldingListItem holding={holding} />

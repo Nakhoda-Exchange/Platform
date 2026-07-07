@@ -16,8 +16,14 @@ export class GetPortfolioUseCase {
     if (!result.ok) return result;
 
     const { holdings, availableIrt, pendingWithdrawIrt } = result.data;
-    const holdingsValueIrt = holdings.reduce((sum, h) => sum + h.valueIrt, 0);
-    const costIrt = holdings.reduce((sum, h) => sum + h.costIrt, 0);
+    // Coerce any non-finite field so one malformed holding can't turn the whole
+    // total (and «سود کل») into NaN.
+    const num = (n: number) => (Number.isFinite(n) ? n : 0);
+    const holdingsValueIrt = holdings.reduce(
+      (sum, h) => sum + num(h.valueIrt),
+      0,
+    );
+    const costIrt = holdings.reduce((sum, h) => sum + num(h.costIrt), 0);
     const profitIrt = holdingsValueIrt - costIrt;
     const profitPercent = costIrt > 0 ? (profitIrt / costIrt) * 100 : 0;
     const dayChangeIrt = holdings.reduce(
