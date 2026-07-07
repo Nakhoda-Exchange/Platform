@@ -42,6 +42,8 @@ export function Sheet({
   const draggingRef = useRef(false);
   const dragRef = useRef(0);
   const startYRef = useRef(0);
+  const pushedRef = useRef(false);
+  const poppedRef = useRef(false);
 
   // Mount while open; on close, play the exit then unmount. setState only ever
   // runs inside rAF/timeout callbacks (never directly in the effect body).
@@ -77,6 +79,32 @@ export function Sheet({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  // Back gesture (browser/phone back) closes the sheet instead of navigating:
+  // push a throwaway history entry while open, and pop it on close. If the user
+  // closed via the UI (backdrop/drag/Esc), unwind our entry with history.back()
+  // so no phantom entry is left behind.
+  useEffect(() => {
+    if (!open) return;
+    poppedRef.current = false;
+    if (!pushedRef.current) {
+      window.history.pushState({ nakhodaSheet: true }, "");
+      pushedRef.current = true;
+    }
+    const onPop = () => {
+      poppedRef.current = true;
+      pushedRef.current = false; // the browser already dropped our entry
+      onClose();
+    };
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      if (pushedRef.current && !poppedRef.current) {
+        pushedRef.current = false;
+        window.history.back();
+      }
+    };
   }, [open, onClose]);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
