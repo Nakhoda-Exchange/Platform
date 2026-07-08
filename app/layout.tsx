@@ -7,8 +7,6 @@ import { CurrencyUnitsHydrator } from "@/components/layout/currency-units-hydrat
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
 import { setCurrencyUnits } from "@/lib/utils/money";
-import { SplashScreen } from "@/components/pwa/splash-screen";
-import { SplashHider } from "@/components/pwa/splash-hider";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { BuildInfoLogger } from "@/components/layout/build-info-logger";
 
@@ -55,11 +53,9 @@ export default async function RootLayout({
       <body className="flex min-h-full flex-col bg-paper text-ink">
         {/* Sets .dark before first paint (system default or stored override). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <SplashScreen />
         <CurrencyUnitsHydrator units={currencyUnits} />
         <ThemeWatcher />
         {children}
-        <SplashHider />
         <ServiceWorkerRegister />
         <BuildInfoLogger />
       </body>
