@@ -36,31 +36,28 @@ export function CoinDetailScreen({
       <PriceChart coin={coin} series={detail.series} candles={detail.candles} />
 
       {holding ? (
-        // The viewer's position in this coin — a «yours» callout: what you own
-        // (right) and what it's worth in Toman (left).
-        <div className="flex items-center justify-between gap-3 rounded-card bg-brand-soft px-4 py-4">
-          <span className="flex min-w-0 items-center gap-3">
+        // The viewer's position in this coin — a «yours» callout: the amount
+        // held and its Toman worth sit together on one line.
+        <div className="flex items-center gap-3 rounded-card bg-brand-soft px-4 py-4">
+          <span
+            aria-hidden
+            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand"
+          >
+            <WalletIcon size={20} />
+          </span>
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-[13px] text-muted">دارایی شما</span>
             <span
-              aria-hidden
-              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand"
+              dir="ltr"
+              className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
             >
-              <WalletIcon size={20} />
-            </span>
-            <span className="flex min-w-0 flex-col">
-              <span className="text-[13px] text-muted">دارایی شما</span>
-              <span
-                dir="ltr"
-                className="truncate text-[16px] font-extrabold text-ink"
-              >
+              <span className="text-[16px] font-extrabold text-ink">
                 {formatCoinAmount(holding.amount)} {coin.symbol}
               </span>
+              <span className="text-[13px] font-medium text-muted">
+                ≈ {formatIrt(holding.valueIrt)}
+              </span>
             </span>
-          </span>
-          <span
-            dir="ltr"
-            className="shrink-0 text-[14px] font-bold tabular-nums text-ink"
-          >
-            {formatIrt(holding.valueIrt)}
           </span>
         </div>
       ) : null}
