@@ -6,11 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Coin } from "@/lib/core/domain/market/coin";
 import { CoinIcon } from "./coin-icon";
 import { ChevronRightIcon, CoinsIcon, WalletIcon } from "@/components/ui/icons";
-import {
-  formatChangePercent,
-  formatIrtShort,
-  formatUsd,
-} from "@/lib/utils/money";
+import { formatChangePercent, formatIrtShort } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 
 // Swipe-action geometry, modelled on Apple's row swipe actions. The row tracks
@@ -210,13 +206,11 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
             {formatChangePercent(coin.change24h)}
           </span>
 
-          {/* Left (RTL end): Toman price with the dollar price under it */}
-          <div className="flex flex-col items-end gap-0.5 justify-self-end">
+          {/* Left (RTL end): Toman price. The 24h change sits centered (above),
+              so price and percent read as the two data points — no USD. */}
+          <div className="flex flex-col items-end justify-self-end">
             <span className="text-[14px] font-bold text-ink">
               {formatIrtShort(coin.priceIrt)}
-            </span>
-            <span className="text-[12px] text-muted">
-              {formatUsd(coin.priceUsd)}
             </span>
           </div>
         </Link>
