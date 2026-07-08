@@ -1,0 +1,55 @@
+/**
+ * Deterministic mini price series for list/card sparklines, each value 0..1.
+ * ponytail: derived from a seed + 24h direction so it needs no backend series
+ * yet — swap for a real `sparkline: number[]` from the market API when it lands
+ * (drop this and feed the API values straight into `sparklinePaths`).
+ */
+export function sparklineSeries(
+  seed: number,
+  up: boolean,
+  points = 24,
+): number[] {
+  let s = seed >>> 0 || 1;
+  const rnd = () => (s = (s * 1664525 + 1013904223) >>> 0) / 0xffffffff;
+  const out: number[] = [];
+  let v = 0.5;
+  for (let i = 0; i < points; i++) {
+    v += (rnd() - 0.5) * 0.28;
+    v = Math.max(0.08, Math.min(0.92, v));
+    out.push(v);
+  }
+  // Pin the end to the extreme that agrees with the 24h sign, so the line's
+  // finish matches the percentage shown beside it.
+  out[points - 1] = up ? Math.max(...out) : Math.min(...out);
+  return out;
+}
+
+/** Stable seed from a coin symbol, so a coin's sparkline never changes shape. */
+export function seedFromSymbol(symbol: string): number {
+  let h = 0;
+  for (const ch of symbol) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return h || 1;
+}
+
+/** SVG line + area paths (over a w×h box) for a normalized 0..1 series. */
+export function sparklinePaths(
+  series: number[],
+  w: number,
+  h: number,
+  pad = 2.5,
+): { line: string; area: string; end: readonly [number, number] } {
+  const n = series.length;
+  // Pad on both axes so the line's ends and the endpoint dot stay inside the
+  // viewBox (an unpadded x=w endpoint gets its dot shaved at the right edge).
+  const innerW = w - pad * 2;
+  const innerH = h - pad * 2;
+  const pts = series.map(
+    (val, i) =>
+      [pad + (i / (n - 1)) * innerW, pad + (1 - val) * innerH] as const,
+  );
+  const line = pts
+    .map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`)
+    .join(" ");
+  const area = `${line} L${(w - pad).toFixed(1)} ${h} L${pad.toFixed(1)} ${h} Z`;
+  return { line, area, end: pts[n - 1] };
+}

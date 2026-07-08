@@ -75,7 +75,7 @@ export function MarketScreen({
         // Toman row, in a card container so it stands out at the page top.
         <CashListItem
           availableIrt={availableIrt}
-          className="rounded-card bg-surface hover:bg-line"
+          className="rounded-card border border-line bg-surface hover:bg-line"
         />
       ) : (
         // No spendable Toman — you can't buy anything, so lead with a bold
@@ -105,7 +105,7 @@ export function MarketScreen({
         className="sticky z-20 -mx-4 bg-paper px-4 py-1"
         style={{ top: headerH }}
       >
-        <label className="flex h-[54px] items-center gap-2 rounded-[27px] bg-surface px-[18px] shadow-sm">
+        <label className="flex h-[54px] items-center gap-2 rounded-[27px] border border-line bg-surface px-[18px]">
           <SearchIcon size={20} className="shrink-0 text-placeholder" />
           <input
             value={query}

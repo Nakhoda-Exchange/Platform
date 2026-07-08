@@ -5,6 +5,7 @@ import { useRef, useState, type PointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Coin } from "@/lib/core/domain/market/coin";
 import { CoinIcon } from "./coin-icon";
+import { Sparkline } from "./sparkline";
 import { ChevronRightIcon, CoinsIcon, WalletIcon } from "@/components/ui/icons";
 import { formatChangePercent, formatIrtShort } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
@@ -181,36 +182,42 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
           onClick={(e) => {
             if (dragged.current) e.preventDefault();
           }}
-          className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3 transition-colors hover:bg-surface"
+          className="grid grid-cols-[1fr_66px_auto] items-center gap-3 px-4 py-3 transition-colors hover:bg-surface"
         >
           {/* Right (RTL start): identity */}
-          <div className="flex items-center gap-3">
-            <CoinIcon coin={coin} size={42} />
-            <div className="flex flex-col">
-              <span className="text-[15px] font-bold text-ink">
+          <div className="flex min-w-0 items-center gap-3">
+            <CoinIcon coin={coin} size={40} />
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate text-[15px] font-bold text-ink">
                 {coin.name}
               </span>
-              <span className="text-[12px] text-muted">{coin.symbol}</span>
+              <span dir="ltr" className="text-[12px] text-muted">
+                {coin.symbol}
+              </span>
             </div>
           </div>
 
-          {/* Center: 24h change */}
-          <span
-            dir="ltr"
-            aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
-            className={cn(
-              "justify-self-center text-[13px] font-bold",
-              up ? "text-gain" : "text-loss",
-            )}
-          >
-            {formatChangePercent(coin.change24h)}
-          </span>
+          {/* Center: mini price sparkline */}
+          <Sparkline symbol={coin.symbol} up={up} width={66} height={28} />
 
-          {/* Left (RTL end): Toman price. The 24h change sits centered (above),
-              so price and percent read as the two data points — no USD. */}
-          <div className="flex flex-col items-end justify-self-end">
-            <span className="text-[14px] font-bold text-ink">
+          {/* Left (RTL end): Toman price + 24h change (▲/▼ + colour, never
+              colour alone) — the two data points that matter in the list. */}
+          <div className="flex flex-col items-end justify-self-end gap-0.5">
+            <span
+              dir="ltr"
+              className="text-[14px] font-bold tabular-nums text-ink"
+            >
               {formatIrtShort(coin.priceIrt)}
+            </span>
+            <span
+              dir="ltr"
+              aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
+              className={cn(
+                "flex items-center gap-0.5 text-[12px] font-bold",
+                up ? "text-gain" : "text-loss",
+              )}
+            >
+              {up ? "▲" : "▼"} {formatChangePercent(coin.change24h)}
             </span>
           </div>
         </Link>
