@@ -128,8 +128,8 @@ export function MarketScreen({
         )
       ) : (
         <>
-          <WatchlistSection coins={overview.all} heldIds={heldIds} />
           <TopGainers coins={overview.topGainers} />
+          <WatchlistSection coins={overview.all} heldIds={heldIds} />
           <TrendingList coins={overview.trending} heldIds={heldIds} />
           <NewCoins coins={overview.newCoins} />
           <AllAssets

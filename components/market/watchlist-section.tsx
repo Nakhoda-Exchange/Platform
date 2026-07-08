@@ -8,7 +8,7 @@ import { StarIcon } from "@/components/ui/icons";
 import { FAVORITES_EVENT, getFavorites } from "@/lib/utils/favorites";
 
 /**
- * «علاقه‌مندی‌ها» — the user's watchlist, FIRST section of the market screen
+ * «علاقه‌مندی‌ها» — the user's watchlist, shown right after «بیشترین رشد»
  * (the place people check their coins daily; the chip in «همه ارزها» remains
  * as a filter). Renders nothing until at least one coin is starred, so new
  * users see the curated discovery sections untouched.
