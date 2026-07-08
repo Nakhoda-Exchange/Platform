@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { GoftinoChat } from "@/components/support/goftino-chat";
+import { SplashScreen } from "@/components/pwa/splash-screen";
+import { SplashHider } from "@/components/pwa/splash-hider";
 
 // The platform is the app, not the marketing site: it's per-user and data-
 // driven, so nothing under this group should be prerendered at build (that
@@ -25,7 +27,10 @@ export default function AppLayout({
 }) {
   return (
     <>
+      {/* Branded PWA splash — only over the app, never the marketing site. */}
+      <SplashScreen />
       <AppShell header={header}>{children}</AppShell>
+      <SplashHider />
       <GoftinoChat />
     </>
   );
