@@ -56,7 +56,10 @@ export default async function WalletPage() {
           <ul className="-mx-4 flex flex-col divide-y divide-line">
             {portfolio.availableIrt > 0 ? (
               <li>
-                <CashListItem availableIrt={portfolio.availableIrt} />
+                <CashListItem
+                  availableIrt={portfolio.availableIrt}
+                  withActions
+                />
               </li>
             ) : null}
             {portfolio.holdings.map((holding) => (
