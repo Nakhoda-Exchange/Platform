@@ -8,7 +8,6 @@ import {
   ChevronLeftIcon,
   CreditCardIcon,
   FileTextIcon,
-  FingerprintIcon,
   GiftIcon,
   HeadphonesIcon,
   ShieldIcon,
@@ -16,8 +15,6 @@ import {
 } from "@/components/ui/icons";
 import { openSupportChat } from "@/components/support/goftino";
 import { ThemeRow } from "./theme-row";
-import { useEffect, useState } from "react";
-import { hasBiometricCredential } from "@/lib/utils/webauthn";
 import { cn } from "@/lib/utils/cn";
 
 /** One settings row: leading icon, label, trailing value + RTL-forward chevron. */
@@ -83,13 +80,6 @@ function Row({
  * the Goftino widget; every other row navigates to its settings screen.
  */
 export function AccountMenu({ profile }: { profile: UserProfile }) {
-  // Enrollment is device-local — readable only after mount.
-  const [biometricEnrolled, setBiometricEnrolled] = useState(false);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only read
-    setBiometricEnrolled(hasBiometricCredential());
-  }, []);
-
   return (
     <nav aria-label="تنظیمات حساب">
       <ul className="flex flex-col divide-y divide-line">
@@ -101,17 +91,6 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
             value={profile.twoFactorEnabled ? "فعال" : "غیرفعال"}
             valueClassName={
               profile.twoFactorEnabled ? "font-bold text-brand" : undefined
-            }
-          />
-        </li>
-        <li>
-          <Row
-            Icon={FingerprintIcon}
-            label="ورود بیومتریک"
-            href="/account/biometric"
-            value={biometricEnrolled ? "فعال" : "غیرفعال"}
-            valueClassName={
-              biometricEnrolled ? "font-bold text-brand" : undefined
             }
           />
         </li>

@@ -151,23 +151,6 @@ export async function verifyLogin(
 }
 
 /**
- * Biometric variant of the gate: the device verified the user via WebAuthn
- * (client-side `navigator.credentials.get`). Mock: the assertion signature is
- * NOT re-verified here — that is backend work once auth sessions land; this
- * action only performs the redirect the password path would. Status + next come
- * from the httpOnly cookie set at the OTP step.
- */
-export async function passTwoStepBiometric(): Promise<void> {
-  const pending = await readLoginStatus();
-  if (!pending) redirect("/login");
-
-  const resolved = asStatus(pending.status);
-  await clearLoginStatus();
-  if (resolved !== "declined") await startSession();
-  redirect(pending.next ?? DESTINATION[resolved]);
-}
-
-/**
  * Step 3 (only when a two-step password is set) — verify it, then continue to
  * the status destination read from the httpOnly cookie.
  */

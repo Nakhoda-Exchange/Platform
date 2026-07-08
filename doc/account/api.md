@@ -50,5 +50,3 @@ Errors: `WRONG_PASSWORD` (422, «رمز دومرحله‌ای درست نیست.
   `{ nationalCode, birthDate, code, password }` with the KYC error codes
   (`INVALID_NATIONAL_CODE`, `INVALID_BIRTHDATE`, `INVALID_CODE`) — the UI
   jumps back to the step named by the code.
-- Biometric (WebAuthn) assertion verification is future backend work; the
-  device only unlocks the same gate today.
