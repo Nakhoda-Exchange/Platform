@@ -37,10 +37,10 @@ export function TopGainers({ coins }: { coins: Coin[] }) {
 
             <Sparkline symbol={coin.symbol} up width={122} height={34} />
 
-            <span className="flex items-center justify-between gap-1">
+            <span className="flex flex-col items-start gap-1.5">
               <span
                 dir="ltr"
-                className="text-[14px] font-extrabold tabular-nums text-ink"
+                className="max-w-full text-[13px] font-extrabold tabular-nums text-ink"
               >
                 {formatIrtShort(coin.priceIrt)}
               </span>

@@ -182,7 +182,7 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
           onClick={(e) => {
             if (dragged.current) e.preventDefault();
           }}
-          className="grid grid-cols-[1fr_66px_auto] items-center gap-3 px-4 py-3 transition-colors hover:bg-surface"
+          className="grid grid-cols-[1fr_66px_1fr] items-center gap-3 px-4 py-3 transition-colors hover:bg-surface"
         >
           {/* Right (RTL start): identity */}
           <div className="flex min-w-0 items-center gap-3">
