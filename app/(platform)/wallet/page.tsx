@@ -4,6 +4,7 @@ import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
 import { PortfolioSummary } from "@/components/portfolio/portfolio-summary";
 import { HoldingListItem } from "@/components/portfolio/holding-list-item";
+import { CashListItem } from "@/components/portfolio/cash-list-item";
 import { PortfolioEmpty } from "@/components/portfolio/portfolio-empty";
 import { LoadError } from "@/components/ui/load-error";
 import { buttonClasses } from "@/components/ui/button";
@@ -46,10 +47,18 @@ export default async function WalletPage() {
         portfolio={portfolio}
         history={historyResult.ok ? historyResult.data : null}
       />
-      {portfolio.holdings.length > 0 ? (
+      {/* Assets — Toman always leads (like a صراف), then the coins. Shows
+          whenever there's cash or coins; a coins-empty wallet still gets the
+          «buy your first coin» nudge below. */}
+      {portfolio.holdings.length > 0 || portfolio.availableIrt > 0 ? (
         <section className="flex flex-col gap-2">
           <h2 className="text-[17px] font-bold text-ink">دارایی‌های من</h2>
           <ul className="-mx-4 flex flex-col divide-y divide-line">
+            {portfolio.availableIrt > 0 ? (
+              <li>
+                <CashListItem availableIrt={portfolio.availableIrt} />
+              </li>
+            ) : null}
             {portfolio.holdings.map((holding) => (
               <li key={holding.coin.id}>
                 <HoldingListItem holding={holding} />
@@ -57,7 +66,9 @@ export default async function WalletPage() {
             ))}
           </ul>
         </section>
-      ) : (
+      ) : null}
+
+      {portfolio.holdings.length === 0 ? (
         <section className="flex flex-col items-center gap-3 rounded-card bg-surface px-6 py-8 text-center">
           <p className="max-w-[280px] text-[15px] leading-[1.8] text-muted">
             هنوز رمزارزی نخریده‌ای. با اولین خرید، سبد دارایی‌ات این‌جا شکل
@@ -67,7 +78,7 @@ export default async function WalletPage() {
             خرید رمزارز
           </Link>
         </section>
-      )}
+      ) : null}
     </div>
   );
 }
