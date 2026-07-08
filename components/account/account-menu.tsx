@@ -118,7 +118,10 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
         <Row Icon={HeadphonesIcon} label="پشتیبانی" onClick={openSupportChat} />
       </div>
 
-      <ThemeSelector />
+      <div className="flex flex-col gap-2">
+        <h2 className="px-1 text-[12px] font-bold text-muted">حالت نمایش</h2>
+        <ThemeSelector />
+      </div>
     </nav>
   );
 }
