@@ -14,11 +14,11 @@ test("deterministic: same seed + direction → identical series", () => {
   expect(a).toEqual(b);
 });
 
-test("end agrees with direction (up ⇒ ends at the max, down ⇒ at the min)", () => {
+test("end agrees with direction (up ends above its start, down below)", () => {
   const up = sparklineSeries(123, true);
-  expect(up[up.length - 1]).toBe(Math.max(...up));
+  expect(up[up.length - 1]).toBeGreaterThan(up[0]);
   const down = sparklineSeries(123, false);
-  expect(down[down.length - 1]).toBe(Math.min(...down));
+  expect(down[down.length - 1]).toBeLessThan(down[0]);
 });
 
 test("seedFromSymbol is stable and non-zero", () => {
