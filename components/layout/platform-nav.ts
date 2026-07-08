@@ -42,4 +42,5 @@ export const HEADER_CONFIG: Record<string, HeaderConfig> = {
   "/account/announcements": { title: "اعلان‌ها", backHref: "/account" },
   "/account/referral": { title: "کد دعوت", backHref: "/account" },
   "/account/terms": { title: "قوانین و حریم خصوصی", backHref: "/account" },
+  "/account/faq": { title: "سوالات متداول", backHref: "/account" },
 };
