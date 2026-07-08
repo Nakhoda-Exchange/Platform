@@ -6,7 +6,6 @@ import { PriceChart } from "./price-chart";
 import { CoinKeyStats } from "./coin-key-stats";
 import { IndicatorSummaryCard } from "./indicator-summary-card";
 import { PastPerformanceCard } from "./past-performance-card";
-import { CoinBlogPosts } from "./coin-blog-posts";
 import { buttonClasses } from "@/components/ui/button";
 
 /**
@@ -39,8 +38,6 @@ export function CoinDetailScreen({ detail }: { detail: CoinDetail }) {
         <p className="text-[15px] leading-7 text-muted">{detail.description}</p>
         <p className="text-[15px] leading-7 text-muted">{detail.history}</p>
       </section>
-
-      <CoinBlogPosts posts={detail.blogPosts} />
 
       {/* Sticky Buy/Sell bar → Trade screen (which gates selling itself). Full
           bleed with its own background + top divider so it reads as a bar over
