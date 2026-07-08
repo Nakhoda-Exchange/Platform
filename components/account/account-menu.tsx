@@ -38,6 +38,7 @@ function Row({
   valueClassName,
   onClick,
   href,
+  highlight,
 }: {
   Icon: ComponentType<IconProps>;
   label: string;
@@ -45,6 +46,8 @@ function Row({
   valueClassName?: string;
   onClick?: () => void;
   href?: string;
+  /** Give this row extra weight — for the one item worth drawing the eye to. */
+  highlight?: boolean;
 }) {
   const inner = (
     <>
@@ -55,7 +58,14 @@ function Row({
         >
           <Icon size={18} />
         </span>
-        <span className="truncate text-[15px] font-bold text-ink">{label}</span>
+        <span
+          className={cn(
+            "truncate text-[15px]",
+            highlight ? "font-extrabold text-brand" : "font-bold text-ink",
+          )}
+        >
+          {label}
+        </span>
       </span>
       <span className="flex shrink-0 items-center gap-1.5">
         {value ? (
@@ -118,7 +128,12 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
 
       <Group label="فعالیت">
         <Row Icon={BellIcon} label="اعلان‌ها" href="/account/announcements" />
-        <Row Icon={GiftIcon} label="دعوت از دوستان" href="/account/referral" />
+        <Row
+          Icon={GiftIcon}
+          label="دعوت از دوستان"
+          href="/account/referral"
+          highlight
+        />
       </Group>
 
       <Group label="راهنما و پشتیبانی">

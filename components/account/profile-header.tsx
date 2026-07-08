@@ -22,7 +22,7 @@ export function ProfileHeader({ profile }: { profile: UserProfile }) {
         <h1 className="truncate text-[17px] font-extrabold text-ink">
           {profile.name}
         </h1>
-        <span dir="ltr" className="text-[13px] text-muted">
+        <span dir="ltr" className="text-right text-[13px] text-muted">
           {toPersianDigits(profile.mobile)}
         </span>
       </div>
