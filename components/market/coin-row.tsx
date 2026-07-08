@@ -5,7 +5,7 @@ import { useRef, useState, type PointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Coin } from "@/lib/core/domain/market/coin";
 import { CoinIcon } from "./coin-icon";
-import { ChevronLeftIcon, CoinsIcon, WalletIcon } from "@/components/ui/icons";
+import { ChevronRightIcon, CoinsIcon, WalletIcon } from "@/components/ui/icons";
 import {
   formatChangePercent,
   formatIrtShort,
@@ -42,8 +42,8 @@ function resist(dx: number): number {
  * symbol) on the right, the 24h change centered, the Toman price on the left.
  * Tapping opens the coin detail page.
  *
- * Quick trade by swipe (the primary way to buy/sell): drag the row RIGHT to
- * reveal «خرید» and release to open the buy screen; drag LEFT to reveal «فروش»
+ * Quick trade by swipe (the primary way to buy/sell): drag the row LEFT to
+ * reveal «خرید» and release to open the buy screen; drag RIGHT to reveal «فروش»
  * (when the user holds the coin) or «جزئیات» otherwise. Vertical panning stays
  * with the browser (touch-action: pan-y); a horizontal drag suppresses the
  * row's own tap navigation.
@@ -63,14 +63,17 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
   const [dragging, setDragging] = useState(false);
 
   const buyHref = `/trade/${symbol}?side=buy`;
-  const leftHref = canSell ? `/trade/${symbol}?side=sell` : `/market/${symbol}`;
+  const trailHref = canSell
+    ? `/trade/${symbol}?side=sell`
+    : `/market/${symbol}`;
 
   // Reveal progress toward the commit point, per side (0…1), and whether the
-  // pull is far enough that a release will fire ("armed").
-  const buyProgress = dx > 0 ? Math.min(dx / COMMIT_AT, 1) : 0;
-  const trailProgress = dx < 0 ? Math.min(-dx / COMMIT_AT, 1) : 0;
-  const buyArmed = dx >= COMMIT_AT;
-  const trailArmed = dx <= -COMMIT_AT;
+  // pull is far enough that a release will fire ("armed"). Buy is the LEFT
+  // pull (dx < 0); the trailing action (sell/details) is the RIGHT pull.
+  const buyProgress = dx < 0 ? Math.min(-dx / COMMIT_AT, 1) : 0;
+  const trailProgress = dx > 0 ? Math.min(dx / COMMIT_AT, 1) : 0;
+  const buyArmed = dx <= -COMMIT_AT;
+  const trailArmed = dx >= COMMIT_AT;
 
   function onPointerDown(e: PointerEvent<HTMLDivElement>) {
     if (!e.isPrimary) return;
@@ -99,8 +102,8 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
 
   function onPointerEnd() {
     if (engagedRef.current) {
-      if (dxRef.current >= COMMIT_AT) router.push(buyHref);
-      else if (dxRef.current <= -COMMIT_AT) router.push(leftHref);
+      if (dxRef.current <= -COMMIT_AT) router.push(buyHref);
+      else if (dxRef.current >= COMMIT_AT) router.push(trailHref);
     }
     start.current = null;
     engagedRef.current = false;
@@ -110,27 +113,27 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
   }
 
   const trailLabel = canSell ? "فروش" : "جزئیات";
-  const TrailIcon = canSell ? WalletIcon : ChevronLeftIcon;
+  const TrailIcon = canSell ? WalletIcon : ChevronRightIcon;
 
   // Label opacity fills in by REVEAL_AT so it's readable on a slight swipe;
   // the icon+label scale in with progress, then firm up with a pop when armed.
-  const buyReveal = dx > 0 ? Math.min(dx / REVEAL_AT, 1) : 0;
-  const trailReveal = dx < 0 ? Math.min(-dx / REVEAL_AT, 1) : 0;
+  const buyReveal = dx < 0 ? Math.min(-dx / REVEAL_AT, 1) : 0;
+  const trailReveal = dx > 0 ? Math.min(dx / REVEAL_AT, 1) : 0;
   const buyScale = buyArmed ? 1.1 : 0.9 + 0.1 * buyProgress;
   const trailScale = trailArmed ? 1.1 : 0.9 + 0.1 * trailProgress;
 
   return (
     <div className="relative overflow-hidden">
       {/* Action panels behind the row, revealed as it slides. خرید on the
-          leading (rightward) edge, فروش/جزئیات on the trailing (leftward)
-          edge. dir="ltr" pins each label to the PHYSICAL edge it's revealed
-          from (RTL would push it toward the center, out of the swipe's reach),
-          so even a small pull shows a readable icon + label — the indicator —
-          which firms up with a pop once armed. */}
+          right edge (revealed by a leftward pull), فروش/جزئیات on the left
+          edge (revealed by a rightward pull). dir="ltr" pins each label to the
+          PHYSICAL edge it's revealed from (RTL would push it toward the center,
+          out of the swipe's reach), so even a small pull shows a readable icon
+          + label — the indicator — which firms up with a pop once armed. */}
       <div aria-hidden className="absolute inset-0">
         <div
           dir="ltr"
-          className="absolute inset-y-0 left-0 flex w-40 items-center justify-start bg-gain pl-4 text-white"
+          className="absolute inset-y-0 right-0 flex w-40 items-center justify-end bg-gain pr-4 text-white"
         >
           <span
             className="flex items-center gap-1.5 text-[14px] font-bold"
@@ -147,7 +150,7 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
         <div
           dir="ltr"
           className={cn(
-            "absolute inset-y-0 right-0 flex w-40 items-center justify-end pr-4",
+            "absolute inset-y-0 left-0 flex w-40 items-center justify-start pl-4",
             canSell ? "bg-loss text-white" : "bg-surface text-ink",
           )}
         >

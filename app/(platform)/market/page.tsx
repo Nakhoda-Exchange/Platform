@@ -23,7 +23,7 @@ export default async function MarketPage({
     return <LoadError message="بارگذاری بازار ناموفق بود." />;
   }
 
-  // Coins the user holds: their rows swipe-left to SELL instead of details.
+  // Coins the user holds: their rows swipe-right to SELL instead of details.
   const heldIds = portfolioResult.ok
     ? portfolioResult.data.holdings
         .filter((h) => h.amount > 0)
