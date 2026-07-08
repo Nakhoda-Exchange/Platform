@@ -52,6 +52,15 @@ export function Sheet({
   const pushedRef = useRef(false);
   const poppedRef = useRef(false);
 
+  // Parents pass an inline `onClose` (new ref each render). Keep it in a ref so
+  // the effects below don't list it as a dep — otherwise every parent re-render
+  // (e.g. typing into a field in the sheet) re-runs the history effect, whose
+  // cleanup fires history.back() and closes the sheet on the first keystroke.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   // Mount while open; on close, play the exit then unmount. setState only ever
   // runs inside rAF/timeout callbacks (never directly in the effect body).
   useEffect(() => {
@@ -82,11 +91,11 @@ export function Sheet({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onCloseRef.current();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open]);
 
   // Back gesture (browser/phone back) closes the sheet instead of navigating:
   // push a throwaway history entry while open, and pop it on close. If the user
@@ -102,7 +111,7 @@ export function Sheet({
     const onPop = () => {
       poppedRef.current = true;
       pushedRef.current = false; // the browser already dropped our entry
-      onClose();
+      onCloseRef.current();
     };
     window.addEventListener("popstate", onPop);
     return () => {
@@ -112,7 +121,7 @@ export function Sheet({
         window.history.back();
       }
     };
-  }, [open, manageBack, onClose]);
+  }, [open, manageBack]);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     draggingRef.current = true;
