@@ -74,9 +74,14 @@
   --tone-loss-soft: rgba(248, 113, 113, 0.14);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/*
+ * Deliberately NO `scroll-behavior: smooth` on html: set on the root element
+ * it propagates to the viewport scroller (like `overflow` does), so it animates
+ * the router's scroll-to-top on every client navigation — a new page (e.g. a
+ * coin PDP) then opens at the previous scroll position instead of the top.
+ * Keeping the reset instant fixes that. Scope smooth to a specific container if
+ * ever needed; never put it back on html.
+ */
 
 /*
  * App-like, mobile-first: scrolling stays, scrollbars don't — neither the page
