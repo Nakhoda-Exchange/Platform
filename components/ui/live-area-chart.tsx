@@ -100,6 +100,35 @@ function liveTailData(
   return data;
 }
 
+/**
+ * Scrub marker: a single brand-blue dot sitting ON the line at the peeked
+ * point, so the finger's position reads at a glance (the axisPointer line
+ * alone is easy to lose). All-null except the peeked index; hidden when not
+ * scrubbing (index null). Length matches the xAxis (+1 for the live slot).
+ */
+function peekData(
+  points: ChartPoint[],
+  tones: Tones,
+  index: number | null,
+): LineSeriesOption["data"] {
+  const data: NonNullable<LineSeriesOption["data"]> = new Array(
+    points.length + 1,
+  ).fill(null);
+  if (index != null && index >= 0 && index < points.length) {
+    data[index] = {
+      value: points[index].value,
+      symbol: "circle",
+      symbolSize: 11,
+      itemStyle: {
+        color: tones.brand,
+        borderColor: tones.paper,
+        borderWidth: 2.5,
+      },
+    };
+  }
+  return data;
+}
+
 function buildOption(
   points: ChartPoint[],
   tones: Tones,
@@ -166,6 +195,18 @@ function buildOption(
         emphasis: { disabled: true },
         animationDurationUpdate: LIVE_TICK_MS * 0.75,
         animationEasingUpdate: "linear",
+      },
+      {
+        // The scrub dot. No line — just the marker; driven on peek change.
+        id: "peek",
+        type: "line",
+        data: peekData(points, tones, null),
+        symbol: "none",
+        showSymbol: true,
+        silent: true,
+        lineStyle: { width: 0 },
+        emphasis: { disabled: true },
+        z: 5,
       },
     ],
   };
@@ -271,6 +312,16 @@ export function LiveAreaChart({
       ],
     });
   }, [liveValue, points]);
+
+  // Move the scrub dot to the peeked point (hidden when not scrubbing).
+  // themeClass is a dep so a notMerge theme rebuild doesn't drop the dot.
+  const scrubIndex =
+    peek != null && peek >= 0 && peek < points.length ? peek : null;
+  useEffect(() => {
+    chartRef.current?.setOption({
+      series: [{ id: "peek", data: peekData(points, readTones(), scrubIndex) }],
+    });
+  }, [scrubIndex, points, themeClass]);
 
   const moment = (
     <span className="text-muted">
