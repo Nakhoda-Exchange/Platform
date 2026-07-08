@@ -35,7 +35,7 @@ DESTINATION[status]:  registration→/kyc · approved→/market · declined→/d
   `/account`, `/trade`: no `session` cookie → redirect `/login?next=<path>`;
   logged-in visits to `/login` bounce to `/market`.
 - The session cookie is set ONLY at true login success: OTP success when no
-  two-step password exists; the gate (password/biometric) when one does —
+  two-step password exists; the gate (password) when one does —
   so the gate cannot be skipped. Declined users short-circuit to
   `/declined` before the gate and never receive a session. Logout clears it.
 - `?next=` rides the whole flow (login → verify → gate) via hidden fields;

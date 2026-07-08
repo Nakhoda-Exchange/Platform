@@ -35,7 +35,6 @@ export const HEADER_CONFIG: Record<string, HeaderConfig> = {
   "/wallet/withdraw": { title: "برداشت", backHref: "/wallet" },
   "/account/bank-accounts": { title: "حساب‌های بانکی", backHref: "/account" },
   "/account/two-step": { title: "ورود دومرحله‌ای", backHref: "/account" },
-  "/account/biometric": { title: "ورود بیومتریک", backHref: "/account" },
   "/account/two-step/reset": {
     title: "بازنشانی رمز",
     backHref: "/account/two-step",

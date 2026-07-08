@@ -17,8 +17,8 @@ mandatory passwords.
 
 ## Non-goals (this tier)
 
-- Email login, social login, passkeys/WebAuthn (biometric is a future factor
-  for the two-step gate), device management, session list.
+- Email login, social login, passkeys/WebAuthn, device management, session
+  list.
 
 ## Flow & statuses
 
