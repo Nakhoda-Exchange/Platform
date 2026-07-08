@@ -14,10 +14,23 @@ import {
   type IconProps,
 } from "@/components/ui/icons";
 import { openSupportChat } from "@/components/support/goftino";
-import { ThemeRow } from "./theme-row";
+import { ThemeSelector } from "./theme-row";
 import { cn } from "@/lib/utils/cn";
 
-/** One settings row: leading icon, label, trailing value + RTL-forward chevron. */
+/** A labeled group; its `children` sit in a single rounded, divided card. */
+function Group({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="px-1 text-[12px] font-bold text-muted">{label}</h2>
+      <div className="flex flex-col divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+/** One settings row: a brand-badged icon, label, trailing value + chevron. A
+ *  row with neither `onClick` nor `href` renders static, never a dead link. */
 function Row({
   Icon,
   label,
@@ -35,16 +48,16 @@ function Row({
 }) {
   const inner = (
     <>
-      <span className="flex items-center gap-3">
+      <span className="flex min-w-0 items-center gap-3">
         <span
           aria-hidden
-          className="flex size-10 items-center justify-center rounded-field bg-surface text-muted"
+          className="flex size-9 shrink-0 items-center justify-center rounded-field bg-brand/10 text-brand"
         >
-          <Icon size={20} />
+          <Icon size={18} />
         </span>
-        <span className="text-[15px] font-bold text-ink">{label}</span>
+        <span className="truncate text-[15px] font-bold text-ink">{label}</span>
       </span>
-      <span className="flex items-center gap-1.5">
+      <span className="flex shrink-0 items-center gap-1.5">
         {value ? (
           <span className={cn("text-[13px] text-muted", valueClassName)}>
             {value}
@@ -55,9 +68,7 @@ function Row({
     </>
   );
   const rowClass =
-    "flex w-full items-center justify-between gap-3 py-3 text-right transition-colors hover:bg-surface";
-  // A row is either an action (onClick) or a link (href). With neither it
-  // renders as a static row, never a dead `#` link.
+    "flex w-full items-center justify-between gap-3 px-4 py-3 text-right transition-colors hover:bg-line";
   if (onClick) {
     return (
       <button type="button" onClick={onClick} className={rowClass}>
@@ -76,59 +87,44 @@ function Row({
 }
 
 /**
- * The account settings list. A client leaf only because the support row opens
- * the Goftino widget; every other row navigates to its settings screen.
+ * Account settings, grouped and ordered: security first, then appearance,
+ * activity, and help. A client leaf only because the support row opens the
+ * Goftino widget and the theme control is interactive.
  */
 export function AccountMenu({ profile }: { profile: UserProfile }) {
   return (
-    <nav aria-label="تنظیمات حساب">
-      <ul className="flex flex-col divide-y divide-line">
-        <li>
-          <Row
-            Icon={ShieldIcon}
-            label="ورود دومرحله‌ای"
-            href="/account/two-step"
-            value={profile.twoFactorEnabled ? "فعال" : "غیرفعال"}
-            valueClassName={
-              profile.twoFactorEnabled ? "font-bold text-brand" : undefined
-            }
-          />
-        </li>
-        <li>
-          <Row
-            Icon={CreditCardIcon}
-            label="حساب‌های بانکی"
-            href="/account/bank-accounts"
-          />
-        </li>
-        <li>
-          <ThemeRow />
-        </li>
-        <li>
-          <Row
-            Icon={GiftIcon}
-            label="دعوت از دوستان"
-            href="/account/referral"
-          />
-        </li>
-        <li>
-          <Row Icon={BellIcon} label="اعلان‌ها" href="/account/announcements" />
-        </li>
-        <li>
-          <Row
-            Icon={HeadphonesIcon}
-            label="پشتیبانی"
-            onClick={openSupportChat}
-          />
-        </li>
-        <li>
-          <Row
-            Icon={HelpCircleIcon}
-            label="سوالات متداول"
-            href="/account/faq"
-          />
-        </li>
-      </ul>
+    <nav aria-label="تنظیمات حساب" className="flex flex-col gap-5">
+      <Group label="حساب و امنیت">
+        <Row
+          Icon={ShieldIcon}
+          label="ورود دومرحله‌ای"
+          href="/account/two-step"
+          value={profile.twoFactorEnabled ? "فعال" : "غیرفعال"}
+          valueClassName={
+            profile.twoFactorEnabled ? "font-bold text-brand" : undefined
+          }
+        />
+        <Row
+          Icon={CreditCardIcon}
+          label="حساب‌های بانکی"
+          href="/account/bank-accounts"
+        />
+      </Group>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="px-1 text-[12px] font-bold text-muted">حالت نمایش</h2>
+        <ThemeSelector />
+      </section>
+
+      <Group label="فعالیت">
+        <Row Icon={BellIcon} label="اعلان‌ها" href="/account/announcements" />
+        <Row Icon={GiftIcon} label="دعوت از دوستان" href="/account/referral" />
+      </Group>
+
+      <Group label="راهنما و پشتیبانی">
+        <Row Icon={HelpCircleIcon} label="سوالات متداول" href="/account/faq" />
+        <Row Icon={HeadphonesIcon} label="پشتیبانی" onClick={openSupportChat} />
+      </Group>
     </nav>
   );
 }
