@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MoonIcon } from "@/components/ui/icons";
+import { useEffect, useState, type ComponentType } from "react";
+import {
+  MonitorIcon,
+  MoonIcon,
+  SunIcon,
+  type IconProps,
+} from "@/components/ui/icons";
 import {
   applyThemePref,
   getThemePref,
@@ -9,19 +14,23 @@ import {
 } from "@/lib/utils/theme";
 import { cn } from "@/lib/utils/cn";
 
-const OPTIONS: { value: ThemePref; label: string }[] = [
-  { value: "system", label: "سیستم" },
-  { value: "light", label: "روشن" },
-  { value: "dark", label: "تیره" },
+const OPTIONS: {
+  value: ThemePref;
+  label: string;
+  Icon: ComponentType<IconProps>;
+}[] = [
+  { value: "system", label: "سیستم", Icon: MonitorIcon },
+  { value: "light", label: "روشن", Icon: SunIcon },
+  { value: "dark", label: "تیره", Icon: MoonIcon },
 ];
 
 /**
- * «حالت نمایش» — segmented system/light/dark picker. The preference lives in
- * localStorage; the pre-paint script in the root layout restores it on load.
- * State is read in an effect (SSR can't know it), so the row hydrates on
- * «سیستم» and settles instantly.
+ * «حالت نمایش» — a full-width system/light/dark segmented control (icon +
+ * label per segment). The preference lives in localStorage; the pre-paint
+ * script in the root layout restores it. State is read in an effect (SSR can't
+ * know it), so it hydrates on «سیستم» and settles instantly.
  */
-export function ThemeRow() {
+export function ThemeSelector() {
   const [pref, setPref] = useState<ThemePref>("system");
   useEffect(() => {
     // localStorage is client-only; hydrate on «سیستم», settle to the stored pref.
@@ -30,40 +39,32 @@ export function ThemeRow() {
   }, []);
 
   return (
-    <div className="flex w-full items-center justify-between gap-3 py-3">
-      <span className="flex items-center gap-3">
-        <span
-          aria-hidden
-          className="flex size-10 items-center justify-center rounded-field bg-surface text-muted"
+    <div
+      role="radiogroup"
+      aria-label="حالت نمایش"
+      className="grid grid-cols-3 gap-1 rounded-full border border-line bg-surface p-1"
+    >
+      {OPTIONS.map(({ value, label, Icon }) => (
+        <button
+          key={value}
+          type="button"
+          role="radio"
+          aria-checked={pref === value}
+          onClick={() => {
+            setPref(value);
+            applyThemePref(value);
+          }}
+          className={cn(
+            "flex items-center justify-center gap-1.5 rounded-full py-2.5 text-[13px] font-bold transition-colors",
+            pref === value
+              ? "bg-brand text-white"
+              : "text-muted hover:text-ink",
+          )}
         >
-          <MoonIcon size={20} />
-        </span>
-        <span className="text-[15px] font-bold text-ink">حالت نمایش</span>
-      </span>
-      <div
-        role="radiogroup"
-        aria-label="حالت نمایش"
-        className="flex rounded-full bg-surface p-1"
-      >
-        {OPTIONS.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            role="radio"
-            aria-checked={pref === o.value}
-            onClick={() => {
-              setPref(o.value);
-              applyThemePref(o.value);
-            }}
-            className={cn(
-              "h-9 rounded-full px-3 text-[13px] font-bold transition-colors",
-              pref === o.value ? "bg-brand text-white" : "text-muted",
-            )}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
+          <Icon size={16} />
+          {label}
+        </button>
+      ))}
     </div>
   );
 }

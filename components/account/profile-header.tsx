@@ -1,35 +1,42 @@
 import Link from "next/link";
 import type { UserProfile } from "@/lib/core/domain/account/profile";
-import { CheckCircleIcon, UserIcon } from "@/components/ui/icons";
+import { CheckCircleIcon } from "@/components/ui/icons";
 import { toPersianDigits } from "@/lib/utils/digits";
 
-/** Avatar + name + phone, with the KYC status chip (or the CTA to finish it). */
+/**
+ * Compact identity card: a name monogram + name + phone on the right, and KYC
+ * status on the left — a chip when verified, a «تکمیل احراز هویت» call when not.
+ * One tight row instead of a tall centered stack.
+ */
 export function ProfileHeader({ profile }: { profile: UserProfile }) {
+  const initial = Array.from(profile.name.trim())[0] ?? "؟";
   return (
-    <section className="flex flex-col items-center gap-3 py-2 text-center">
+    <section className="flex items-center gap-3.5 rounded-card border border-line bg-surface p-4">
       <span
         aria-hidden
-        className="flex size-20 items-center justify-center rounded-full bg-brand/10 text-brand"
+        className="flex size-13 shrink-0 items-center justify-center rounded-full bg-brand text-[20px] font-extrabold text-white"
       >
-        <UserIcon size={36} />
+        {initial}
       </span>
-      <div className="flex flex-col gap-1">
-        <h1 className="text-[20px] font-extrabold text-ink">{profile.name}</h1>
-        <span className="text-[15px] text-muted" dir="ltr">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <h1 className="truncate text-[17px] font-extrabold text-ink">
+          {profile.name}
+        </h1>
+        <span dir="ltr" className="text-[13px] text-muted">
           {toPersianDigits(profile.mobile)}
         </span>
       </div>
       {profile.kycVerified ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-3 py-1.5 text-[13px] font-bold text-brand">
-          <CheckCircleIcon size={16} />
-          هویت تأیید شده
+        <span className="flex shrink-0 items-center gap-1 rounded-full bg-brand/10 px-3 py-1.5 text-[12px] font-bold text-brand">
+          <CheckCircleIcon size={14} />
+          تأیید شده
         </span>
       ) : (
         <Link
           href="/kyc"
-          className="inline-flex items-center rounded-full bg-brand px-4 py-2 text-[13px] font-bold text-white transition-colors hover:bg-brand/90"
+          className="shrink-0 rounded-full bg-brand px-3.5 py-2 text-[12px] font-bold text-white transition-colors hover:bg-brand/90"
         >
-          تکمیل احراز هویت
+          تکمیل احراز
         </Link>
       )}
     </section>
