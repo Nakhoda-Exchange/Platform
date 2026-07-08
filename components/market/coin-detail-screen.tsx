@@ -6,7 +6,6 @@ import { PriceChart } from "./price-chart";
 import { IndicatorSummaryCard } from "./indicator-summary-card";
 import { PastPerformanceCard } from "./past-performance-card";
 import { buttonClasses } from "@/components/ui/button";
-import { WalletIcon } from "@/components/ui/icons";
 import { formatCoinAmount, formatIrt } from "@/lib/utils/money";
 
 /** What the viewer holds of this coin, when they hold any. */
@@ -36,30 +35,18 @@ export function CoinDetailScreen({
       <PriceChart coin={coin} series={detail.series} candles={detail.candles} />
 
       {holding ? (
-        // The viewer's position in this coin — a «yours» callout: the amount
-        // held and its Toman worth sit together on one line.
-        <div className="flex items-center gap-3 rounded-card bg-brand-soft px-4 py-4">
-          <span
-            aria-hidden
-            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand"
-          >
-            <WalletIcon size={20} />
+        // Your position, said plainly — no card, just a quiet line.
+        <p className="px-1 text-[14px] leading-7 text-muted">
+          شما{" "}
+          <span dir="ltr" className="font-extrabold text-ink">
+            {formatCoinAmount(holding.amount)} {coin.symbol}
+          </span>{" "}
+          از این رمزارز دارید، معادل{" "}
+          <span dir="ltr" className="font-bold text-ink">
+            {formatIrt(holding.valueIrt)}
           </span>
-          <span className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-[13px] text-muted">دارایی شما</span>
-            <span
-              dir="ltr"
-              className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
-            >
-              <span className="text-[16px] font-extrabold text-ink">
-                {formatCoinAmount(holding.amount)} {coin.symbol}
-              </span>
-              <span className="text-[13px] font-medium text-muted">
-                ≈ {formatIrt(holding.valueIrt)}
-              </span>
-            </span>
-          </span>
-        </div>
+          .
+        </p>
       ) : null}
 
       <IndicatorSummaryCard
