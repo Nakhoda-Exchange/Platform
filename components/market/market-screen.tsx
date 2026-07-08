@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { MarketOverview } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
 import { SearchIcon, WalletIcon, ChevronLeftIcon } from "@/components/ui/icons";
@@ -15,9 +15,30 @@ import { NewCoins } from "./new-coins";
 import { AllAssets } from "./all-assets";
 
 /**
- * Market/discover screen. Discovery-first: search → gainers → trending → new →
- * all-assets. Typing in search hides the curated sections and shows matches.
- * When there's spendable Toman, a strip up top shows what's on hand to buy with.
+ * Simplified Iran-flag disc (green / white / red bands) for the موجودی تومانی
+ * strip. The emblem is dropped — it's unreadable at this size and the tricolor
+ * alone reads as «تومان». Pure markup so it renders identically on WebKit and
+ * Chromium (no flag-emoji font dependency).
+ */
+function IranFlag() {
+  return (
+    <span
+      aria-hidden
+      className="flex size-7 shrink-0 flex-col overflow-hidden rounded-full ring-1 ring-line/60"
+    >
+      <span className="flex-1 bg-[#239f40]" />
+      <span className="flex-1 bg-white" />
+      <span className="flex-1 bg-[#da0000]" />
+    </span>
+  );
+}
+
+/**
+ * Market/discover screen. The top shows spendable Toman (or a deposit prompt
+ * when there's none). Search is hidden at rest and pins under the header once
+ * you scroll past the balance — so the first thing people see is what they can
+ * buy with, not a search box. Typing hides the curated sections and shows
+ * matches.
  */
 export function MarketScreen({
   overview,
@@ -33,7 +54,47 @@ export function MarketScreen({
   initialFilter?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
+  const [scrolledPast, setScrolledPast] = useState(false);
+  // Real height of the sticky app bar (safe-area inset + bar). Measured, not
+  // guessed, so the reveal trigger and the pin position share ONE source and
+  // stay correct on notched devices. 72 is just the pre-measure fallback.
+  const [headerH, setHeaderH] = useState(72);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const searching = query.trim() !== "";
+
+  // Search exists only once the balance has scrolled up behind the header — or
+  // while actively searching, so a short result list doesn't make it vanish.
+  const showSearch = scrolledPast || searching;
+
+  useEffect(() => {
+    // The HeaderBar is the sibling right before the <main> we live in
+    // (AppShell renders {header} directly before <main>). Falls back to 72 if
+    // that shape ever changes — safe, just a less-precise pin until then.
+    const measure = () => {
+      const header = sentinelRef.current?.closest("main")?.previousElementSibling;
+      if (header instanceof HTMLElement) {
+        const h = header.getBoundingClientRect().height;
+        if (h) setHeaderH(h);
+      }
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    // The sentinel sits just under the balance. Shrinking the observer root by
+    // the header height means "not intersecting" == the balance is gone behind
+    // the sticky header, which is exactly when the search should take over.
+    const obs = new IntersectionObserver(
+      ([entry]) => setScrolledPast(!entry.isIntersecting),
+      { rootMargin: `-${Math.round(headerH)}px 0px 0px 0px` },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [headerH]);
 
   const clearSearch = () => {
     setQuery("");
@@ -51,33 +112,20 @@ export function MarketScreen({
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-6 pt-4">
-      <label className="flex h-[54px] items-center gap-2 rounded-[27px] bg-surface px-[18px]">
-        <SearchIcon size={20} className="shrink-0 text-placeholder" />
-        <input
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            replaceUrlParam("q", e.target.value.trim() || null);
-          }}
-          placeholder="جستجوی رمزارز…"
-          aria-label="جستجوی رمزارز"
-          className="w-full bg-transparent text-right text-[16px] text-ink outline-none placeholder:text-placeholder"
-        />
-      </label>
-
       {availableIrt > 0 ? (
+        // Spendable Toman up top: the flag + «موجودی تومانی» on the right, the
+        // amount on the left. The whole strip taps through to deposit.
         <Link
           href="/wallet/deposit"
-          className="flex items-center justify-between rounded-card bg-surface px-4 py-3 transition-colors hover:bg-line"
+          aria-label="موجودی تومانی — واریز"
+          className="flex items-center justify-between rounded-card bg-surface px-4 py-3.5 transition-colors hover:bg-line"
         >
-          <span className="flex items-center gap-2 text-[14px]">
-            <span className="text-muted">موجودی تومانی</span>
-            <span dir="ltr" className="font-extrabold text-ink">
-              {formatIrt(availableIrt)}
-            </span>
+          <span className="flex items-center gap-2.5">
+            <IranFlag />
+            <span className="text-[15px] font-bold text-ink">موجودی تومانی</span>
           </span>
-          <span className="rounded-full bg-brand/10 px-3 py-1.5 text-[13px] font-bold text-brand">
-            واریز
+          <span dir="ltr" className="text-[15px] font-extrabold text-ink">
+            {formatIrt(availableIrt)}
           </span>
         </Link>
       ) : (
@@ -100,6 +148,31 @@ export function MarketScreen({
           </span>
           <ChevronLeftIcon size={22} className="shrink-0 text-white/80" />
         </Link>
+      )}
+
+      {/* When this scrolls up behind the header, the search bar takes over. */}
+      <div ref={sentinelRef} aria-hidden className="h-0" />
+
+      {showSearch && (
+        <div
+          // Pins flush under the measured header, in the balance's place.
+          className="sticky z-20 -mx-4 bg-paper px-4 py-1"
+          style={{ top: headerH }}
+        >
+          <label className="flex h-[54px] items-center gap-2 rounded-[27px] bg-surface px-[18px] shadow-sm">
+            <SearchIcon size={20} className="shrink-0 text-placeholder" />
+            <input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                replaceUrlParam("q", e.target.value.trim() || null);
+              }}
+              placeholder="جستجوی رمزارز…"
+              aria-label="جستجوی رمزارز"
+              className="w-full bg-transparent text-right text-[16px] text-ink outline-none placeholder:text-placeholder"
+            />
+          </label>
+        </div>
       )}
 
       {searching ? (
