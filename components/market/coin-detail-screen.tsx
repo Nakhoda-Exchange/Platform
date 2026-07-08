@@ -3,34 +3,57 @@ import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
 import { summarizeIndicators } from "@/lib/core/domain/market/indicator-summary";
 import { pastPerformance } from "@/lib/core/domain/market/past-performance";
 import { PriceChart } from "./price-chart";
-import { CoinKeyStats } from "./coin-key-stats";
 import { IndicatorSummaryCard } from "./indicator-summary-card";
 import { PastPerformanceCard } from "./past-performance-card";
 import { buttonClasses } from "@/components/ui/button";
+import { formatCoinAmount, formatIrt } from "@/lib/utils/money";
+
+/** What the viewer holds of this coin, when they hold any. */
+export type CoinHolding = { amount: number; valueIrt: number };
 
 /**
  * Coin detail page (PDP). The coin's identity (icon, name, symbol, favorite,
  * history) lives in the app bar — see CoinPageHeader via the `@header` slot.
  * The screen itself: the live price-chart card (the card headline IS the
- * price — live-ticking, with USD + 24h change as the idle subhead), market
- * stats, and an «about» blurb. Trading happens from the market list via the
- * swipe quick-action, so the PDP stays a focused, read-only overview.
+ * price), market stats, an «about» blurb, and — when the viewer holds this
+ * coin — a holding card up top and a «فروش» action next to «خرید». Buyers who
+ * hold nothing see a buy-only bar.
  */
-export function CoinDetailScreen({ detail }: { detail: CoinDetail }) {
+export function CoinDetailScreen({
+  detail,
+  holding,
+}: {
+  detail: CoinDetail;
+  holding?: CoinHolding;
+}) {
   const { coin } = detail;
   const trade = coin.symbol.toLowerCase();
+  const canSell = holding !== undefined;
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-8 pt-4">
       <PriceChart coin={coin} series={detail.series} candles={detail.candles} />
+
+      {holding ? (
+        // The viewer's position in this coin — what they own and its worth.
+        <div className="flex items-center justify-between rounded-card border border-line bg-surface px-4 py-3.5">
+          <span className="text-[14px] text-muted">دارایی شما</span>
+          <span className="flex flex-col items-end gap-0.5">
+            <span dir="ltr" className="text-[15px] font-bold text-ink">
+              {formatCoinAmount(holding.amount)} {coin.symbol}
+            </span>
+            <span dir="ltr" className="text-[13px] text-muted">
+              ≈ {formatIrt(holding.valueIrt)}
+            </span>
+          </span>
+        </div>
+      ) : null}
 
       <IndicatorSummaryCard
         summary={summarizeIndicators(coin.change24h, detail.series)}
       />
 
       <PastPerformanceCard performance={pastPerformance(detail.series)} />
-
-      <CoinKeyStats detail={detail} />
 
       {/* About + history */}
       <section className="flex flex-col gap-2">
@@ -39,9 +62,9 @@ export function CoinDetailScreen({ detail }: { detail: CoinDetail }) {
         <p className="text-[15px] leading-7 text-muted">{detail.history}</p>
       </section>
 
-      {/* Sticky Buy/Sell bar → Trade screen (which gates selling itself). Full
-          bleed with its own background + top divider so it reads as a bar over
-          the scrolling content. */}
+      {/* Sticky action bar → Trade screen. «فروش» shows only when the viewer
+          holds this coin; otherwise it's a buy-only bar. Full bleed with its
+          own background + top divider so it reads as a bar over the content. */}
       <div className="sticky bottom-0 -mx-4 mt-auto flex gap-3 border-t border-line bg-paper px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3">
         <Link
           href={`/trade/${trade}?side=buy`}
@@ -49,17 +72,19 @@ export function CoinDetailScreen({ detail }: { detail: CoinDetail }) {
         >
           خرید
         </Link>
-        <Link
-          href={`/trade/${trade}?side=sell`}
-          className={buttonClasses({
-            variant: "ghost",
-            size: "lg",
-            fullWidth: true,
-            className: "border border-line bg-surface",
-          })}
-        >
-          فروش
-        </Link>
+        {canSell ? (
+          <Link
+            href={`/trade/${trade}?side=sell`}
+            className={buttonClasses({
+              variant: "ghost",
+              size: "lg",
+              fullWidth: true,
+              className: "border border-line bg-surface",
+            })}
+          >
+            فروش
+          </Link>
+        ) : null}
       </div>
     </div>
   );

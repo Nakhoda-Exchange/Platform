@@ -20,9 +20,10 @@ export default async function CoinDetailPage({
   params: Promise<{ symbol: string }>;
 }) {
   const { symbol } = await params;
-  const result = await container
-    .resolve(TOKENS.GetCoinDetailUseCase)
-    .execute(symbol);
+  const [result, portfolioResult] = await Promise.all([
+    container.resolve(TOKENS.GetCoinDetailUseCase).execute(symbol),
+    container.resolve(TOKENS.GetPortfolioUseCase).execute(),
+  ]);
 
   if (!result.ok) {
     return (
@@ -33,6 +34,17 @@ export default async function CoinDetailPage({
     );
   }
   if (!result.data) notFound();
+  const detail = result.data;
 
-  return <CoinDetailScreen detail={result.data} />;
+  // The viewer's position in this coin (if any) → holding card + «فروش» action.
+  const held = portfolioResult.ok
+    ? portfolioResult.data.holdings.find(
+        (h) => h.coin.id === detail.coin.id && h.amount > 0,
+      )
+    : undefined;
+  const holding = held
+    ? { amount: held.amount, valueIrt: held.valueIrt }
+    : undefined;
+
+  return <CoinDetailScreen detail={detail} holding={holding} />;
 }
