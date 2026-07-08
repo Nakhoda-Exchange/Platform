@@ -6,6 +6,7 @@ import { PriceChart } from "./price-chart";
 import { IndicatorSummaryCard } from "./indicator-summary-card";
 import { PastPerformanceCard } from "./past-performance-card";
 import { buttonClasses } from "@/components/ui/button";
+import { WalletIcon } from "@/components/ui/icons";
 import { formatCoinAmount, formatIrt } from "@/lib/utils/money";
 
 /** What the viewer holds of this coin, when they hold any. */
@@ -35,16 +36,31 @@ export function CoinDetailScreen({
       <PriceChart coin={coin} series={detail.series} candles={detail.candles} />
 
       {holding ? (
-        // The viewer's position in this coin — what they own and its worth.
-        <div className="flex items-center justify-between rounded-card border border-line bg-surface px-4 py-3.5">
-          <span className="text-[14px] text-muted">دارایی شما</span>
-          <span className="flex flex-col items-end gap-0.5">
-            <span dir="ltr" className="text-[15px] font-bold text-ink">
-              {formatCoinAmount(holding.amount)} {coin.symbol}
+        // The viewer's position in this coin — a «yours» callout: what you own
+        // (right) and what it's worth in Toman (left).
+        <div className="flex items-center justify-between gap-3 rounded-card bg-brand-soft px-4 py-4">
+          <span className="flex min-w-0 items-center gap-3">
+            <span
+              aria-hidden
+              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand"
+            >
+              <WalletIcon size={20} />
             </span>
-            <span dir="ltr" className="text-[13px] text-muted">
-              ≈ {formatIrt(holding.valueIrt)}
+            <span className="flex min-w-0 flex-col">
+              <span className="text-[13px] text-muted">دارایی شما</span>
+              <span
+                dir="ltr"
+                className="truncate text-[16px] font-extrabold text-ink"
+              >
+                {formatCoinAmount(holding.amount)} {coin.symbol}
+              </span>
             </span>
+          </span>
+          <span
+            dir="ltr"
+            className="shrink-0 text-[14px] font-bold tabular-nums text-ink"
+          >
+            {formatIrt(holding.valueIrt)}
           </span>
         </div>
       ) : null}
