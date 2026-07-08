@@ -5,7 +5,6 @@ import { pastPerformance } from "@/lib/core/domain/market/past-performance";
 import { PriceChart } from "./price-chart";
 import { IndicatorSummaryCard } from "./indicator-summary-card";
 import { PastPerformanceCard } from "./past-performance-card";
-import { CoinBlogPosts } from "./coin-blog-posts";
 import { buttonClasses } from "@/components/ui/button";
 import { formatCoinAmount, formatIrt } from "@/lib/utils/money";
 
@@ -62,8 +61,6 @@ export function CoinDetailScreen({
         <p className="text-[15px] leading-7 text-muted">{detail.description}</p>
         <p className="text-[15px] leading-7 text-muted">{detail.history}</p>
       </section>
-
-      <CoinBlogPosts posts={detail.blogPosts} />
 
       {/* Sticky action bar → Trade screen. «فروش» shows only when the viewer
           holds this coin; otherwise it's a buy-only bar. Full bleed with its
