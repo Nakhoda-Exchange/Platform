@@ -1,8 +1,8 @@
 import type { WalletRepository } from "@/lib/core/application/wallet/ports/wallet-repository.port";
 import type { BankCard } from "@/lib/core/domain/wallet/bank-card";
+import type { Iban } from "@/lib/core/domain/wallet/bank-account";
 import type {
   CardDeposit,
-  DepositAddress,
   DepositStatus,
 } from "@/lib/core/domain/wallet/deposit";
 import type { Result } from "@/lib/core/domain/shared/result";
@@ -12,18 +12,48 @@ import type { HttpClient } from "../http/http-client";
 export class HttpWalletRepository implements WalletRepository {
   constructor(private readonly http: HttpClient) {}
 
-  getDepositAddress(coinId: string): Promise<Result<DepositAddress>> {
-    return this.http.get<DepositAddress>(
-      `/wallet/deposit-address/${encodeURIComponent(coinId)}`,
-    );
-  }
-
   listCards(): Promise<Result<BankCard[]>> {
     return this.http.get<BankCard[]>("/wallet/cards");
   }
 
-  addCard(number: string): Promise<Result<BankCard>> {
-    return this.http.post<BankCard>("/wallet/cards", { number });
+  addCard(number: string, ownerName: string): Promise<Result<BankCard>> {
+    return this.http.post<BankCard>("/wallet/cards", { number, ownerName });
+  }
+
+  setPrimaryCard(id: string): Promise<Result<void>> {
+    return this.http.request<void>({
+      method: "PUT",
+      path: `/wallet/cards/${encodeURIComponent(id)}/primary`,
+    });
+  }
+
+  removeCard(id: string): Promise<Result<void>> {
+    return this.http.request<void>({
+      method: "DELETE",
+      path: `/wallet/cards/${encodeURIComponent(id)}`,
+    });
+  }
+
+  listIbans(): Promise<Result<Iban[]>> {
+    return this.http.get<Iban[]>("/wallet/ibans");
+  }
+
+  addIban(value: string, ownerName: string): Promise<Result<Iban>> {
+    return this.http.post<Iban>("/wallet/ibans", { iban: value, ownerName });
+  }
+
+  setPrimaryIban(id: string): Promise<Result<void>> {
+    return this.http.request<void>({
+      method: "PUT",
+      path: `/wallet/ibans/${encodeURIComponent(id)}/primary`,
+    });
+  }
+
+  removeIban(id: string): Promise<Result<void>> {
+    return this.http.request<void>({
+      method: "DELETE",
+      path: `/wallet/ibans/${encodeURIComponent(id)}`,
+    });
   }
 
   initiateCardDeposit(
@@ -44,30 +74,12 @@ export class HttpWalletRepository implements WalletRepository {
     return { ok: true, data: result.data.status };
   }
 
-  getWithdrawFees(): Promise<Result<Record<string, number>>> {
-    return this.http.get<Record<string, number>>("/wallet/withdraw-fees");
-  }
-
   requestIrtWithdraw(
-    cardId: string,
+    ibanId: string,
     amountIrt: number,
   ): Promise<Result<{ id: string }>> {
     return this.http.post<{ id: string }>("/wallet/withdrawals/irt", {
-      cardId,
-      amountIrt,
-    });
-  }
-
-  requestCryptoWithdraw(
-    coinId: string,
-    address: string,
-    amountCoin: number,
-    amountIrt: number,
-  ): Promise<Result<{ id: string }>> {
-    return this.http.post<{ id: string }>("/wallet/withdrawals/crypto", {
-      coinId,
-      address,
-      amountCoin,
+      ibanId,
       amountIrt,
     });
   }

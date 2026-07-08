@@ -1,9 +1,13 @@
 import { toEnglishDigits } from "@/lib/utils/digits";
+import type { BankAccountStatus } from "./bank-account";
 
 /** One of the user's bank cards (the source of card-to-card deposits). */
 export interface BankCard {
   id: string;
   number: string; // 16 digits, normalized Latin
+  ownerName: string; // registered holder from the card inquiry
+  primary: boolean; // auto-selected for deposit/withdraw when several exist
+  status: BankAccountStatus;
 }
 
 /** Normalize a typed card number (Persian digits, spaces, dashes) to 16 digits, or null. */

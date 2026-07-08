@@ -4,26 +4,17 @@ Port: `lib/core/application/wallet/ports/wallet-repository.port.ts` (deposit hal
 Adapter: `lib/infrastructure/wallet/http-wallet.repository.ts` ·
 Conventions: [`doc/api-conventions.md`](../api-conventions.md)
 
-## GET `/wallet/cards` — auth
+> **V0 scope:** crypto deposit is removed — see the **Removed in V0** section
+> at the bottom of this file. Only the Toman endpoints are implemented by the
+> HTTP adapter for V0.
 
-```json
-// 200
-[{ "id": "card_1", "number": "6037997599571347" }]
-```
+## Saved cards
 
-## POST `/wallet/cards` — auth
-
-The frontend Luhn-validates; re-validate AND verify the card belongs to the
-user's verified identity (own-name rule from the terms).
-
-```json
-// request
-{ "number": "6037997599571347" }
-// 200
-{ "id": "card_1", "number": "6037997599571347" }
-```
-
-Errors: `INVALID_CARD` (422), `CARD_NOT_OWNED` (422 — «کارت باید به نام خودتان باشد.»).
+Listing/adding/removing/setting-primary a card is the **bank-account**
+feature's contract, not deposit's — see
+[`doc/bank-account/api.md`](../bank-account/api.md) (`GET/POST /wallet/cards`,
+`PUT /wallet/cards/{id}/primary`, `DELETE /wallet/cards/{id}`). Deposit only
+consumes the resulting `cardId`.
 
 ## POST `/wallet/deposits/card` — auth
 
@@ -56,9 +47,14 @@ Polled (~3s) while the countdown runs, until the bank transfer is observed.
 On `done` the balance must already be credited and the transaction flipped in
 `/wallet/transactions`.
 
-## GET `/wallet/deposit-address/{coinId}` — auth
+## Removed in V0 — GET `/wallet/deposit-address/{coinId}`
+
+Crypto deposit is out of scope for V0. Deferred, not forgotten — the
+endpoint below is documented for when the coin deposit flow returns; the
+HTTP adapter must not call it in V0.
 
 ```json
+// auth
 // 200
 { "address": "bc1qxy2…", "network": "بیت‌کوین (BTC)" }
 ```

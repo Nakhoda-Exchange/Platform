@@ -3,6 +3,7 @@ import type { AuthRepository } from "@/lib/core/application/auth/ports/auth-repo
 import type { RequestOtpUseCase } from "@/lib/core/application/auth/use-cases/request-otp.use-case";
 import type { VerifyOtpUseCase } from "@/lib/core/application/auth/use-cases/verify-otp.use-case";
 import type { IdentityInquiryPort } from "@/lib/core/application/kyc/ports/identity-inquiry.port";
+import type { BankInquiryPort } from "@/lib/core/application/kyc/ports/bank-inquiry.port";
 import type { InquireIdentityUseCase } from "@/lib/core/application/kyc/use-cases/inquire-identity.use-case";
 import type { MarketRepository } from "@/lib/core/application/market/ports/market-repository.port";
 import type { ListCoinsUseCase } from "@/lib/core/application/market/use-cases/list-coins.use-case";
@@ -19,8 +20,8 @@ import type { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-
 import type { WalletRepository } from "@/lib/core/application/wallet/ports/wallet-repository.port";
 import type { DepositIrtUseCase } from "@/lib/core/application/wallet/use-cases/deposit-irt.use-case";
 import type { ManageCardsUseCase } from "@/lib/core/application/wallet/use-cases/manage-cards.use-case";
+import type { ManageIbansUseCase } from "@/lib/core/application/wallet/use-cases/manage-ibans.use-case";
 import type { WithdrawUseCase } from "@/lib/core/application/wallet/use-cases/withdraw.use-case";
-import type { GetDepositAddressUseCase } from "@/lib/core/application/wallet/use-cases/get-deposit-address.use-case";
 import type { UserRepository } from "@/lib/core/application/account/ports/user-repository.port";
 import type { GetProfileUseCase } from "@/lib/core/application/account/use-cases/get-profile.use-case";
 import type { TwoStepPasswordUseCase } from "@/lib/core/application/account/use-cases/two-step-password.use-case";
@@ -36,6 +37,7 @@ export const TOKENS = {
   // Ports (implemented by infrastructure adapters)
   AuthRepository: token<AuthRepository>("AuthRepository"),
   IdentityInquiryPort: token<IdentityInquiryPort>("IdentityInquiryPort"),
+  BankInquiryPort: token<BankInquiryPort>("BankInquiryPort"),
   MarketRepository: token<MarketRepository>("MarketRepository"),
   PortfolioRepository: token<PortfolioRepository>("PortfolioRepository"),
   TradeRepository: token<TradeRepository>("TradeRepository"),
@@ -73,10 +75,8 @@ export const TOKENS = {
   ),
   DepositIrtUseCase: token<DepositIrtUseCase>("DepositIrtUseCase"),
   ManageCardsUseCase: token<ManageCardsUseCase>("ManageCardsUseCase"),
+  ManageIbansUseCase: token<ManageIbansUseCase>("ManageIbansUseCase"),
   WithdrawUseCase: token<WithdrawUseCase>("WithdrawUseCase"),
-  GetDepositAddressUseCase: token<GetDepositAddressUseCase>(
-    "GetDepositAddressUseCase",
-  ),
   GetProfileUseCase: token<GetProfileUseCase>("GetProfileUseCase"),
   TwoStepPasswordUseCase: token<TwoStepPasswordUseCase>(
     "TwoStepPasswordUseCase",
