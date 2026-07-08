@@ -121,6 +121,16 @@ export function ChevronLeftIcon(props: IconProps) {
   );
 }
 
+/** Full arrow pointing right — the header «بازگشت» (back) icon in this RTL app. */
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </Icon>
+  );
+}
+
 export function UserIcon(props: IconProps) {
   return (
     <Icon {...props}>
