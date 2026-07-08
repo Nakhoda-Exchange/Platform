@@ -6,31 +6,12 @@ import type { MarketOverview } from "@/lib/core/application/market/use-cases/get
 import { SearchIcon, WalletIcon, ChevronLeftIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { toEnglishDigits } from "@/lib/utils/digits";
-import { formatIrt } from "@/lib/utils/money";
 import { replaceUrlParam } from "@/lib/utils/url-param";
+import { CashListItem } from "@/components/portfolio/cash-list-item";
 import { TopGainers } from "./top-gainers";
 import { WatchlistSection } from "./watchlist-section";
 import { TrendingList } from "./trending-list";
 import { AllAssets } from "./all-assets";
-
-/**
- * Simplified Iran-flag disc (green / white / red bands) for the موجودی تومانی
- * strip. The emblem is dropped — it's unreadable at this size and the tricolor
- * alone reads as «تومان». Pure markup so it renders identically on WebKit and
- * Chromium (no flag-emoji font dependency).
- */
-function IranFlag() {
-  return (
-    <span
-      aria-hidden
-      className="flex size-7 shrink-0 flex-col overflow-hidden rounded-full ring-1 ring-line/60"
-    >
-      <span className="flex-1 bg-[#239f40]" />
-      <span className="flex-1 bg-white" />
-      <span className="flex-1 bg-[#da0000]" />
-    </span>
-  );
-}
 
 /**
  * Market/discover screen. The top shows spendable Toman (or a deposit prompt
@@ -111,23 +92,12 @@ export function MarketScreen({
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-6 pt-4">
       {availableIrt > 0 ? (
-        // Spendable Toman up top: the flag + «موجودی تومانی» on the right, the
-        // amount on the left. The whole strip taps through to deposit.
-        <Link
-          href="/wallet/deposit"
-          aria-label="موجودی تومانی — واریز"
-          className="flex items-center justify-between rounded-card bg-surface px-4 py-3.5 transition-colors hover:bg-line"
-        >
-          <span className="flex items-center gap-2.5">
-            <IranFlag />
-            <span className="text-[15px] font-bold text-ink">
-              موجودی تومانی
-            </span>
-          </span>
-          <span dir="ltr" className="text-[15px] font-extrabold text-ink">
-            {formatIrt(availableIrt)}
-          </span>
-        </Link>
+        // Spendable Toman up top — the same card as the wallet «دارایی‌های من»
+        // Toman row, in a card container so it stands out at the page top.
+        <CashListItem
+          availableIrt={availableIrt}
+          className="rounded-card bg-surface hover:bg-line"
+        />
       ) : (
         // No spendable Toman — you can't buy anything, so lead with a bold
         // deposit card instead of a balance strip.

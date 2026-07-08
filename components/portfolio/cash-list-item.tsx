@@ -1,17 +1,28 @@
 import Link from "next/link";
 import { formatIrtShort } from "@/lib/utils/money";
+import { cn } from "@/lib/utils/cn";
 
 /**
- * The Toman balance shown as the FIRST «دارایی» row — cash sits alongside the
- * coins like on an exchange (صراف), so «چقدر دارم؟» always starts with the money
- * you can spend. Taps through to deposit to top it up. Mirrors HoldingListItem's
- * layout (identity right, balance left) so the list reads as one column.
+ * The Toman balance card, shared by the wallet «دارایی‌های من» list and the
+ * market strip so the two never diverge: cash sits alongside the coins like on
+ * an exchange (صراف). Taps through to deposit to top it up. `className` supplies
+ * the container look per context (wallet = a plain list row, market = a card);
+ * the identity + balance inside stay identical.
  */
-export function CashListItem({ availableIrt }: { availableIrt: number }) {
+export function CashListItem({
+  availableIrt,
+  className,
+}: {
+  availableIrt: number;
+  className?: string;
+}) {
   return (
     <Link
       href="/wallet/deposit"
-      className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-surface"
+      className={cn(
+        "flex items-center justify-between gap-3 px-4 py-3 transition-colors",
+        className ?? "hover:bg-surface",
+      )}
     >
       {/* Identity */}
       <div className="flex items-center gap-3">
