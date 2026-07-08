@@ -3,7 +3,6 @@ import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
 import { summarizeIndicators } from "@/lib/core/domain/market/indicator-summary";
 import { pastPerformance } from "@/lib/core/domain/market/past-performance";
 import { PriceChart } from "./price-chart";
-import { CoinKeyStats } from "./coin-key-stats";
 import { IndicatorSummaryCard } from "./indicator-summary-card";
 import { PastPerformanceCard } from "./past-performance-card";
 import { CoinBlogPosts } from "./coin-blog-posts";
@@ -56,8 +55,6 @@ export function CoinDetailScreen({
       />
 
       <PastPerformanceCard performance={pastPerformance(detail.series)} />
-
-      <CoinKeyStats detail={detail} />
 
       {/* About + history */}
       <section className="flex flex-col gap-2">
