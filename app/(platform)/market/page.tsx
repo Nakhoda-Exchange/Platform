@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 export default async function MarketPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; f?: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const [{ q, f }, result, portfolioResult] = await Promise.all([
+  const [{ q }, result, portfolioResult] = await Promise.all([
     searchParams,
     container.resolve(TOKENS.GetMarketOverviewUseCase).execute(),
     container.resolve(TOKENS.GetPortfolioUseCase).execute(),
@@ -40,7 +40,6 @@ export default async function MarketPage({
       heldIds={heldIds}
       availableIrt={availableIrt}
       initialQuery={q ?? ""}
-      initialFilter={f}
     />
   );
 }

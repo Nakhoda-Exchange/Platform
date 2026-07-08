@@ -11,7 +11,6 @@ import { replaceUrlParam } from "@/lib/utils/url-param";
 import { TopGainers } from "./top-gainers";
 import { WatchlistSection } from "./watchlist-section";
 import { TrendingList } from "./trending-list";
-import { NewCoins } from "./new-coins";
 import { AllAssets } from "./all-assets";
 
 /**
@@ -45,13 +44,11 @@ export function MarketScreen({
   heldIds,
   availableIrt = 0,
   initialQuery = "",
-  initialFilter,
 }: {
   overview: MarketOverview;
   heldIds: string[];
   availableIrt?: number;
   initialQuery?: string;
-  initialFilter?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [scrolledPast, setScrolledPast] = useState(false);
@@ -207,13 +204,6 @@ export function MarketScreen({
           <TopGainers coins={overview.topGainers} />
           <WatchlistSection coins={overview.all} heldIds={heldIds} />
           <TrendingList coins={overview.trending} heldIds={heldIds} />
-          <NewCoins coins={overview.newCoins} />
-          <AllAssets
-            coins={overview.all}
-            heldIds={heldIds}
-            initialFilter={initialFilter}
-            urlSync
-          />
         </>
       )}
     </div>
