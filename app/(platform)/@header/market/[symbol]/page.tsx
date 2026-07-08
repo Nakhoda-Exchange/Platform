@@ -3,7 +3,7 @@ import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
 import { CoinPageHeader } from "@/components/market/coin-page-header";
 import { HeaderBar } from "@/components/layout/header-bar";
-import { ChevronRightIcon } from "@/components/ui/icons";
+import { ArrowRightIcon } from "@/components/ui/icons";
 
 /** The coin detail page's slot header: coin identity + favorite/history. */
 export default async function CoinHeaderSlot({
@@ -28,7 +28,7 @@ export default async function CoinHeaderSlot({
               aria-label="بازگشت"
               className="flex size-11 items-center justify-center rounded-xl text-ink transition-colors hover:bg-surface"
             >
-              <ChevronRightIcon size={24} />
+              <ArrowRightIcon size={24} />
             </Link>
             <h1 className="text-[18px] font-extrabold text-ink">
               جزئیات رمزارز
