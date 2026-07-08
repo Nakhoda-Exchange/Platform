@@ -33,7 +33,9 @@ export function IrtDepositForm({
   firstDeposit?: boolean;
 }) {
   const [cards, setCards] = useState(initialCards);
-  const [selectedId, setSelectedId] = useState(initialCards[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState(
+    (initialCards.find((c) => c.primary) ?? initialCards[0])?.id ?? "",
+  );
   const [digits, setDigits] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();

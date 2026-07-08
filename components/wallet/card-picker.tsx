@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import type { BankCard } from "@/lib/core/domain/wallet/bank-card";
 import { addBankCard } from "@/app/actions/deposit";
 import { Button } from "@/components/ui/button";
+import { BankLogo } from "@/components/ui/bank-logo";
 import { Field } from "@/components/ui/field";
 import { Sheet } from "@/components/ui/sheet";
 import { CheckCircleIcon } from "@/components/ui/icons";
@@ -46,7 +47,7 @@ export function CardPicker({
         <label
           key={card.id}
           className={cn(
-            "flex cursor-pointer items-center justify-between rounded-field border p-4 transition-colors",
+            "flex cursor-pointer items-center justify-between rounded-field border p-4 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/40",
             selectedId === card.id
               ? "border-brand bg-brand/5"
               : "border-line bg-surface",
@@ -59,8 +60,11 @@ export function CardPicker({
             onChange={() => onSelect(card.id)}
             className="sr-only"
           />
-          <span dir="ltr" className="text-[15px] font-bold text-ink">
-            {formatCard(card.number)}
+          <span className="flex items-center gap-3">
+            <BankLogo kind="card" value={card.number} size={40} />
+            <span dir="ltr" className="text-[15px] font-bold text-ink">
+              {formatCard(card.number)}
+            </span>
           </span>
           {selectedId === card.id ? (
             <CheckCircleIcon size={20} className="text-brand" />

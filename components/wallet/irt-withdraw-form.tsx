@@ -1,28 +1,33 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import type { Iban } from "@/lib/core/domain/wallet/bank-account";
 import type { BankCard } from "@/lib/core/domain/wallet/bank-card";
 import { MIN_WITHDRAW_IRT } from "@/lib/core/domain/wallet/withdraw";
 import { requestIrtWithdraw } from "@/app/actions/withdraw";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { WalletIcon } from "@/components/ui/icons";
-import { CardPicker } from "./card-picker";
+import { IbanPicker } from "./iban-picker";
 import { WalletEmpty } from "./wallet-empty";
 import { WithdrawResult } from "./withdraw-result";
 import { toEnglishDigits, toPersianDigits } from "@/lib/utils/digits";
 import { formatIrt } from "@/lib/utils/money";
 
-/** Toman withdrawal to one of the user's cards; the request stays pending. */
+/** Toman withdrawal to one of the user's IBANs (شبا); the request stays pending. */
 export function IrtWithdrawForm({
-  initialCards,
+  initialIbans,
+  cards,
   availableIrt,
 }: {
-  initialCards: BankCard[];
+  initialIbans: Iban[];
+  cards: BankCard[];
   availableIrt: number;
 }) {
-  const [cards, setCards] = useState(initialCards);
-  const [selectedId, setSelectedId] = useState(initialCards[0]?.id ?? "");
+  const [ibans, setIbans] = useState(initialIbans);
+  const [selectedId, setSelectedId] = useState(
+    (initialIbans.find((i) => i.primary) ?? initialIbans[0])?.id ?? "",
+  );
   const [digits, setDigits] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -39,7 +44,7 @@ export function IrtWithdrawForm({
     amount >= MIN_WITHDRAW_IRT && amount <= availableIrt && selectedId !== "";
 
   if (done) {
-    return <WithdrawResult summary={`${formatIrt(amount)} به کارت شما`} />;
+    return <WithdrawResult summary={`${formatIrt(amount)} به شبای شما`} />;
   }
 
   // Toman is only withdrawable once you have some. Explain how to get it here,
@@ -87,16 +92,17 @@ export function IrtWithdrawForm({
         </button>
       </div>
 
-      <CardPicker
-        label="کارت مقصد"
+      <IbanPicker
+        label="شبای مقصد"
+        ibans={ibans}
         cards={cards}
         selectedId={selectedId}
         onSelect={setSelectedId}
-        onCardAdded={(card) => {
-          setCards((cur) =>
-            cur.some((c) => c.id === card.id) ? cur : [...cur, card],
+        onIbanAdded={(iban) => {
+          setIbans((cur) =>
+            cur.some((i) => i.id === iban.id) ? cur : [...cur, iban],
           );
-          setSelectedId(card.id);
+          setSelectedId(iban.id);
         }}
       />
 

@@ -1,5 +1,9 @@
 {
   "enabledPlugins": {
-    "ponytail@ponytail": true
+    "ponytail@ponytail": true,
+    "code-craftsmanship@wondelai-skills": true,
+    "systems-architecture@wondelai-skills": true,
+    "ux-design@wondelai-skills": true,
+    "product-innovation@wondelai-skills": true
   }
 }

@@ -1,73 +1,113 @@
 import type { WalletRepository } from "@/lib/core/application/wallet/ports/wallet-repository.port";
 import type { BankCard } from "@/lib/core/domain/wallet/bank-card";
+import type { Iban } from "@/lib/core/domain/wallet/bank-account";
 import type {
   CardDeposit,
-  DepositAddress,
   DepositStatus,
 } from "@/lib/core/domain/wallet/deposit";
-import { ok, type Result } from "@/lib/core/domain/shared/result";
+import { fail, ok, type Result } from "@/lib/core/domain/shared/result";
 import { wallet } from "../portfolio/mock-wallet-state";
-
-// Crypto withdrawal network fees (units of each coin). Mock values.
-const WITHDRAW_FEES: Record<string, number> = {
-  btc: 0.0002,
-  eth: 0.003,
-  usdt: 1,
-  sol: 0.01,
-  ton: 0.05,
-};
 
 function delay(ms = 400): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Deterministic fake deposit addresses/networks per coin family. Swap for an
-// HTTP adapter in the composition root when the backend lands.
-const ADDRESSES: Record<string, DepositAddress> = {
-  btc: {
-    address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-    network: "بیت‌کوین (BTC)",
-  },
-  usdt: {
-    address: "TQrY8bkbpXhPxdrLgKqYbErTVGL7NxxNqR",
-    network: "ترون (TRC-20)",
-  },
-  ton: {
-    address: "EQCcLAW537KnRg_aSPrnQJoyYjOZkzqYp6FVmRUvN1crSazV",
-    network: "تون (TON)",
-  },
-};
-const EVM: DepositAddress = {
-  address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
-  network: "اتریوم (ERC-20)",
-};
-
-// The user's saved cards (per-process; starts empty so the add-card sheet is
-// the first-run path).
+// The user's saved cards + IBANs (per-process; start empty so the add flow is
+// the first-run path). The first instrument added becomes primary.
 const CARDS: BankCard[] = [];
+const IBANS: Iban[] = [];
+
+// Point `primary` at `id` within a same-kind list; if `id` is gone, promote the
+// first remaining one so there's always exactly one primary when non-empty.
+function repoint<T extends { id: string; primary: boolean }>(
+  list: T[],
+  id: string,
+): void {
+  const target = list.some((x) => x.id === id) ? id : list[0]?.id;
+  for (const item of list) item.primary = item.id === target;
+}
 
 // How long the mock "backend" takes to observe the card-to-card transfer and
 // emit the deposit-submitted event.
 const MOCK_SETTLE_MS = 15_000;
 
 export class MockWalletRepository implements WalletRepository {
-  async getDepositAddress(coinId: string): Promise<Result<DepositAddress>> {
-    await delay(200);
-    return ok(ADDRESSES[coinId] ?? EVM);
-  }
-
   async listCards(): Promise<Result<BankCard[]>> {
     await delay(150);
     return ok([...CARDS]);
   }
 
-  async addCard(number: string): Promise<Result<BankCard>> {
+  async addCard(number: string, ownerName: string): Promise<Result<BankCard>> {
     await delay(250);
     const existing = CARDS.find((c) => c.number === number);
     if (existing) return ok(existing);
-    const card: BankCard = { id: crypto.randomUUID(), number };
+    const card: BankCard = {
+      id: crypto.randomUUID(),
+      number,
+      ownerName,
+      primary: CARDS.length === 0, // first card is primary
+      status: "verified", // ownership already confirmed by the inquiry
+    };
     CARDS.push(card);
     return ok(card);
+  }
+
+  async setPrimaryCard(id: string): Promise<Result<void>> {
+    await delay(150);
+    if (!CARDS.some((c) => c.id === id)) {
+      return fail("CARD_NOT_FOUND", "کارت پیدا نشد.");
+    }
+    repoint(CARDS, id);
+    return ok(undefined);
+  }
+
+  async removeCard(id: string): Promise<Result<void>> {
+    await delay(150);
+    const idx = CARDS.findIndex((c) => c.id === id);
+    if (idx === -1) return fail("CARD_NOT_FOUND", "کارت پیدا نشد.");
+    const wasPrimary = CARDS[idx].primary;
+    CARDS.splice(idx, 1);
+    if (wasPrimary && CARDS.length) repoint(CARDS, CARDS[0].id);
+    return ok(undefined);
+  }
+
+  async listIbans(): Promise<Result<Iban[]>> {
+    await delay(150);
+    return ok([...IBANS]);
+  }
+
+  async addIban(value: string, ownerName: string): Promise<Result<Iban>> {
+    await delay(250);
+    const existing = IBANS.find((i) => i.value === value);
+    if (existing) return ok(existing);
+    const iban: Iban = {
+      id: crypto.randomUUID(),
+      value,
+      ownerName,
+      primary: IBANS.length === 0,
+      status: "verified",
+    };
+    IBANS.push(iban);
+    return ok(iban);
+  }
+
+  async setPrimaryIban(id: string): Promise<Result<void>> {
+    await delay(150);
+    if (!IBANS.some((i) => i.id === id)) {
+      return fail("IBAN_NOT_FOUND", "شبا پیدا نشد.");
+    }
+    repoint(IBANS, id);
+    return ok(undefined);
+  }
+
+  async removeIban(id: string): Promise<Result<void>> {
+    await delay(150);
+    const idx = IBANS.findIndex((i) => i.id === id);
+    if (idx === -1) return fail("IBAN_NOT_FOUND", "شبا پیدا نشد.");
+    const wasPrimary = IBANS[idx].primary;
+    IBANS.splice(idx, 1);
+    if (wasPrimary && IBANS.length) repoint(IBANS, IBANS[0].id);
+    return ok(undefined);
   }
 
   async initiateCardDeposit(
@@ -103,13 +143,8 @@ export class MockWalletRepository implements WalletRepository {
     });
   }
 
-  async getWithdrawFees(): Promise<Result<Record<string, number>>> {
-    await delay(100);
-    return ok({ ...WITHDRAW_FEES });
-  }
-
   async requestIrtWithdraw(
-    _cardId: string,
+    _ibanId: string,
     amountIrt: number,
   ): Promise<Result<{ id: string }>> {
     await delay();
@@ -123,40 +158,6 @@ export class MockWalletRepository implements WalletRepository {
       at: new Date(),
       amountIrt,
     });
-    return ok({ id });
-  }
-
-  async requestCryptoWithdraw(
-    coinId: string,
-    _address: string,
-    amountCoin: number,
-    amountIrt: number,
-  ): Promise<Result<{ id: string }>> {
-    await delay();
-    const id = crypto.randomUUID();
-    const held = wallet.holdings.find((h) => h.coin.id === coinId);
-    if (held) {
-      const soldShare = Math.min(1, amountCoin / held.amount);
-      held.amount -= amountCoin;
-      const price = held.valueIrt / (held.amount + amountCoin);
-      if (held.amount <= 1e-9) {
-        wallet.holdings.splice(wallet.holdings.indexOf(held), 1);
-      } else {
-        held.valueIrt = Math.round(held.amount * price);
-        held.costIrt = Math.round(held.costIrt * (1 - soldShare));
-      }
-      wallet.transactions.push({
-        id,
-        type: "withdraw",
-        status: "pending",
-        at: new Date(),
-        amountIrt,
-        symbol: held.coin.symbol,
-        coinName: held.coin.name,
-        amountCoin,
-        iconUrl: held.coin.iconUrl,
-      });
-    }
     return ok({ id });
   }
 

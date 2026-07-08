@@ -14,8 +14,8 @@ import { MockTransactionsRepository } from "@/lib/infrastructure/wallet/mock-tra
 import { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-cases/list-transactions.use-case";
 import { DepositIrtUseCase } from "@/lib/core/application/wallet/use-cases/deposit-irt.use-case";
 import { ManageCardsUseCase } from "@/lib/core/application/wallet/use-cases/manage-cards.use-case";
+import { ManageIbansUseCase } from "@/lib/core/application/wallet/use-cases/manage-ibans.use-case";
 import { WithdrawUseCase } from "@/lib/core/application/wallet/use-cases/withdraw.use-case";
-import { GetDepositAddressUseCase } from "@/lib/core/application/wallet/use-cases/get-deposit-address.use-case";
 import { MockWalletRepository } from "@/lib/infrastructure/wallet/mock-wallet.repository";
 import { GetProfileUseCase } from "@/lib/core/application/account/use-cases/get-profile.use-case";
 import { TwoStepPasswordUseCase } from "@/lib/core/application/account/use-cases/two-step-password.use-case";
@@ -28,11 +28,13 @@ import { MockConfigRepository } from "@/lib/infrastructure/config/mock-config.re
 import { GetCurrencyUnitsUseCase } from "@/lib/core/application/config/use-cases/get-currency-units.use-case";
 import { MockPortfolioRepository } from "@/lib/infrastructure/portfolio/mock-portfolio.repository";
 import { MockIdentityInquiryRepository } from "@/lib/infrastructure/kyc/mock-identity-inquiry.repository";
+import { MockBankInquiryRepository } from "@/lib/infrastructure/kyc/mock-bank-inquiry.repository";
 import { MockMarketRepository } from "@/lib/infrastructure/market/mock-market.repository";
 import { HttpClient } from "@/lib/infrastructure/http/http-client";
 import { authAndLocaleInterceptor } from "@/lib/infrastructure/http/interceptors";
 import { HttpAuthRepository } from "@/lib/infrastructure/auth/http-auth.repository";
 import { HttpIdentityInquiryRepository } from "@/lib/infrastructure/kyc/http-identity-inquiry.repository";
+import { HttpBankInquiryRepository } from "@/lib/infrastructure/kyc/http-bank-inquiry.repository";
 import { HttpMarketRepository } from "@/lib/infrastructure/market/http-market.repository";
 import { HttpPortfolioRepository } from "@/lib/infrastructure/portfolio/http-portfolio.repository";
 import { HttpTradeRepository } from "@/lib/infrastructure/trade/http-trade.repository";
@@ -71,6 +73,10 @@ function registerHttpAdapters(container: Container, baseUrl: string): void {
   container.registerSingleton(
     TOKENS.IdentityInquiryPort,
     () => new HttpIdentityInquiryRepository(http),
+  );
+  container.registerSingleton(
+    TOKENS.BankInquiryPort,
+    () => new HttpBankInquiryRepository(http),
   );
   container.registerSingleton(
     TOKENS.MarketRepository,
@@ -127,6 +133,10 @@ export function buildContainer(): Container {
   container.registerSingleton(
     TOKENS.IdentityInquiryPort,
     () => new MockIdentityInquiryRepository(),
+  );
+  container.registerSingleton(
+    TOKENS.BankInquiryPort,
+    () => new MockBankInquiryRepository(),
   );
   container.registerSingleton(
     TOKENS.MarketRepository,
@@ -231,22 +241,25 @@ function registerUseCases(container: Container): void {
   );
   container.register(
     TOKENS.ManageCardsUseCase,
-    (c) => new ManageCardsUseCase(c.resolve(TOKENS.WalletRepository)),
+    (c) =>
+      new ManageCardsUseCase(
+        c.resolve(TOKENS.WalletRepository),
+        c.resolve(TOKENS.BankInquiryPort),
+      ),
+  );
+  container.register(
+    TOKENS.ManageIbansUseCase,
+    (c) =>
+      new ManageIbansUseCase(
+        c.resolve(TOKENS.WalletRepository),
+        c.resolve(TOKENS.BankInquiryPort),
+      ),
   );
   container.register(
     TOKENS.WithdrawUseCase,
     (c) =>
       new WithdrawUseCase(
-        c.resolve(TOKENS.MarketRepository),
         c.resolve(TOKENS.TradeRepository),
-        c.resolve(TOKENS.WalletRepository),
-      ),
-  );
-  container.register(
-    TOKENS.GetDepositAddressUseCase,
-    (c) =>
-      new GetDepositAddressUseCase(
-        c.resolve(TOKENS.MarketRepository),
         c.resolve(TOKENS.WalletRepository),
       ),
   );

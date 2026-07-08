@@ -6,6 +6,7 @@ import type { UserProfile } from "@/lib/core/domain/account/profile";
 import {
   BellIcon,
   ChevronLeftIcon,
+  CreditCardIcon,
   FileTextIcon,
   FingerprintIcon,
   GiftIcon,
@@ -112,6 +113,13 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
             valueClassName={
               biometricEnrolled ? "font-bold text-brand" : undefined
             }
+          />
+        </li>
+        <li>
+          <Row
+            Icon={CreditCardIcon}
+            label="حساب‌های بانکی"
+            href="/account/bank-accounts"
           />
         </li>
         <li>
