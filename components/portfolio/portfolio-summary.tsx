@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/icons";
 import { buttonClasses } from "@/components/ui/button";
 import { PortfolioDetails } from "./portfolio-details";
-import { CashBalanceCard } from "./cash-balance-card";
 import { formatIrt } from "@/lib/utils/money";
 
 type Action = {
@@ -50,9 +49,10 @@ function ActionIcon({ href, label, Icon }: Action) {
 }
 
 /**
- * The wallet-home summary: the total (cash + coins), the cash/coins breakdown
- * so the total reads as a sum, a compact profit pill that opens the details
- * sheet, and the quick actions.
+ * The wallet-home summary: the total (cash + coins), a compact profit pill that
+ * opens the details sheet, and the quick actions. The cash/coins/pending
+ * breakdown now lives in the «دارایی‌های من» list (Toman as its first row), so
+ * it isn't repeated here.
  *
  * With no spendable Toman there's nothing to withdraw, so برداشت drops and واریز
  * becomes a full-width CTA — the one thing that unblocks buying is depositing.
@@ -79,25 +79,10 @@ export function PortfolioSummary({
         <span className="text-[32px] font-extrabold text-ink">
           {formatIrt(portfolio.totalIrt)}
         </span>
-        {allCash ? (
-          portfolio.pendingWithdrawIrt > 0 ? (
-            <span className="text-[13px] text-placeholder">
-              {formatIrt(portfolio.pendingWithdrawIrt)} در حال برداشت
-            </span>
-          ) : null
-        ) : (
+        {allCash ? null : (
           <PortfolioDetails portfolio={portfolio} history={history} />
         )}
       </div>
-
-      {/* Cash + coins that make up the total, once coins are in the mix. */}
-      {!allCash ? (
-        <CashBalanceCard
-          availableIrt={portfolio.availableIrt}
-          holdingsValueIrt={portfolio.holdingsValueIrt}
-          pendingWithdrawIrt={portfolio.pendingWithdrawIrt}
-        />
-      ) : null}
 
       {hasCash ? (
         <nav
