@@ -15,9 +15,8 @@ import { AllAssets } from "./all-assets";
 
 /**
  * Market/discover screen. The top shows spendable Toman (or a deposit prompt
- * when there's none). Search is hidden at rest and pins under the header once
- * you scroll past the balance — so the first thing people see is what they can
- * buy with, not a search box. Typing hides the curated sections and shows
+ * when there's none), then a search box that's always visible and pins under
+ * the header as you scroll. Typing hides the curated sections and shows
  * matches.
  */
 export function MarketScreen({
@@ -32,25 +31,19 @@ export function MarketScreen({
   initialQuery?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
-  const [scrolledPast, setScrolledPast] = useState(false);
-  // Real height of the sticky app bar (safe-area inset + bar). Measured, not
-  // guessed, so the reveal trigger and the pin position share ONE source and
-  // stay correct on notched devices. 72 is just the pre-measure fallback.
+  // Real height of the sticky app bar (safe-area inset + bar), measured so the
+  // always-visible search pins flush under it on notched devices. 72 is the
+  // pre-measure fallback.
   const [headerH, setHeaderH] = useState(72);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
   const searching = query.trim() !== "";
-
-  // Search exists only once the balance has scrolled up behind the header — or
-  // while actively searching, so a short result list doesn't make it vanish.
-  const showSearch = scrolledPast || searching;
 
   useEffect(() => {
     // The HeaderBar is the sibling right before the <main> we live in
     // (AppShell renders {header} directly before <main>). Falls back to 72 if
     // that shape ever changes — safe, just a less-precise pin until then.
     const measure = () => {
-      const header =
-        sentinelRef.current?.closest("main")?.previousElementSibling;
+      const header = searchRef.current?.closest("main")?.previousElementSibling;
       if (header instanceof HTMLElement) {
         const h = header.getBoundingClientRect().height;
         if (h) setHeaderH(h);
@@ -60,20 +53,6 @@ export function MarketScreen({
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, []);
-
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-    // The sentinel sits just under the balance. Shrinking the observer root by
-    // the header height means "not intersecting" == the balance is gone behind
-    // the sticky header, which is exactly when the search should take over.
-    const obs = new IntersectionObserver(
-      ([entry]) => setScrolledPast(!entry.isIntersecting),
-      { rootMargin: `-${Math.round(headerH)}px 0px 0px 0px` },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [headerH]);
 
   const clearSearch = () => {
     setQuery("");
@@ -120,30 +99,26 @@ export function MarketScreen({
         </Link>
       )}
 
-      {/* When this scrolls up behind the header, the search bar takes over. */}
-      <div ref={sentinelRef} aria-hidden className="h-0" />
-
-      {showSearch && (
-        <div
-          // Pins flush under the measured header, in the balance's place.
-          className="sticky z-20 -mx-4 bg-paper px-4 py-1"
-          style={{ top: headerH }}
-        >
-          <label className="flex h-[54px] items-center gap-2 rounded-[27px] bg-surface px-[18px] shadow-sm">
-            <SearchIcon size={20} className="shrink-0 text-placeholder" />
-            <input
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                replaceUrlParam("q", e.target.value.trim() || null);
-              }}
-              placeholder="جستجوی رمزارز…"
-              aria-label="جستجوی رمزارز"
-              className="w-full bg-transparent text-right text-[16px] text-ink outline-none placeholder:text-placeholder"
-            />
-          </label>
-        </div>
-      )}
+      {/* Always visible; pins flush under the header as you scroll. */}
+      <div
+        ref={searchRef}
+        className="sticky z-20 -mx-4 bg-paper px-4 py-1"
+        style={{ top: headerH }}
+      >
+        <label className="flex h-[54px] items-center gap-2 rounded-[27px] bg-surface px-[18px] shadow-sm">
+          <SearchIcon size={20} className="shrink-0 text-placeholder" />
+          <input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              replaceUrlParam("q", e.target.value.trim() || null);
+            }}
+            placeholder="جستجوی رمزارز…"
+            aria-label="جستجوی رمزارز"
+            className="w-full bg-transparent text-right text-[16px] text-ink outline-none placeholder:text-placeholder"
+          />
+        </label>
+      </div>
 
       {searching ? (
         results.length === 0 ? (
