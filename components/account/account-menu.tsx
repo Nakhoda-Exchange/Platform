@@ -17,18 +17,6 @@ import { openSupportChat } from "@/components/support/goftino";
 import { ThemeSelector } from "./theme-row";
 import { cn } from "@/lib/utils/cn";
 
-/** A labeled group; its `children` sit in a single rounded, divided card. */
-function Group({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <section className="flex flex-col gap-2">
-      <h2 className="px-1 text-[12px] font-bold text-muted">{label}</h2>
-      <div className="flex flex-col divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
-        {children}
-      </div>
-    </section>
-  );
-}
-
 /** One settings row: a brand-badged icon, label, trailing value + chevron. A
  *  row with neither `onClick` nor `href` renders static, never a dead link. */
 function Row({
@@ -97,14 +85,14 @@ function Row({
 }
 
 /**
- * Account settings, grouped and ordered: security first, then appearance,
- * activity, and help. A client leaf only because the support row opens the
- * Goftino widget and the theme control is interactive.
+ * Account settings: one card of rows (security → account → activity → help, top
+ * to bottom), then the theme control. A client leaf because the support row
+ * opens the Goftino widget and the theme control is interactive.
  */
 export function AccountMenu({ profile }: { profile: UserProfile }) {
   return (
-    <nav aria-label="تنظیمات حساب" className="flex flex-col gap-5">
-      <Group label="حساب و امنیت">
+    <nav aria-label="تنظیمات حساب" className="flex flex-col gap-4">
+      <div className="flex flex-col divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
         <Row
           Icon={ShieldIcon}
           label="ورود دومرحله‌ای"
@@ -119,14 +107,6 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
           label="حساب‌های بانکی"
           href="/account/bank-accounts"
         />
-      </Group>
-
-      <section className="flex flex-col gap-2">
-        <h2 className="px-1 text-[12px] font-bold text-muted">حالت نمایش</h2>
-        <ThemeSelector />
-      </section>
-
-      <Group label="فعالیت">
         <Row Icon={BellIcon} label="اعلان‌ها" href="/account/announcements" />
         <Row
           Icon={GiftIcon}
@@ -134,12 +114,11 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
           href="/account/referral"
           highlight
         />
-      </Group>
-
-      <Group label="راهنما و پشتیبانی">
         <Row Icon={HelpCircleIcon} label="سوالات متداول" href="/account/faq" />
         <Row Icon={HeadphonesIcon} label="پشتیبانی" onClick={openSupportChat} />
-      </Group>
+      </div>
+
+      <ThemeSelector />
     </nav>
   );
 }
