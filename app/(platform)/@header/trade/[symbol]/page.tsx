@@ -2,7 +2,7 @@ import Link from "next/link";
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
 import { HeaderBar } from "@/components/layout/header-bar";
-import { ChevronRightIcon } from "@/components/ui/icons";
+import { ArrowRightIcon } from "@/components/ui/icons";
 import { CoinIcon } from "@/components/market/coin-icon";
 
 /**
@@ -30,7 +30,7 @@ export default async function TradeHeaderSlot({
             aria-label="بازگشت"
             className="flex size-11 items-center justify-center rounded-xl text-ink transition-colors hover:bg-surface"
           >
-            <ChevronRightIcon size={24} />
+            <ArrowRightIcon size={24} />
           </Link>
           {coin ? (
             <div className="flex items-center gap-2.5">

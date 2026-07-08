@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "./logo";
 import { HeaderBar } from "./header-bar";
-import { ChevronRightIcon, HeadphonesIcon } from "@/components/ui/icons";
+import { ArrowRightIcon, HeadphonesIcon } from "@/components/ui/icons";
 import { NotificationBell } from "./notification-bell";
 import { HEADER_CONFIG, type HeaderConfig } from "./platform-nav";
 import { openSupportChat } from "@/components/support/goftino";
@@ -48,7 +48,7 @@ export function PlatformHeader() {
               aria-label="بازگشت"
               className="flex size-11 items-center justify-center rounded-xl text-ink transition-colors hover:bg-surface"
             >
-              <ChevronRightIcon size={24} />
+              <ArrowRightIcon size={24} />
             </Link>
           ) : null}
           {showTitle ? (
