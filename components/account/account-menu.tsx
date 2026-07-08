@@ -7,9 +7,9 @@ import {
   BellIcon,
   ChevronLeftIcon,
   CreditCardIcon,
-  FileTextIcon,
   GiftIcon,
   HeadphonesIcon,
+  HelpCircleIcon,
   ShieldIcon,
   type IconProps,
 } from "@/components/ui/icons";
@@ -123,9 +123,9 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
         </li>
         <li>
           <Row
-            Icon={FileTextIcon}
-            label="قوانین و حریم خصوصی"
-            href="/account/terms"
+            Icon={HelpCircleIcon}
+            label="سوالات متداول"
+            href="/account/faq"
           />
         </li>
       </ul>

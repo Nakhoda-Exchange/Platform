@@ -121,6 +121,25 @@ export function ChevronLeftIcon(props: IconProps) {
   );
 }
 
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <polyline points="6 9 12 15 18 9" />
+    </Icon>
+  );
+}
+
+/** Question mark in a circle — the «سوالات متداول» (FAQ) icon. */
+export function HelpCircleIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <path d="M12 17h.01" />
+    </Icon>
+  );
+}
+
 /** Full arrow pointing right — the header «بازگشت» (back) icon in this RTL app. */
 export function ArrowRightIcon(props: IconProps) {
   return (
