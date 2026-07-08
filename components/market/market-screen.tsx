@@ -71,7 +71,8 @@ export function MarketScreen({
     // (AppShell renders {header} directly before <main>). Falls back to 72 if
     // that shape ever changes — safe, just a less-precise pin until then.
     const measure = () => {
-      const header = sentinelRef.current?.closest("main")?.previousElementSibling;
+      const header =
+        sentinelRef.current?.closest("main")?.previousElementSibling;
       if (header instanceof HTMLElement) {
         const h = header.getBoundingClientRect().height;
         if (h) setHeaderH(h);
@@ -122,7 +123,9 @@ export function MarketScreen({
         >
           <span className="flex items-center gap-2.5">
             <IranFlag />
-            <span className="text-[15px] font-bold text-ink">موجودی تومانی</span>
+            <span className="text-[15px] font-bold text-ink">
+              موجودی تومانی
+            </span>
           </span>
           <span dir="ltr" className="text-[15px] font-extrabold text-ink">
             {formatIrt(availableIrt)}
