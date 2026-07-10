@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { CoinsIcon, RocketIcon, ZapOffIcon } from "@/components/ui/icons";
+import { AnchorIcon, CoinsIcon, ZapOffIcon } from "@/components/ui/icons";
 import type { IconProps } from "@/components/ui/icons";
 
 export interface Feature {
@@ -12,17 +12,19 @@ export const FEATURES: Feature[] = [
   {
     icon: ZapOffIcon,
     title: "سریع و روان",
-    description: "رابط کاربری سبک و ساده برای انجام معاملات بدون پیچیدگی.",
+    description:
+      "رابط سبک و بی‌دردسر؛ خرید و فروش تنها با چند حرکت، بدون منوهای پیچیده.",
   },
   {
     icon: CoinsIcon,
-    title: "تنوع آلت‌کوین‌ها",
+    title: "صدها رمزارز",
     description:
-      "به طیف گسترده‌ای از آلت‌کوین‌ها و میم‌کوین‌های محبوب دسترسی داشته باشید.",
+      "از بیت‌کوین تا میم‌کوین‌های نوظهور — همه در یک عرشه، با قیمت لحظه‌ای.",
   },
   {
-    icon: RocketIcon,
-    title: "شروع آسان",
-    description: "فقط با شماره موبایل در کمتر از یک دقیقه وارد بازار شوید.",
+    icon: AnchorIcon,
+    title: "شروع در یک دقیقه",
+    description:
+      "فقط با شماره موبایل لنگر بینداز؛ احراز هویت آنی و اولین معامله بی‌معطلی.",
   },
 ];
