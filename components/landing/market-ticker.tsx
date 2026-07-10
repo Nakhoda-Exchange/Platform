@@ -48,48 +48,59 @@ const TICKER = [
   },
 ];
 
+/** One copy of the strip. `pe-9` gives it a trailing gap that matches the
+ *  internal `gap-9`, so two copies tile edge-to-edge and the −50% shift lands
+ *  exactly one copy over — no half-gap hitch at the seam. */
+function Strip() {
+  return (
+    <div className="flex shrink-0 gap-9 pe-9">
+      {TICKER.map((c, i) => (
+        <span key={i} className="flex items-center gap-2.5 whitespace-nowrap">
+          <span
+            className="flex size-6 items-center justify-center rounded-full text-[11px] font-extrabold text-white"
+            style={{ background: c.c }}
+          >
+            {c.t}
+          </span>
+          <span dir="ltr" className="text-[14px] font-extrabold text-ink">
+            {c.sym}
+          </span>
+          <MiniSpark symbol={c.sym} up={c.up} width={44} height={18} />
+          <span dir="ltr" className="text-[13px] tabular-nums text-muted">
+            {c.price}
+          </span>
+          <span
+            dir="ltr"
+            className={
+              "text-[12px] font-extrabold " + (c.up ? "text-gain" : "text-loss")
+            }
+          >
+            {c.up ? "▲" : "▼"}
+            {c.ch}٪
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /**
- * The market horizon — a slow, continuous drift of live coin prices and
- * sparklines, like a captain's instrument reading the seas. The strip is
- * duplicated so the −50% loop is seamless; reduced-motion holds it still.
+ * The market horizon — a slow, continuous drift of coin prices and sparklines,
+ * like a captain's instrument reading the seas. Two identical copies tile so
+ * the −50% loop is seamless; reduced-motion holds it still. Decorative sample
+ * data (the app is the real thing), so it's aria-hidden — no fake prices read
+ * aloud, no phantom landmark.
  */
 export function MarketTicker() {
-  const strip = [...TICKER, ...TICKER];
   return (
-    <section
-      aria-label="نمای لحظه‌ای بازار"
+    <div
+      aria-hidden
       className="overflow-hidden border-y border-line bg-surface py-3.5"
     >
-      <div className="flex w-max animate-ticker gap-9">
-        {strip.map((c, i) => (
-          <span key={i} className="flex items-center gap-2.5 whitespace-nowrap">
-            <span
-              aria-hidden
-              className="flex size-6 items-center justify-center rounded-full text-[11px] font-extrabold text-white"
-              style={{ background: c.c }}
-            >
-              {c.t}
-            </span>
-            <span dir="ltr" className="text-[14px] font-extrabold text-ink">
-              {c.sym}
-            </span>
-            <MiniSpark symbol={c.sym} up={c.up} width={44} height={18} />
-            <span dir="ltr" className="text-[13px] tabular-nums text-muted">
-              {c.price}
-            </span>
-            <span
-              dir="ltr"
-              className={
-                "text-[12px] font-extrabold " +
-                (c.up ? "text-gain" : "text-loss")
-              }
-            >
-              {c.up ? "▲" : "▼"}
-              {c.ch}٪
-            </span>
-          </span>
-        ))}
+      <div className="flex w-max animate-ticker">
+        <Strip />
+        <Strip />
       </div>
-    </section>
+    </div>
   );
 }
