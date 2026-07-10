@@ -54,7 +54,7 @@ export function Hero() {
             <PhoneCtaCard />
             <p className="mt-3.5 flex items-center gap-1.5 text-[13px] text-muted">
               <CheckCircleIcon size={15} className="text-brand" />
-              بدون کارمزد ثبت‌نام · احراز هویت آنی
+              بدون کارمزد ثبت‌نام · احراز هویت سریع
             </p>
           </div>
 
