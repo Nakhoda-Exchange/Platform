@@ -1,11 +1,11 @@
-// Generate the PWA/app icons + favicon from the Nakhoda logo (public/logo.png,
-// the captain emblem) centered on a brand-blue square.
+// Generate the PWA/app icons + favicon from the Nakhoda logo mark
+// (public/logo.svg) centered on a brand-blue square.
 // Run: bun run scripts/generate-icons.mjs   (regenerate after a logo change)
 import sharp from "sharp";
 import { mkdirSync } from "node:fs";
 
 const BRAND = "#0023fb";
-const SRC = "public/logo.png";
+const SRC = "public/logo.svg";
 
 mkdirSync("public/icons", { recursive: true });
 
