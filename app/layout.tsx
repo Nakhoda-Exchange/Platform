@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeWatcher } from "@/components/layout/theme-watcher";
 import { THEME_INIT_SCRIPT } from "@/lib/utils/theme";
+import { BROWSER_SUPPORT_GATE } from "@/lib/utils/browser-support";
 import { CurrencyUnitsHydrator } from "@/components/layout/currency-units-hydrator";
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
@@ -51,6 +52,9 @@ export default async function RootLayout({
   return (
     <html lang="fa" dir="rtl" className={`${iranYekan.variable} h-full`}>
       <body className="flex min-h-full flex-col bg-paper text-ink">
+        {/* Redirect browsers below our floor (Tailwind v4's CSS can't render on
+            them) to the static notice, before anything paints. */}
+        <script dangerouslySetInnerHTML={{ __html: BROWSER_SUPPORT_GATE }} />
         {/* Sets .dark before first paint (system default or stored override). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <CurrencyUnitsHydrator units={currencyUnits} />
