@@ -50,7 +50,15 @@ export default async function RootLayout({
   setCurrencyUnits(currencyUnits);
 
   return (
-    <html lang="fa" dir="rtl" className={`${iranYekan.variable} h-full`}>
+    <html
+      lang="fa"
+      dir="rtl"
+      className={`${iranYekan.variable} h-full`}
+      // The pre-paint theme script sets `.dark` on <html> before hydration,
+      // so its className legitimately differs from the server's — tell React
+      // not to flag (and revert) that expected mismatch.
+      suppressHydrationWarning
+    >
       <body className="flex min-h-full flex-col bg-paper text-ink">
         {/* Redirect browsers below our floor (Tailwind v4's CSS can't render on
             them) to the static notice, before anything paints. */}

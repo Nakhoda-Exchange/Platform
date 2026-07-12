@@ -26,7 +26,9 @@ export function AboardBand() {
         <p className="relative mb-7 text-[16px] text-white/85">
           ثبت‌نام رایگان است و کمتر از یک دقیقه طول می‌کشد.
         </p>
-        <div className="relative flex justify-center">
+        {/* The CTA is a flat field + brand button — on the brand band it would
+            blend in, so it sits on a paper card here to keep contrast. */}
+        <div className="relative mx-auto w-full max-w-[420px] rounded-card bg-paper p-5 text-right shadow-xl">
           <PhoneCtaCard />
         </div>
       </div>
