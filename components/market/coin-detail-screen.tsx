@@ -36,21 +36,22 @@ function HoldingSummary({
   return (
     <section className="flex flex-col gap-3 rounded-card border border-line bg-surface px-4 py-3.5">
       <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[13px] font-medium text-muted">دارایی شما</span>
         <span dir="ltr" className="text-[19px] font-extrabold text-ink">
           {formatIrt(holding.valueIrt)}
         </span>
-        <span className="text-[13px] font-medium text-muted">دارایی شما</span>
       </div>
       <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[13px] text-muted">معادل</span>
         <span dir="ltr" className="text-[14px] font-bold text-ink">
           {formatCoinAmount(holding.amount)} {symbol}
         </span>
-        <span className="text-[13px] text-muted">معادل</span>
       </div>
 
       <div className="border-t border-line" />
 
       <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[13px] text-muted">سود و زیان</span>
         <span
           dir="ltr"
           aria-label={`${up ? "سود" : "زیان"} ${formatIrt(Math.abs(profit))} معادل ${formatChangePercent(percent)}`}
@@ -59,9 +60,8 @@ function HoldingSummary({
             up ? "text-gain" : "text-loss",
           )}
         >
-          {formatIrt(Math.abs(profit))} · {formatChangePercent(percent)}
+          {formatIrt(Math.abs(profit))}
         </span>
-        <span className="text-[13px] text-muted">سود و زیان</span>
       </div>
     </section>
   );
