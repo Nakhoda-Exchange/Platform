@@ -37,9 +37,15 @@ export function CashListItem({
     >
       {/* Identity */}
       <div className="flex items-center gap-3">
-        <span className="flex size-[42px] shrink-0 items-center justify-center rounded-full bg-brand text-[18px] font-extrabold text-white">
-          ت
-        </span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/coins/irt.png"
+          alt=""
+          aria-hidden
+          width={42}
+          height={42}
+          className="size-[42px] shrink-0 rounded-full object-cover"
+        />
         <div className="flex flex-col">
           <span className="text-[15px] font-bold text-ink">تومان</span>
           <span className="text-[12px] text-muted">موجودی</span>
