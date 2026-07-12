@@ -75,7 +75,6 @@ function Strip() {
               "text-[12px] font-extrabold " + (c.up ? "text-gain" : "text-loss")
             }
           >
-            {c.up ? "▲" : "▼"}
             {c.ch}٪
           </span>
         </span>
