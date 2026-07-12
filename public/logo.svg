@@ -1,7 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1008 1056" width="1008" height="1056" role="img" aria-label="Anchor and shield logo">
   <title>Anchor and shield logo</title>
-  <rect id="background" width="1008" height="1056" fill="#000000"/>
-  <g id="shield" fill="#FFFFFF" fill-rule="evenodd" transform="translate(0.000000,1056.000000) scale(0.100000,-0.100000)">
+  <style>
+    /* Transparent, and adapts to the viewer's scheme when embedded via <img>:
+       the shield goes dark on light backgrounds, light on dark; the anchor
+       stays brand. (In-app the mark is inlined and driven by theme tokens.) */
+    #shield { fill: #1a1b1e; }
+    #anchor { fill: #2477ec; }
+    @media (prefers-color-scheme: dark) { #shield { fill: #f3f4f6; } }
+  </style>
+  <g id="shield" fill-rule="evenodd" transform="translate(0.000000,1056.000000) scale(0.100000,-0.100000)">
     <path d="M3215 8139 c-341 -111 -738 -239 -881 -285 -172 -55 -264 -90 -268
 -100 -10 -26 -7 -675 4 -895 27 -526 79 -953 174 -1414 41 -196 122 -500 141
 -531 48 -76 752 -597 763 -565 2 7 -28 82 -66 169 -85 189 -99 223 -168 420
@@ -24,7 +31,7 @@
 159 188 197 169 215 -9 9 -103 23 -279 40 -146 14 -273 26 -283 26 -9 0 -61
 -41 -115 -91z"/>
   </g>
-  <g id="anchor" fill="#2477EC" fill-rule="evenodd" transform="translate(0.000000,1056.000000) scale(0.100000,-0.100000)">
+  <g id="anchor" fill-rule="evenodd" transform="translate(0.000000,1056.000000) scale(0.100000,-0.100000)">
     <path d="M4973 9635 c-271 -49 -531 -218 -675 -440 -65 -99 -117 -217 -145
 -327 -23 -88 -27 -124 -27 -248 -1 -186 22 -293 93 -454 95 -210 296 -410 511
 -506 112 -50 104 -34 96 -200 -10 -214 -25 -372 -37 -386 -8 -10 -126 -14
