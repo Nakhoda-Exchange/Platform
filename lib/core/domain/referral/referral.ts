@@ -27,12 +27,20 @@ export function tierFor(activeCount: number): {
   return { current, next };
 }
 
+/** One person who signed up with your code. */
+export interface Invitee {
+  name: string; // display name, masked by the backend, e.g. «رضا م.»
+  joinedAt: string; // ISO date they signed up
+  active: boolean; // KYC-passed + traded recently (counts toward your tier)
+}
+
 /** What the referral screen shows. */
 export interface ReferralOverview {
-  code: string; // e.g. ALI-1234
+  code: string; // e.g. K7QX2M — 6 chars, A-Z0-9
   invitedCount: number; // everyone who signed up with the code
   activeCount: number; // KYC-passed + traded in the last 30 days
   earnedIrt: number; // lifetime rewards, Toman
   sharePercent: number; // current tier's share of invitee fees
   nextTier?: ReferralTier; // absent at the cap
+  invitees: Invitee[]; // the people you invited (newest first)
 }

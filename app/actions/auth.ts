@@ -51,7 +51,7 @@ export async function startLogin(
   // A shared referral link (?ref=CODE) rides the login form; keep it in an
   // httpOnly cookie until KYC completes, where the attribution is applied.
   const ref = String(formData.get("ref") ?? "").trim();
-  if (/^[A-Za-z]{2,8}-\d{3,6}$/.test(ref)) {
+  if (/^[A-Za-z0-9]{6}$/.test(ref)) {
     (await cookies()).set(REFERRAL_COOKIE, ref.toUpperCase(), {
       httpOnly: true,
       sameSite: "lax",
