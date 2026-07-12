@@ -62,11 +62,11 @@
 .dark {
   color-scheme: dark;
   --tone-brand-soft: rgba(68, 138, 255, 0.14);
-  --tone-paper: #000;
+  --tone-paper: #000; /* pure-black base (OLED) */
   --tone-ink: #f3f4f6;
   --tone-muted: #9ca3af;
-  --tone-surface: #010101;
-  --tone-line: #111;
+  --tone-surface: #16181d; /* lifted off pure black so cards/fields read */
+  --tone-line: #2c2f37; /* visible border on both paper and surface */
   --tone-placeholder: #565d69;
   --tone-gain: #4ade80; /* green-400 */
   --tone-gain-soft: rgba(74, 222, 128, 0.14);
