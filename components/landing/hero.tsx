@@ -36,7 +36,7 @@ export function Hero() {
       </svg>
 
       <Container className="relative">
-        <div className="grid items-center gap-10 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
+        <div className="grid items-center gap-12 py-16 lg:grid-cols-2 lg:gap-10 lg:py-24">
           <div className="flex flex-col items-center text-center lg:items-start lg:text-right">
             <span className="mb-5 inline-flex items-center rounded-full bg-brand/10 px-3 py-1.5 text-[13px] font-extrabold text-brand">
               صرافی آلت‌کوین ایرانی
