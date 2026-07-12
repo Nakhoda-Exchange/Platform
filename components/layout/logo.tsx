@@ -1,28 +1,119 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
-import Image from "next/image";
 
 interface LogoProps {
-  /** Wordmark font size in px; the emblem scales alongside it. */
+  /** Wordmark font size in px; the mark scales alongside it. */
   size?: number;
   className?: string;
   /** Pass `null` to render a plain (non-linked) wordmark. */
   href?: string | null;
-  /** Wordmark colour. `onBrand` (white) for brand/dark backgrounds, e.g. the splash. */
+  /** Wordmark colour. `onBrand` (white) for brand/dark backgrounds. */
   tone?: "brand" | "onBrand";
-  /** `row` (default) sits the wordmark beside the emblem; `stack` places it below — e.g. the splash. */
+  /** `row` (default) sits the wordmark beside the mark; `stack` places it below. */
   layout?: "row" | "stack";
 }
 
-// Intrinsic size of public/logo.png (the captain emblem), for CLS-safe sizing.
-const EMBLEM_W = 538;
-const EMBLEM_H = 408;
+// The mark's intrinsic canvas (viewBox), for aspect-correct sizing.
+const MARK_W = 1008;
+const MARK_H = 1056;
 
 /**
- * The single Nakhoda logo — the captain emblem (public/logo.png) beside the
- * «ناخدا» wordmark. This is the ONE place the logo is defined; every surface
- * renders it through this component, so swapping the artwork is a one-file
- * change. Do not fork it or inline the mark elsewhere.
+ * The anchor + shield mark, inlined from public/logo.svg so it follows the app
+ * theme through tokens: the shield is `fill-ink` (dark on light, light on
+ * dark) and the anchor is `fill-brand`. No background — it sits cleanly on any
+ * surface. Regenerate from the SVG with scripts/gen-logo (see the design SVG).
+ */
+function LogoMark({ width, height }: { width: number; height: number }) {
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox="0 0 1008 1056"
+      aria-hidden
+      className="shrink-0"
+    >
+      <g
+        className="fill-ink"
+        fillRule="evenodd"
+        transform="translate(0.000000,1056.000000) scale(0.100000,-0.100000)"
+      >
+        <path
+          d="M3215 8139 c-341 -111 -738 -239 -881 -285 -172 -55 -264 -90 -268
+        -100 -10 -26 -7 -675 4 -895 27 -526 79 -953 174 -1414 41 -196 122 -500 141
+        -531 48 -76 752 -597 763 -565 2 7 -28 82 -66 169 -85 189 -99 223 -168 420
+        -210 598 -328 1356 -336 2163 -2 211 0 269 10 282 8 9 114 48 235 87 920 295
+        1206 390 1213 401 3 5 -22 64 -55 132 -33 67 -73 165 -87 217 -25 90 -39 121
+        -53 119 -3 0 -285 -90 -626 -200z"
+        />
+        <path
+          d="M6462 8327 c-6 -7 -17 -42 -26 -79 -20 -85 -76 -225 -121 -300 -19
+        -32 -32 -64 -29 -71 3 -8 82 -39 177 -69 404 -131 847 -274 1045 -338 118 -38
+        220 -74 228 -81 31 -26 7 -706 -41 -1129 -79 -689 -232 -1266 -471 -1769 -35
+        -74 -64 -138 -64 -142 0 -19 28 -6 115 53 353 242 644 475 668 536 25 61 94
+        323 128 482 117 554 165 983 189 1680 11 321 4 655 -14 669 -6 5 -96 36 -201
+        69 -104 33 -282 90 -395 127 -884 287 -1159 375 -1170 375 -4 0 -12 -6 -18
+        -13z"
+        />
+        <path
+          d="M3620 3635 c-8 -2 -118 -14 -243 -26 -126 -13 -236 -28 -245 -35 -15
+        -11 -13 -16 13 -50 16 -22 85 -95 154 -164 250 -249 529 -425 840 -530 103
+        -35 125 -40 136 -29 18 19 38 338 23 357 -6 7 -61 48 -122 92 -133 94 -230
+        174 -365 298 -91 84 -104 92 -138 91 -21 -1 -45 -3 -53 -4z"
+        />
+        <path
+          d="M6512 3549 c-119 -111 -228 -199 -375 -302 -62 -43 -115 -84 -118
+        -90 -11 -21 12 -341 25 -355 10 -10 28 -8 94 13 332 105 624 285 882 544 158
+        159 188 197 169 215 -9 9 -103 23 -279 40 -146 14 -273 26 -283 26 -9 0 -61
+        -41 -115 -91z"
+        />
+      </g>
+      <g
+        className="fill-brand"
+        fillRule="evenodd"
+        transform="translate(0.000000,1056.000000) scale(0.100000,-0.100000)"
+      >
+        <path
+          d="M4973 9635 c-271 -49 -531 -218 -675 -440 -65 -99 -117 -217 -145
+        -327 -23 -88 -27 -124 -27 -248 -1 -186 22 -293 93 -454 95 -210 296 -410 511
+        -506 112 -50 104 -34 96 -200 -10 -214 -25 -372 -37 -386 -8 -10 -126 -14
+        -538 -16 l-527 -3 -69 -35 c-120 -60 -171 -151 -169 -305 0 -62 5 -89 22 -122
+        35 -66 78 -110 144 -143 l61 -30 507 0 c478 0 509 -1 530 -18 l23 -19 -12
+        -209 c-6 -115 -16 -290 -21 -389 -6 -99 -19 -344 -30 -545 -11 -201 -27 -493
+        -35 -650 -8 -157 -17 -314 -20 -350 -3 -36 -15 -227 -25 -425 -55 -991 -79
+        -1338 -93 -1352 -17 -18 -152 5 -341 57 -458 126 -841 362 -1190 733 -190 202
+        -400 486 -394 532 3 18 17 22 163 38 467 51 490 54 490 77 0 8 -29 34 -65 58
+        -150 98 -314 209 -345 232 -18 14 -59 43 -91 65 -243 169 -561 424 -812 651
+        -239 215 -231 209 -247 193 -30 -31 -95 -508 -116 -849 -15 -253 -2 -628 32
+        -945 14 -131 48 -365 55 -376 11 -18 30 -8 59 29 17 21 99 126 183 235 85 108
+        160 197 168 197 8 0 32 -37 55 -82 108 -216 257 -451 411 -648 104 -133 381
+        -409 521 -520 271 -212 434 -308 1005 -594 565 -282 771 -411 984 -613 48 -45
+        86 -73 100 -73 14 0 55 32 113 87 205 197 384 309 935 584 459 228 578 293
+        759 413 224 148 362 259 535 430 264 262 442 505 636 868 40 75 79 139 86 142
+        17 6 63 -47 245 -282 97 -126 146 -182 157 -180 20 4 39 113 73 424 20 182 23
+        261 24 614 0 457 -7 553 -72 955 -26 167 -36 198 -58 193 -7 -2 -89 -73 -181
+        -159 -174 -161 -355 -315 -504 -428 -47 -36 -119 -91 -160 -123 -93 -73 -362
+        -261 -535 -374 -146 -96 -174 -119 -160 -133 10 -9 221 -38 485 -66 167 -18
+        170 -19 170 -40 0 -43 -239 -365 -393 -529 -269 -288 -573 -500 -927 -649
+        -172 -72 -448 -147 -555 -150 -55 -2 -60 0 -66 23 -4 14 -19 241 -34 505 -15
+        264 -35 631 -46 815 -10 184 -28 502 -39 705 -31 590 -49 918 -59 1100 -45
+        758 -45 775 -27 793 15 15 66 17 539 22 l522 5 52 27 c143 76 202 264 131 419
+        -36 78 -78 122 -150 155 l-63 29 -529 2 c-413 2 -533 5 -542 15 -8 9 -16 90
+        -23 243 -7 127 -14 242 -17 256 -6 32 10 46 106 89 141 62 293 181 384 298
+        273 355 299 821 69 1205 -60 100 -114 161 -224 252 -86 72 -255 166 -336 187
+        -189 49 -361 60 -510 33z m339 -544 c164 -57 281 -176 330 -334 16 -55 20 -88
+        16 -171 -3 -98 -6 -108 -45 -188 -56 -113 -156 -211 -259 -253 -90 -37 -231
+        -46 -320 -20 -126 36 -243 126 -307 236 -116 198 -80 447 89 615 63 63 161
+        114 257 134 58 12 176 3 239 -19z"
+        />
+      </g>
+    </svg>
+  );
+}
+
+/**
+ * The single Nakhoda logo — the anchor/shield mark beside the «ناخدا» wordmark.
+ * This is the ONE place the logo is defined; every surface renders it through
+ * this component. Do not fork it or inline the mark elsewhere.
  */
 export function Logo({
   size = 24,
@@ -31,25 +122,17 @@ export function Logo({
   tone = "brand",
   layout = "row",
 }: LogoProps) {
-  const h = Math.round(size * 1.7);
-  const w = Math.round(h * (EMBLEM_W / EMBLEM_H));
+  const h = Math.round(size * 2.4);
+  const w = Math.round(h * (MARK_W / MARK_H));
   const content = (
     <span
       className={cn(
         "flex items-center",
-        layout === "stack" ? "flex-col gap-3" : "gap-2.5",
+        layout === "stack" && "flex-col",
         className,
       )}
     >
-      <Image
-        src="/logo.png"
-        alt="ناخدا"
-        aria-hidden
-        width={w}
-        height={h}
-        className="object-contain"
-        style={{ width: w, height: h }}
-      />
+      <LogoMark width={w} height={h} />
       <span
         className={cn(
           "font-extrabold leading-none",

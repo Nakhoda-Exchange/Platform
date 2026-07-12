@@ -11,7 +11,7 @@ export function SplashScreen() {
   return (
     <div id="app-splash" aria-hidden>
       <div className="splash-logo">
-        <Logo size={40} href={null} tone="onBrand" layout="stack" />
+        <Logo size={40} href={null} layout="stack" />
       </div>
       <div className="splash-spinner" />
     </div>

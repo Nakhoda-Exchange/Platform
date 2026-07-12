@@ -62,11 +62,11 @@
 .dark {
   color-scheme: dark;
   --tone-brand-soft: rgba(68, 138, 255, 0.14);
-  --tone-paper: #0f1115;
+  --tone-paper: #000;
   --tone-ink: #f3f4f6;
   --tone-muted: #9ca3af;
-  --tone-surface: #191c22;
-  --tone-line: #262a32;
+  --tone-surface: #010101;
+  --tone-line: #111;
   --tone-placeholder: #565d69;
   --tone-gain: #4ade80; /* green-400 */
   --tone-gain-soft: rgba(74, 222, 128, 0.14);
@@ -197,7 +197,9 @@ input[type="range"].range-brand:focus-visible::-moz-range-thumb {
   align-items: center;
   justify-content: center;
   gap: 30px;
-  background: var(--color-brand);
+  background: var(
+    --color-paper
+  ); /* theme-aware: white in light, dark in dark */
   transition:
     opacity 0.45s ease,
     visibility 0.45s ease;
@@ -218,8 +220,8 @@ input[type="range"].range-brand:focus-visible::-moz-range-thumb {
   width: 32px;
   height: 32px;
   border-radius: 9999px;
-  border: 3px solid rgb(255 255 255 / 0.25);
-  border-top-color: #fff;
+  border: 3px solid var(--color-line);
+  border-top-color: var(--color-brand);
   animation: splash-spin 0.8s linear infinite;
 }
 @keyframes splash-in {
