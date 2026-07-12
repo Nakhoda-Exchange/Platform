@@ -14,6 +14,17 @@
     "format:check": "prettier --check .",
     "prepare": "husky"
   },
+  "//browserslist": "The realistically supportable floor: Tailwind v4 needs Safari 16.4 / Chrome 111 / Firefox 128 (@property + color-mix, no fallbacks), so nothing below can render the app. Governs the production build (SWC transpile + Lightning CSS). Browsers below this are caught at runtime by the pre-paint gate → /unsupported.html.",
+  "browserslist": [
+    "Chrome >= 111",
+    "ChromeAndroid >= 111",
+    "Edge >= 111",
+    "Firefox >= 128",
+    "Safari >= 16.4",
+    "iOS >= 16.4",
+    "Samsung >= 22",
+    "not dead"
+  ],
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
       "eslint --fix",
