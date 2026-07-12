@@ -15,9 +15,17 @@ Raw facts only — tier percentages are domain logic the frontend computes
   "code": "ALI-1234",
   "invitedCount": 3,
   "activeCount": 2, // KYC-passed + traded in the last 30 days
-  "earnedIrt": 680000 // lifetime rewards
+  "earnedIrt": 680000, // lifetime rewards
+  "invitees": [
+    // the people who signed up with this code, newest first
+    { "name": "مهدی کریمی", "joinedAt": "2025-07-01", "active": false },
+    { "name": "سارا احمدی", "joinedAt": "2025-06-18", "active": true }
+  ]
 }
 ```
+
+`invitees[].name` is a display name masked by the backend (privacy);
+`active` mirrors the same rule as `activeCount`.
 
 ## POST `/referral/apply` — auth
 

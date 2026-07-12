@@ -3,9 +3,10 @@
 import { useState } from "react";
 import type { ReferralOverview } from "@/lib/core/domain/referral/referral";
 import { Button } from "@/components/ui/button";
-import { GiftIcon } from "@/components/ui/icons";
+import { GiftIcon, UserIcon } from "@/components/ui/icons";
 import { toPersianDigits } from "@/lib/utils/digits";
 import { formatIrtShort } from "@/lib/utils/money";
+import { formatJalaliDay } from "@/lib/utils/jalali";
 import { cn } from "@/lib/utils/cn";
 
 const HOW_IT_WORKS = [
@@ -15,9 +16,10 @@ const HOW_IT_WORKS = [
 ];
 
 /**
- * «کد دعوت ناخدا»: the code + share, earnings, the fee-share tier and the
- * road to the next one, and three plain steps. Rewards land in the wallet
- * and show as «پاداش دعوت» in the history.
+ * «کد دعوت ناخدا»: the code + share, earnings and the fee-share tier with the
+ * road to the next rung, the list of people you invited (with their status),
+ * and three plain steps. Rewards land in the wallet and show as «پاداش دعوت»
+ * in the history.
  */
 export function ReferralScreen({ overview }: { overview: ReferralOverview }) {
   const [copied, setCopied] = useState(false);
@@ -53,6 +55,10 @@ export function ReferralScreen({ overview }: { overview: ReferralOverview }) {
     }
   };
 
+  const progress = overview.nextTier
+    ? Math.min(100, (overview.activeCount / overview.nextTier.minActive) * 100)
+    : 100;
+
   return (
     <div className="flex flex-1 flex-col gap-6">
       {/* The code */}
@@ -78,7 +84,7 @@ export function ReferralScreen({ overview }: { overview: ReferralOverview }) {
       </div>
 
       {/* Earnings + tier */}
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-card bg-surface p-4">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-card border border-line bg-surface p-4">
         <div className="flex flex-col gap-1">
           <dt className="text-[12px] text-muted">درآمد شما از دعوت‌ها</dt>
           <dd className="text-[14px] font-bold text-gain">
@@ -113,17 +119,67 @@ export function ReferralScreen({ overview }: { overview: ReferralOverview }) {
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-line">
               <div
                 className="h-full rounded-full bg-brand"
-                style={{
-                  width: `${Math.min(
-                    100,
-                    (overview.activeCount / overview.nextTier.minActive) * 100,
-                  )}%`,
-                }}
+                style={{ width: `${progress}%` }}
               />
             </div>
           ) : null}
         </div>
       </dl>
+
+      {/* Invited friends */}
+      <section className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-[15px] font-extrabold text-ink">
+            دوستان دعوت‌شده
+          </h2>
+          <span className="text-[12px] text-muted">
+            {toPersianDigits(overview.invitedCount)} نفر
+          </span>
+        </div>
+
+        {overview.invitees.length === 0 ? (
+          <p className="rounded-card border border-line bg-surface p-6 text-center text-[13px] leading-7 text-muted">
+            هنوز کسی را دعوت نکرده‌اید. کدتان را بفرستید تا دوستانتان اینجا دیده
+            شوند.
+          </p>
+        ) : (
+          <ul className="flex flex-col overflow-hidden rounded-card border border-line bg-surface">
+            {overview.invitees.map((invitee, i) => (
+              <li
+                key={i}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3",
+                  i > 0 && "border-t border-line",
+                )}
+              >
+                <span
+                  aria-hidden
+                  className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand"
+                >
+                  <UserIcon size={20} />
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-[14px] font-bold text-ink">
+                    {invitee.name}
+                  </span>
+                  <span className="text-[12px] text-muted">
+                    عضویت: {formatJalaliDay(new Date(invitee.joinedAt))}
+                  </span>
+                </div>
+                {invitee.active ? (
+                  <span className="shrink-0 rounded-full bg-gain-soft px-2.5 py-1 text-[11px] font-bold text-gain">
+                    فعال
+                  </span>
+                ) : (
+                  <span className="shrink-0 rounded-full border border-line px-2.5 py-1 text-[11px] font-bold text-muted">
+                    در انتظار
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {/* How it works */}
       <ol className="flex flex-col gap-3">

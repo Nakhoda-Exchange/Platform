@@ -1,4 +1,5 @@
 import type { Result } from "@/lib/core/domain/shared/result";
+import type { Invitee } from "@/lib/core/domain/referral/referral";
 
 /** Raw referral facts from the backend; tiers are computed in the use case. */
 export interface ReferralFacts {
@@ -6,6 +7,7 @@ export interface ReferralFacts {
   invitedCount: number;
   activeCount: number;
   earnedIrt: number;
+  invitees: Invitee[];
 }
 
 /** Port for the referral program. Adapters live in infrastructure. */
