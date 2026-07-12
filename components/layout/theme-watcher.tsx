@@ -1,23 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
-import { THEME_STORAGE_KEY } from "@/lib/utils/theme";
+import { getThemePref } from "@/lib/utils/theme";
 
 /**
- * Follows OS theme changes live, but only when the user's preference is
- * explicitly "system" (the default is dark, and light/dark are fixed choices).
- * The pre-paint script in the root layout handles the initial load.
+ * Keeps <html>.dark in sync with the user's preference on the client:
+ * re-asserts it on mount — React can drop the class the pre-paint script set on
+ * <html> during hydration, and nothing else re-adds it — and follows OS changes
+ * live while the preference is «system». (Initial pre-paint is in the layout.)
  */
 export function ThemeWatcher() {
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const follow = (e: MediaQueryListEvent) => {
-      try {
-        if (localStorage.getItem(THEME_STORAGE_KEY) !== "system") return; // only «system» follows the OS
-      } catch {
-        return; // storage unavailable — default (dark) stands
-      }
-      document.documentElement.classList.toggle("dark", e.matches);
+    const apply = () => {
+      const pref = getThemePref();
+      const dark = pref === "dark" || (pref === "system" && media.matches);
+      document.documentElement.classList.toggle("dark", dark);
+    };
+    apply(); // re-assert after hydration
+    const follow = () => {
+      if (getThemePref() === "system") apply();
     };
     media.addEventListener("change", follow);
     return () => media.removeEventListener("change", follow);
