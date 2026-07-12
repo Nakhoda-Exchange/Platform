@@ -141,7 +141,7 @@ export function MarketPreview() {
                     {g.price}
                   </span>
                   <span className="rounded-full bg-gain-soft px-1.5 py-0.5 text-[9px] font-extrabold text-gain">
-                    ▲ {g.ch}٪
+                    {g.ch}٪
                   </span>
                 </span>
               </div>
@@ -179,9 +179,7 @@ export function MarketPreview() {
                 >
                   {r.price}
                 </span>
-                <span className="text-[10px] font-bold text-gain">
-                  ▲ {r.ch}٪
-                </span>
+                <span className="text-[10px] font-bold text-gain">{r.ch}٪</span>
               </span>
             </div>
           ))}
