@@ -59,8 +59,7 @@ function HoldingSummary({
             up ? "text-gain" : "text-loss",
           )}
         >
-          {up ? "▲" : "▼"} {formatIrt(Math.abs(profit))} ·{" "}
-          {formatChangePercent(percent)}
+          {formatIrt(Math.abs(profit))} · {formatChangePercent(percent)}
         </span>
         <span className="text-[13px] text-muted">سود و زیان</span>
       </div>
