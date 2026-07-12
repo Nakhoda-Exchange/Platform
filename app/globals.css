@@ -65,7 +65,7 @@
   --tone-paper: #000; /* pure-black base (OLED) */
   --tone-ink: #f3f4f6;
   --tone-muted: #9ca3af;
-  --tone-surface: #1a1a1c; /* neutral dark, lifted off pure black (no green cast) */
+  --tone-surface: #0c0c0e; /* near-OLED: a hair above black; the border defines the card */
   --tone-line: #2c2c30; /* neutral visible border on both paper and surface */
   --tone-placeholder: #565d69;
   --tone-gain: #4ade80; /* green-400 */
