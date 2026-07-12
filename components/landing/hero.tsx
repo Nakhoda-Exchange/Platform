@@ -6,16 +6,10 @@ import { MarketPreview } from "./market-preview";
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-brand/[0.06] via-paper to-paper">
+    <section className="relative overflow-hidden bg-linear-to-b from-brand/6 via-paper to-paper">
       {/* Decorative sea: wave lines + a faint compass rose. */}
-      <Waves
-        className="right-[-120px] top-6 w-[600px] rotate-[-9deg]"
-        opacity={0.06}
-      />
-      <Waves
-        className="left-[-150px] top-52 w-[640px] rotate-[13deg]"
-        opacity={0.05}
-      />
+      <Waves className="-right-30 top-6 w-150 rotate-[-9deg]" opacity={0.06} />
+      <Waves className="-left-37.5 top-52 w-160 rotate-13" opacity={0.05} />
       <svg
         aria-hidden
         className="pointer-events-none absolute -bottom-24 -left-20 text-brand opacity-[0.05]"
