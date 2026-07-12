@@ -10,6 +10,8 @@ interface LogoProps {
   href?: string | null;
   /** Wordmark colour. `onBrand` (white) for brand/dark backgrounds, e.g. the splash. */
   tone?: "brand" | "onBrand";
+  /** `row` (default) sits the wordmark beside the emblem; `stack` places it below — e.g. the splash. */
+  layout?: "row" | "stack";
 }
 
 // Intrinsic size of public/logo.png (the captain emblem), for CLS-safe sizing.
@@ -27,11 +29,18 @@ export function Logo({
   className,
   href = "/",
   tone = "brand",
+  layout = "row",
 }: LogoProps) {
   const h = Math.round(size * 1.7);
   const w = Math.round(h * (EMBLEM_W / EMBLEM_H));
   const content = (
-    <span className={cn("flex items-center gap-2.5", className)}>
+    <span
+      className={cn(
+        "flex items-center",
+        layout === "stack" ? "flex-col gap-3" : "gap-2.5",
+        className,
+      )}
+    >
       <Image
         src="/logo.png"
         alt="ناخدا"

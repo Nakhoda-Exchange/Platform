@@ -214,12 +214,6 @@ input[type="range"].range-brand:focus-visible::-moz-range-thumb {
   gap: 16px;
   animation: splash-in 0.6s ease both;
 }
-#app-splash .splash-word {
-  color: #fff;
-  font-size: 34px;
-  font-weight: 800;
-  line-height: 1;
-}
 #app-splash .splash-spinner {
   width: 32px;
   height: 32px;
