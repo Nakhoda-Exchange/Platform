@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
+import Image from "next/image";
 
 interface LogoProps {
   /** Wordmark font size in px; the emblem scales alongside it. */
@@ -31,6 +32,15 @@ export function Logo({
   const w = Math.round(h * (EMBLEM_W / EMBLEM_H));
   const content = (
     <span className={cn("flex items-center gap-2.5", className)}>
+      <Image
+        src="/logo.png"
+        alt="ناخدا"
+        aria-hidden
+        width={w}
+        height={h}
+        className="object-contain"
+        style={{ width: w, height: h }}
+      />
       <span
         className={cn(
           "font-extrabold leading-none",
@@ -40,16 +50,6 @@ export function Logo({
       >
         ناخدا
       </span>
-      {/* Decorative: the adjacent wordmark (and the link's aria-label) name it. */}
-      <img
-        src="/logo.png"
-        alt=""
-        aria-hidden
-        width={w}
-        height={h}
-        className="object-contain"
-        style={{ width: w, height: h }}
-      />
     </span>
   );
 
