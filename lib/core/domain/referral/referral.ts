@@ -36,7 +36,7 @@ export interface Invitee {
 
 /** What the referral screen shows. */
 export interface ReferralOverview {
-  code: string; // e.g. ALI-1234
+  code: string; // e.g. K7QX2M — 6 chars, A-Z0-9
   invitedCount: number; // everyone who signed up with the code
   activeCount: number; // KYC-passed + traded in the last 30 days
   earnedIrt: number; // lifetime rewards, Toman

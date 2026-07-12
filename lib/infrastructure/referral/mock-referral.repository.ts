@@ -10,10 +10,21 @@ function delay(ms = 300): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Invite code: 6 random chars, uppercase letters + digits (the backend
+// generates these; the mock mirrors the shape).
+const CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+function randomCode(): string {
+  let out = "";
+  for (let i = 0; i < 6; i++) {
+    out += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  }
+  return out;
+}
+
 // The mock user's referral state (per-process). Counts derive from the invitee
 // list, and earned rewards from the reward transactions in the shared wallet —
 // one source of truth each. Newest invitee first.
-const CODE = "ALI-1234";
+const CODE = randomCode();
 const invitees: Invitee[] = [
   { name: "مهدی کریمی", joinedAt: "2025-07-01", active: false },
   { name: "سارا احمدی", joinedAt: "2025-06-18", active: true },
@@ -38,7 +49,7 @@ export class MockReferralRepository implements ReferralRepository {
   async applyCode(code: string): Promise<Result<void>> {
     await delay(150);
     // Mock: any well-formed code adds a fresh (still-pending) invitee.
-    if (/^[A-Z]{2,8}-\d{3,6}$/.test(code)) {
+    if (/^[A-Z0-9]{6}$/.test(code)) {
       invitees.unshift({
         name: "کاربر جدید",
         joinedAt: new Date().toISOString().slice(0, 10),
