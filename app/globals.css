@@ -243,3 +243,19 @@ input[type="range"].range-brand:focus-visible::-moz-range-thumb {
     animation: none;
   }
 }
+
+/* Landing market ticker — a slow horizontal drift of the coin strip. The
+ * strip is duplicated in markup; a 50% shift loops seamlessly. */
+@keyframes ticker-drift {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-ticker {
+  animation: ticker-drift 46s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-ticker {
+    animation: none;
+  }
+}

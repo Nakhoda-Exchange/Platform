@@ -1,12 +1,16 @@
 import { SiteShell } from "@/components/layout/site-shell";
 import { Hero } from "@/components/landing/hero";
-import { FeatureGrid } from "@/components/landing/feature-grid";
+import { MarketTicker } from "@/components/landing/market-ticker";
+import { WhyNakhoda } from "@/components/landing/why-nakhoda";
+import { AboardBand } from "@/components/landing/aboard-band";
 
 export default function LandingPage() {
   return (
     <SiteShell>
       <Hero />
-      <FeatureGrid />
+      <MarketTicker />
+      <WhyNakhoda />
+      <AboardBand />
     </SiteShell>
   );
 }

@@ -43,7 +43,7 @@ export default async function CoinDetailPage({
       )
     : undefined;
   const holding = held
-    ? { amount: held.amount, valueIrt: held.valueIrt }
+    ? { amount: held.amount, valueIrt: held.valueIrt, costIrt: held.costIrt }
     : undefined;
 
   return <CoinDetailScreen detail={detail} holding={holding} />;

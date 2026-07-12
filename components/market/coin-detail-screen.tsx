@@ -6,10 +6,66 @@ import { PriceChart } from "./price-chart";
 import { IndicatorSummaryCard } from "./indicator-summary-card";
 import { PastPerformanceCard } from "./past-performance-card";
 import { buttonClasses } from "@/components/ui/button";
-import { formatCoinAmount, formatIrt } from "@/lib/utils/money";
+import {
+  formatChangePercent,
+  formatCoinAmount,
+  formatIrt,
+} from "@/lib/utils/money";
+import { cn } from "@/lib/utils/cn";
 
 /** What the viewer holds of this coin, when they hold any. */
-export type CoinHolding = { amount: number; valueIrt: number };
+export type CoinHolding = { amount: number; valueIrt: number; costIrt: number };
+
+/**
+ * The viewer's position, summarized above the chart: the Toman value of the
+ * holding, the coin amount behind it, and the P&L on that value.
+ */
+function HoldingSummary({
+  holding,
+  symbol,
+}: {
+  holding: CoinHolding;
+  symbol: string;
+}) {
+  const profit = holding.valueIrt - holding.costIrt;
+  const up = profit >= 0;
+  const percent = holding.costIrt > 0 ? (profit / holding.costIrt) * 100 : 0;
+
+  // Label on the left, figure on the right — so the figure leads in DOM order
+  // (RTL puts the first flex child at the right edge).
+  return (
+    <section className="flex flex-col gap-3 rounded-card border border-line bg-surface px-4 py-3.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[13px] font-medium text-muted">دارایی شما</span>
+        <span dir="ltr" className="text-[19px] font-extrabold text-ink">
+          {formatIrt(holding.valueIrt)}
+        </span>
+      </div>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[13px] text-muted">معادل</span>
+        <span dir="ltr" className="text-[14px] font-bold text-ink">
+          {formatCoinAmount(holding.amount)} {symbol}
+        </span>
+      </div>
+
+      <div className="border-t border-line" />
+
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[13px] text-muted">سود و زیان</span>
+        <span
+          dir="ltr"
+          aria-label={`${up ? "سود" : "زیان"} ${formatIrt(Math.abs(profit))} معادل ${formatChangePercent(percent)}`}
+          className={cn(
+            "text-[14px] font-bold",
+            up ? "text-gain" : "text-loss",
+          )}
+        >
+          {formatIrt(Math.abs(profit))}
+        </span>
+      </div>
+    </section>
+  );
+}
 
 /**
  * Coin detail page (PDP). The coin's identity (icon, name, symbol, favorite,
@@ -32,22 +88,11 @@ export function CoinDetailScreen({
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-8 pt-4">
-      <PriceChart coin={coin} series={detail.series} candles={detail.candles} />
-
       {holding ? (
-        // Your position, said plainly — no card, just a quiet line.
-        <p className="px-1 text-[14px] leading-7 text-muted">
-          شما{" "}
-          <span dir="ltr" className="font-extrabold text-ink">
-            {formatCoinAmount(holding.amount)} {coin.symbol}
-          </span>{" "}
-          از این رمزارز دارید، معادل{" "}
-          <span dir="ltr" className="font-bold text-ink">
-            {formatIrt(holding.valueIrt)}
-          </span>
-          .
-        </p>
+        <HoldingSummary holding={holding} symbol={coin.symbol} />
       ) : null}
+
+      <PriceChart coin={coin} series={detail.series} candles={detail.candles} />
 
       <IndicatorSummaryCard
         summary={summarizeIndicators(coin.change24h, detail.series)}
