@@ -38,17 +38,14 @@ export function Hero() {
       <Container className="relative">
         <div className="grid items-center gap-12 py-16 lg:grid-cols-2 lg:gap-10 lg:py-24">
           <div className="flex flex-col items-center text-center lg:items-start lg:text-right">
-            <span className="mb-5 inline-flex items-center rounded-full bg-brand/10 px-3 py-1.5 text-[13px] font-extrabold text-brand">
-              صرافی آلت‌کوین ایرانی
-            </span>
             <h1 className="mb-4 text-[34px] font-extrabold leading-[1.15] text-ink sm:text-[44px] lg:text-[54px]">
-              دنیای آلت‌کوین‌ها،
-              <br />
-              زیر نظر <span className="text-brand">ناخدا</span>.
+              با
+              <span className="text-brand"> ناخدا </span>
+              سکاندار دارایی‌هایت باش!
             </h1>
-            <p className="mb-7 max-w-[520px] text-[16px] leading-[1.9] text-muted sm:text-[18px]">
+            <p className="mb-7 max-w-130 text-[16px] leading-[1.9] text-muted sm:text-[18px]">
               سکان بازار رمزارز را به دست بگیر. خرید و فروش صدها ارز، سریع و
-              ساده — با شماره موبایلت در کمتر از یک دقیقه سوار شو و اولین
+              ساده! با شماره موبایلت در کمتر از یک دقیقه سوار شو و اولین
               معامله‌ات را انجام بده.
             </p>
             <PhoneCtaCard />
