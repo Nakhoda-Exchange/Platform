@@ -1,6 +1,11 @@
 import { Container } from "@/components/ui/container";
 import { PhoneCtaCard } from "./phone-cta-card";
 import { Blobs } from "./blobs";
+import { MEME_COINS } from "./coins";
+
+/** Per-coin tilt for the mobile cluster, so the stacked stickers look tossed
+ *  down rather than lined up. */
+const CLUSTER_TILTS = [-8, 6, -5, 7, -6];
 
 /**
  * A coin sticker that bounces in place. Decorative — real logos are the one
@@ -100,6 +105,35 @@ export function Hero() {
           <span className="mb-6 inline-flex items-center gap-2 rounded-full bg-paper/70 px-4 py-2 text-[13px] font-bold text-brand shadow-[0_8px_24px_-12px_rgba(15,35,80,0.4)] ring-1 ring-line backdrop-blur">
             🌊 سوار موجِ میم‌کوین‌ها شو
           </span>
+
+          {/* Mobile: an overlapping bounce cluster so the meme logos show on
+              small screens too (the scattered floaters are desktop-only). */}
+          <div
+            className="mb-7 flex items-center justify-center sm:hidden"
+            aria-hidden
+          >
+            {MEME_COINS.map((coin, i) => (
+              <span
+                key={coin.sym}
+                className="animate-bob grid size-14 place-items-center rounded-full bg-paper shadow-[0_12px_26px_-12px_rgba(15,35,80,0.55)] ring-4 ring-paper"
+                style={{
+                  ["--r" as string]: `${CLUSTER_TILTS[i]}deg`,
+                  animationDelay: `${i * 0.18}s`,
+                  marginInlineStart: i === 0 ? 0 : -14,
+                  zIndex: i,
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={coin.icon}
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="size-10 rounded-full object-cover"
+                />
+              </span>
+            ))}
+          </div>
 
           <h1 className="mb-5 text-[44px] font-extrabold leading-[1.08] tracking-tight text-ink sm:text-[60px] lg:text-[72px]">
             میم‌کوین؟
