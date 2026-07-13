@@ -60,6 +60,18 @@ Providers are split by CAPABILITY so each is swappable; the service routes by
 - Moralis — `https://deep-index.moralis.io/api/v2.2/…` (header `X-API-Key`)
 - Helius — `https://api.helius.xyz/v0/…?api-key=…`
 
+## Internal route (client refresh)
+
+`app/api/insights/[chain]/[address]/route.ts` — first paint is RSC calling
+`GetTokenInsightsUseCase`; this route serves the SAME shape for client-driven
+refresh / window switches. Provider keys never leave the server.
+
+```
+GET /api/insights/{chain}/{address}?usdToIrt={rate}
+  200 → TokenInsights   · 400 unknown chain / missing address · 502 provider error
+  Cache-Control: public, s-maxage=10, stale-while-revalidate=60
+```
+
 ## Caching (per-capability TTL)
 
 `lib/infrastructure/insights/cache.ts`. Not one blanket TTL:
