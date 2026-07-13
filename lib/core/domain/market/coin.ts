@@ -1,3 +1,5 @@
+import type { TokenIdentity } from "@/lib/core/domain/shared/token-identity";
+
 /** A tradable coin as shown in the market screens. */
 export interface Coin {
   id: string;
@@ -9,4 +11,5 @@ export interface Coin {
   change24h: number; // signed 24h change percent (e.g. 3.2 / -2.1)
   marketCap: number; // market cap in همت (هزار میلیارد تومان)
   isNew: boolean; // recently listed
+  token?: TokenIdentity; // on-chain identity — present only for on-chain (meme) coins
 }
