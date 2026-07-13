@@ -3,6 +3,8 @@ import { AppShell } from "@/components/layout/app-shell";
 import { GoftinoChat } from "@/components/support/goftino-chat";
 import { SplashScreen } from "@/components/pwa/splash-screen";
 import { SplashHider } from "@/components/pwa/splash-hider";
+import { ToastProvider } from "@/components/ui/toast";
+import { LiveTradeToaster } from "@/components/realtime/live-trade-toaster";
 
 // The platform is the app, not the marketing site: it's per-user and data-
 // driven, so nothing under this group should be prerendered at build (that
@@ -26,12 +28,14 @@ export default function AppLayout({
   header: ReactNode;
 }) {
   return (
-    <>
+    <ToastProvider>
       {/* Branded PWA splash — only over the app, never the marketing site. */}
       <SplashScreen />
       <AppShell header={header}>{children}</AppShell>
       <SplashHider />
       <GoftinoChat />
-    </>
+      {/* Live prices + trade toasts stream over the WebSocket while the app is open. */}
+      <LiveTradeToaster />
+    </ToastProvider>
   );
 }
