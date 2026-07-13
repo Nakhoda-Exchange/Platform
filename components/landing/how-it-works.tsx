@@ -3,6 +3,7 @@ import {
   CreditCardIcon,
   RocketIcon,
   SmartphoneIcon,
+  SparklesIcon,
 } from "@/components/ui/icons";
 import { toPersianDigits } from "@/lib/utils/digits";
 
@@ -37,6 +38,10 @@ export function HowItWorks() {
     <section className="bg-linear-to-b from-transparent via-brand/[0.04] to-transparent">
       <Container className="py-20 lg:py-24">
         <div className="mx-auto mb-14 max-w-[640px] text-center">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-brand/5 px-4 py-2 text-[13px] font-bold text-brand">
+            <SparklesIcon size={15} />
+            به همین آسونی
+          </span>
           <h2 className="mb-3.5 text-[30px] font-extrabold text-ink sm:text-[36px]">
             سه قدم تا اولین میم‌کوینت
           </h2>

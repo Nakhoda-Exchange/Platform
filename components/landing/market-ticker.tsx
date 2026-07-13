@@ -2,17 +2,27 @@ import { ArrowUpIcon, ArrowDownIcon } from "@/components/ui/icons";
 import { ALL_COINS, type LandingCoin } from "./coins";
 import { cn } from "@/lib/utils/cn";
 
-/** A chunky coin pill for the marquee — real logo, symbol, and 24h change. */
+/** Soft edge fade so pills dissolve at both ends instead of hard-cutting.
+ *  Both the standard and -webkit- properties are set so it works in WebKit. */
+const EDGE_FADE = {
+  maskImage:
+    "linear-gradient(to right, transparent, #000 7%, #000 93%, transparent)",
+  WebkitMaskImage:
+    "linear-gradient(to right, transparent, #000 7%, #000 93%, transparent)",
+} as const;
+
+/** A coin pill for the marquee — real logo, symbol, and 24h change. Flat (no
+ *  drop-shadow) so a row of them can animate without repaint jank. */
 function CoinPill({ coin }: { coin: LandingCoin }) {
   return (
-    <span className="flex shrink-0 items-center gap-2.5 rounded-full border border-line bg-paper py-2 pe-4 ps-2 shadow-[0_6px_16px_-10px_rgba(15,35,80,0.5)]">
+    <span className="flex shrink-0 items-center gap-2.5 rounded-full border border-line bg-paper py-2 pe-4 ps-2">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={coin.icon}
         alt=""
-        width={32}
-        height={32}
-        className="size-8 rounded-full object-cover"
+        width={30}
+        height={30}
+        className="size-[30px] rounded-full object-cover"
       />
       <span dir="ltr" className="text-[15px] font-extrabold text-ink">
         {coin.sym}
@@ -43,9 +53,9 @@ function Strip({ coins }: { coins: LandingCoin[] }) {
 }
 
 /**
- * Two rows of coin pills drifting in opposite directions — a lively, funky
- * market horizon. Decorative sample data (the app is the real thing), so it's
- * aria-hidden; reduced-motion holds both rows still.
+ * Two rows of coin pills drifting in opposite directions — a lively market
+ * horizon that fades softly at both edges. Decorative sample data (the app is
+ * the real thing), so it's aria-hidden; reduced-motion holds both rows still.
  */
 export function MarketTicker() {
   const row1 = ALL_COINS;
@@ -53,13 +63,14 @@ export function MarketTicker() {
   return (
     <div
       aria-hidden
-      className="flex flex-col gap-3 overflow-hidden border-y border-line bg-surface py-5"
+      className="flex flex-col gap-2.5 overflow-hidden border-y border-line bg-surface py-4"
+      style={EDGE_FADE}
     >
-      <div className="flex w-max animate-ticker">
+      <div className="flex w-max animate-ticker will-change-transform">
         <Strip coins={row1} />
         <Strip coins={row1} />
       </div>
-      <div className="flex w-max animate-ticker-reverse">
+      <div className="flex w-max animate-ticker-reverse will-change-transform">
         <Strip coins={row2} />
         <Strip coins={row2} />
       </div>

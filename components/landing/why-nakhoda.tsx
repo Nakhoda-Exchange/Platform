@@ -1,4 +1,5 @@
 import { Container } from "@/components/ui/container";
+import { ShieldIcon } from "@/components/ui/icons";
 import { FEATURES } from "./features";
 
 /** «چرا ناخدا؟» — three punchy value props, funky but plain-spoken. */
@@ -6,6 +7,10 @@ export function WhyNakhoda() {
   return (
     <Container className="py-20 lg:py-24">
       <div className="mx-auto mb-12 max-w-[640px] text-center">
+        <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-brand/5 px-4 py-2 text-[13px] font-bold text-brand">
+          <ShieldIcon size={15} />
+          خیالت راحت
+        </span>
         <h2 className="mb-3.5 text-[30px] font-extrabold text-ink sm:text-[36px]">
           چرا ناخدا؟
         </h2>

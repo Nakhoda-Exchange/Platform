@@ -56,42 +56,42 @@ export function Hero() {
           size={64}
           r={-10}
           delay={0}
-          className="left-[7%] top-[16%]"
-        />
-        <FloatingCoin
-          icon="/coins/doge.png"
-          size={52}
-          r={12}
-          delay={0.6}
-          className="left-[14%] top-[63%]"
-        />
-        <FloatingCoin
-          icon="/coins/wif.png"
-          size={58}
-          r={-6}
-          delay={1.1}
-          className="right-[8%] top-[20%]"
-        />
-        <FloatingCoin
-          icon="/coins/bome.png"
-          size={44}
-          r={14}
-          delay={1.6}
-          className="right-[15%] top-[64%]"
-        />
-        <FloatingCoin
-          icon="/coins/mew.png"
-          size={40}
-          r={-14}
-          delay={0.9}
-          className="right-[29%] top-[9%]"
+          className="left-[6%] top-[22%]"
         />
         <FloatingCoin
           icon="/coins/sol.png"
-          size={38}
+          size={40}
           r={8}
           delay={1.3}
-          className="left-[29%] top-[8%]"
+          className="left-[24%] top-[13%]"
+        />
+        <FloatingCoin
+          icon="/coins/doge.png"
+          size={54}
+          r={12}
+          delay={0.6}
+          className="left-[13%] top-[62%]"
+        />
+        <FloatingCoin
+          icon="/coins/wif.png"
+          size={60}
+          r={-6}
+          delay={1.1}
+          className="right-[6%] top-[24%]"
+        />
+        <FloatingCoin
+          icon="/coins/mew.png"
+          size={42}
+          r={-14}
+          delay={0.9}
+          className="right-[24%] top-[13%]"
+        />
+        <FloatingCoin
+          icon="/coins/bome.png"
+          size={46}
+          r={14}
+          delay={1.6}
+          className="right-[13%] top-[63%]"
         />
       </div>
 
