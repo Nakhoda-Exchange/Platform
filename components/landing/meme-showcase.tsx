@@ -5,7 +5,6 @@ import {
   TrendingUpIcon,
 } from "@/components/ui/icons";
 import { MEME_COINS, type LandingCoin } from "./coins";
-import { MarketPreview } from "./market-preview";
 import { Blobs } from "./blobs";
 import { cn } from "@/lib/utils/cn";
 
@@ -44,9 +43,9 @@ function CoinCard({ coin }: { coin: LandingCoin }) {
 }
 
 /**
- * «داغ‌ترین میم‌کوین‌ها» — the fun heart of the page. A soft grid of buyable
- * meme coins next to a peek of the real app. Coin cards are decorative sample
- * data; the app is the truth.
+ * «داغ‌ترین میم‌کوین‌ها» — the fun heart of the page: a soft, full-width grid
+ * of buyable meme coins. Coin cards are decorative sample data; the app is the
+ * truth.
  */
 export function MemeShowcase() {
   return (
@@ -66,18 +65,15 @@ export function MemeShowcase() {
           </p>
         </div>
 
-        <div className="grid items-center gap-10 lg:grid-cols-[1fr_auto] lg:gap-14">
-          <div className="grid gap-3.5 sm:grid-cols-2" aria-hidden>
-            {MEME_COINS.map((coin) => (
-              <CoinCard key={coin.sym} coin={coin} />
-            ))}
-            <div className="flex items-center justify-center rounded-[24px] border border-dashed border-brand/25 bg-brand/[0.04] p-4 text-[15px] font-bold text-muted">
-              و صدها توکنِ دیگه…
-            </div>
-          </div>
-
-          <div className="flex justify-center">
-            <MarketPreview />
+        <div
+          className="mx-auto grid max-w-[860px] gap-3.5 sm:grid-cols-2 lg:grid-cols-3"
+          aria-hidden
+        >
+          {MEME_COINS.map((coin) => (
+            <CoinCard key={coin.sym} coin={coin} />
+          ))}
+          <div className="flex items-center justify-center rounded-[24px] border border-dashed border-brand/25 bg-brand/[0.04] p-4 text-[15px] font-bold text-muted">
+            و صدها توکنِ دیگه…
           </div>
         </div>
       </Container>
