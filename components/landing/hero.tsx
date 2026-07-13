@@ -1,57 +1,136 @@
 import { Container } from "@/components/ui/container";
-import { CheckCircleIcon } from "@/components/ui/icons";
 import { PhoneCtaCard } from "./phone-cta-card";
-import { Waves } from "./waves";
-import { MarketPreview } from "./market-preview";
+import { Blobs } from "./blobs";
+
+/**
+ * A coin sticker that bounces in place. Decorative — real logos are the one
+ * sanctioned exception to the blue-only palette (see CoinIcon). Sits in a soft
+ * squishy ring; `r` tilts it and `delay` desyncs the bounce so no two match.
+ */
+function FloatingCoin({
+  icon,
+  className,
+  size,
+  r = 0,
+  delay = 0,
+}: {
+  icon: string;
+  className: string;
+  size: number;
+  r?: number;
+  delay?: number;
+}) {
+  return (
+    <span
+      aria-hidden
+      className={`animate-bob pointer-events-none absolute grid place-items-center rounded-full bg-paper/70 shadow-[0_20px_45px_-15px_rgba(15,35,80,0.45)] ring-1 ring-line backdrop-blur-sm ${className}`}
+      style={{
+        ["--r" as string]: `${r}deg`,
+        animationDelay: `${delay}s`,
+        padding: size * 0.16,
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={icon}
+        alt=""
+        width={size}
+        height={size}
+        style={{ width: size, height: size }}
+        className="rounded-full object-cover"
+      />
+    </span>
+  );
+}
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden bg-linear-to-b from-brand/6 via-paper to-paper">
-      {/* Decorative sea: wave lines + a faint compass rose. */}
-      <Waves className="-right-30 top-6 w-150 rotate-[-9deg]" opacity={0.06} />
-      <Waves className="-left-37.5 top-52 w-160 rotate-13" opacity={0.05} />
-      <svg
-        aria-hidden
-        className="pointer-events-none absolute -bottom-24 -left-20 text-brand opacity-[0.05]"
-        width="320"
-        height="320"
-        viewBox="0 0 100 100"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.2"
-      >
-        <circle cx="50" cy="50" r="46" />
-        <circle cx="50" cy="50" r="34" />
-        <path
-          d="M50 6 L58 42 L50 50 L42 42 Z M50 94 L42 58 L50 50 L58 58 Z M6 50 L42 42 L50 50 L42 58 Z M94 50 L58 58 L50 50 L58 42 Z"
-          fill="currentColor"
-          stroke="none"
+    <section className="relative overflow-hidden bg-linear-to-b from-brand/10 via-paper to-paper dark:from-brand/20">
+      <Blobs />
+
+      {/* Bouncy meme coins orbit the type from sm up; hidden on the smallest
+          screens so they never crowd the headline. */}
+      <div className="pointer-events-none absolute inset-0 hidden sm:block">
+        <FloatingCoin
+          icon="/coins/pepe.png"
+          size={64}
+          r={-10}
+          delay={0}
+          className="left-[7%] top-[16%]"
         />
-      </svg>
+        <FloatingCoin
+          icon="/coins/doge.png"
+          size={52}
+          r={12}
+          delay={0.6}
+          className="left-[14%] top-[63%]"
+        />
+        <FloatingCoin
+          icon="/coins/wif.png"
+          size={58}
+          r={-6}
+          delay={1.1}
+          className="right-[8%] top-[20%]"
+        />
+        <FloatingCoin
+          icon="/coins/bome.png"
+          size={44}
+          r={14}
+          delay={1.6}
+          className="right-[15%] top-[64%]"
+        />
+        <FloatingCoin
+          icon="/coins/mew.png"
+          size={40}
+          r={-14}
+          delay={0.9}
+          className="right-[29%] top-[9%]"
+        />
+        <FloatingCoin
+          icon="/coins/sol.png"
+          size={38}
+          r={8}
+          delay={1.3}
+          className="left-[29%] top-[8%]"
+        />
+      </div>
 
       <Container className="relative">
-        <div className="grid items-center gap-12 py-16 lg:grid-cols-2 lg:gap-10 lg:py-24">
-          <div className="flex flex-col items-center text-center lg:items-start lg:text-right">
-            <h1 className="mb-4 text-[34px] font-extrabold leading-[1.15] text-ink sm:text-[44px] lg:text-[54px]">
-              میم‌کوین بخر،
-              <br />
-              با
-              <span className="text-brand"> تومان</span>.
-            </h1>
-            <p className="mb-7 max-w-130 text-[16px] leading-[1.9] text-muted sm:text-[18px]">
-              نه کیف پول می‌خواهد، نه رمز خصوصی. شماره‌ات را وارد کن، با تومان
-              پرداخت کن، و هر توکن آنچین را همان لحظه روی زنجیره تحویل بگیر —
-              ساده، بدون دانش کریپتو.
-            </p>
-            <PhoneCtaCard />
-            <p className="mt-3.5 flex items-center gap-1.5 text-[13px] text-muted">
-              <CheckCircleIcon size={15} className="text-brand" />
-              بدون کیف پول و رمز خصوصی · پرداخت با تومان
-            </p>
-          </div>
+        <div className="mx-auto flex max-w-[680px] flex-col items-center py-20 text-center lg:py-28">
+          <span className="mb-6 inline-flex items-center gap-2 rounded-full bg-paper/70 px-4 py-2 text-[13px] font-bold text-brand shadow-[0_8px_24px_-12px_rgba(15,35,80,0.4)] ring-1 ring-line backdrop-blur">
+            🌊 سوار موجِ میم‌کوین‌ها شو
+          </span>
 
-          <div className="flex justify-center">
-            <MarketPreview />
+          <h1 className="mb-5 text-[44px] font-extrabold leading-[1.08] tracking-tight text-ink sm:text-[60px] lg:text-[72px]">
+            میم‌کوین؟
+            <br />
+            با{" "}
+            <span className="bg-linear-to-l from-brand to-brand/70 bg-clip-text text-transparent">
+              تومان
+            </span>{" "}
+            بخر!
+          </h1>
+
+          <p className="mb-8 max-w-[520px] text-[17px] leading-[1.9] text-muted sm:text-[19px]">
+            پپه، داگ، وایف و صدها توکنِ دیگه — شماره‌ات رو بده، با تومان پرداخت
+            کن، و همون لحظه صاحبش شو. نه کیف پول، نه رمز خصوصی، نه دردسر.
+          </p>
+
+          {/* Squishy CTA card floating on the soft gradient. */}
+          <div className="w-full max-w-[440px] rounded-[28px] bg-paper/80 p-5 shadow-[0_30px_70px_-30px_rgba(15,35,80,0.5)] ring-1 ring-line backdrop-blur-sm">
+            <PhoneCtaCard />
+            <ul className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              {["بدون کیف پول", "بدون رمز خصوصی", "پرداخت با تومان"].map(
+                (t) => (
+                  <li
+                    key={t}
+                    className="rounded-full bg-brand/5 px-3 py-1.5 text-[12px] font-semibold text-muted"
+                  >
+                    {t}
+                  </li>
+                ),
+              )}
+            </ul>
           </div>
         </div>
       </Container>

@@ -256,8 +256,50 @@ input[type="range"].range-brand:focus-visible::-moz-range-thumb {
 .animate-ticker {
   animation: ticker-drift 46s linear infinite;
 }
+/* Second marquee row drifts the opposite way for a playful, funky rhythm. */
+.animate-ticker-reverse {
+  animation: ticker-drift 38s linear infinite reverse;
+}
+
+/* Landing — meme-coin sticker stickers bob gently around the hero. Per-coin
+ * tilt + delay are set inline via --r / animation-delay so no two match. */
+@keyframes coin-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translateY(-16px) rotate(var(--r, 0deg));
+  }
+}
+.animate-bob {
+  animation: coin-bob 4.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* Soft gradient blobs drift and breathe slowly behind the content, giving the
+ * landing a friendly, alive depth. Heavy blur + low opacity keeps them a wash,
+ * never competing with text. */
+@keyframes blob-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(4%, -5%) scale(1.12);
+  }
+  66% {
+    transform: translate(-4%, 4%) scale(0.94);
+  }
+}
+.animate-blob {
+  animation: blob-drift 18s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-ticker {
+  .animate-ticker,
+  .animate-ticker-reverse,
+  .animate-bob,
+  .animate-blob {
     animation: none;
   }
 }
