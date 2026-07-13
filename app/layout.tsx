@@ -27,9 +27,9 @@ const iranYekan = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "ناخدا | دنیای آلت‌کوین‌ها، زیر نظر ناخدا",
+  title: "ناخدا | خرید میم‌کوین و توکن‌های آنچین با تومان",
   description:
-    "ناخدا تجربه‌ای مدرن برای معامله آلت‌کوین‌ها فراهم کرده است؛ با تمرکز بر سرعت، سادگی و دسترسی به رمزارزهای متنوع.",
+    "با ناخدا هر توکن آنچین را مستقیم با تومان بخر — بدون کیف پول، بدون رمز خصوصی و بدون دانش کریپتو. ساده‌ترین راه برای خرید میم‌کوین‌ها.",
   applicationName: "ناخدا",
   appleWebApp: { capable: true, title: "ناخدا", statusBarStyle: "default" },
   // Demo site — no search engine or bot should index it (robots.ts + this meta).

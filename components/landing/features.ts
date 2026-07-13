@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { CoinsIcon, SmartphoneIcon, ZapOffIcon } from "@/components/ui/icons";
+import { CreditCardIcon, FlameIcon, ShieldIcon } from "@/components/ui/icons";
 import type { IconProps } from "@/components/ui/icons";
 
 export interface Feature {
@@ -10,21 +10,21 @@ export interface Feature {
 
 export const FEATURES: Feature[] = [
   {
-    icon: ZapOffIcon,
-    title: "سریع و روان",
+    icon: CreditCardIcon,
+    title: "با تومان، بی‌واسطه",
     description:
-      "رابط سبک و بی‌دردسر؛ خرید و فروش تنها با چند حرکت، بدون منوهای پیچیده.",
+      "نه دلار، نه تتر، نه صرافی خارجی. مستقیم با تومان بخر و هر وقت خواستی به تومان بفروش.",
   },
   {
-    icon: CoinsIcon,
-    title: "صدها رمزارز",
+    icon: ShieldIcon,
+    title: "بدون دانش کریپتو",
     description:
-      "از بیت‌کوین تا میم‌کوین‌های نوظهور — همه در یک عرشه، با قیمت لحظه‌ای.",
+      "کیف پول، رمز خصوصی و کارمزد شبکه با ماست. تو فقط توکن را انتخاب کن؛ بقیه‌اش را ناخدا می‌سپارد به زنجیره.",
   },
   {
-    icon: SmartphoneIcon,
-    title: "شروع در یک دقیقه",
+    icon: FlameIcon,
+    title: "داغ‌ترین میم‌کوین‌ها",
     description:
-      "فقط با شماره موبایل شروع کن؛ احراز هویت سریع و اولین معامله بی‌معطلی.",
+      "از پپه و داگ‌کوین تا تازه‌ترین توکن‌ها — هزاران توکن آنچین، یک‌جا و با قیمت لحظه‌ای.",
   },
 ];

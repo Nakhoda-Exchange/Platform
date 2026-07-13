@@ -9,25 +9,25 @@ import {
 } from "@/components/ui/icons";
 import { cn } from "@/lib/utils/cn";
 
-/** A gainer chip for the «بیشترین رشد» strip. */
+/** A gainer chip for the «بیشترین رشد» strip — meme coins lead. */
 const GAINERS = [
-  { sym: "SOL", icon: "/coins/sol.png", ch: "۱۴٫۵" },
-  { sym: "MEW", icon: "/coins/mew.png", ch: "۱۵٫۲" },
-  { sym: "TON", icon: "/coins/ton.png", ch: "۳۶٫۷" },
+  { sym: "WIF", icon: "/coins/wif.png", ch: "۴۲٫۳" },
+  { sym: "BOME", icon: "/coins/bome.png", ch: "۶۳٫۵" },
+  { sym: "PEPE", icon: "/coins/pepe.png", ch: "۲۸٫۱" },
 ];
 
 /** «علاقه‌مندی‌ها» rows. */
 const ROWS = [
   {
-    name: "بیت‌کوین",
-    sym: "BTC",
-    icon: "/coins/btc.png",
-    price: "۳٬۹۰۰٬۰۰۰٬۰۰۰",
-    ch: "۳٫۲",
+    name: "پپه",
+    sym: "PEPE",
+    icon: "/coins/pepe.png",
+    price: "۰٫۶۸",
+    ch: "۲۸٫۱",
     up: true,
   },
   {
-    name: "دوج‌کوین",
+    name: "داگ‌کوین",
     sym: "DOGE",
     icon: "/coins/doge.png",
     price: "۴٬۵۰۰",
@@ -35,11 +35,11 @@ const ROWS = [
     up: false,
   },
   {
-    name: "میو",
-    sym: "MEW",
-    icon: "/coins/mew.png",
-    price: "۳۲۰",
-    ch: "۱۵٫۲",
+    name: "داگ‌ویف‌هت",
+    sym: "WIF",
+    icon: "/coins/wif.png",
+    price: "۱۴۰٬۰۰۰",
+    ch: "۴۲٫۳",
     up: true,
   },
 ];

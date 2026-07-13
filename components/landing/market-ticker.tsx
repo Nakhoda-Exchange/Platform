@@ -1,12 +1,25 @@
 import { MiniSpark } from "./mini-spark";
 
 const TICKER = [
+  { sym: "PEPE", t: "🐸", c: "#4a9e4a", price: "۰٫۶۸", ch: "۲۸٫۱", up: true },
+  { sym: "WIF", t: "🐶", c: "#b4794a", price: "۱۴۰٬۰۰۰", ch: "۴۲٫۳", up: true },
+  { sym: "BOME", t: "B", c: "#c23b3b", price: "۹۵۰", ch: "۶۳٫۵", up: true },
+  { sym: "DOGE", t: "Ð", c: "#c2a633", price: "۴٬۵۰۰", ch: "۲٫۱", up: false },
   {
     sym: "BTC",
     t: "₿",
     c: "#f7931a",
     price: "۳٬۹۰۰٬۰۰۰٬۰۰۰",
     ch: "۳٫۲",
+    up: true,
+  },
+  { sym: "MEW", t: "🐱", c: "#6f5bd0", price: "۳۲۰", ch: "۱۵٫۲", up: true },
+  {
+    sym: "SOL",
+    t: "S",
+    c: "#9945ff",
+    price: "۸٬۳۰۰٬۰۰۰",
+    ch: "۱۴٫۵",
     up: true,
   },
   {
@@ -19,32 +32,12 @@ const TICKER = [
   },
   { sym: "TON", t: "T", c: "#0098ea", price: "۳۲۰٬۰۰۰", ch: "۳۶٫۷", up: true },
   {
-    sym: "SOL",
-    t: "S",
-    c: "#9945ff",
-    price: "۸٬۳۰۰٬۰۰۰",
-    ch: "۱۴٫۵",
-    up: true,
-  },
-  {
     sym: "BNB",
     t: "B",
     c: "#f0b90b",
     price: "۴۵٬۰۰۰٬۰۰۰",
     ch: "۱٫۹",
     up: false,
-  },
-  { sym: "XRP", t: "X", c: "#23292f", price: "۴۲٬۰۰۰", ch: "۴٫۱", up: true },
-  { sym: "DOGE", t: "Ð", c: "#c2a633", price: "۴٬۵۰۰", ch: "۲٫۱", up: false },
-  { sym: "LINK", t: "L", c: "#2a5ada", price: "۸۴۰٬۰۰۰", ch: "۵٫۱", up: true },
-  { sym: "SUI", t: "S", c: "#4da2ff", price: "۶۶٬۰۰۰", ch: "۱۱٫۲", up: true },
-  {
-    sym: "AVAX",
-    t: "A",
-    c: "#e84142",
-    price: "۱٬۶۷۵٬۰۰۰",
-    ch: "۷٫۸",
-    up: true,
   },
 ];
 

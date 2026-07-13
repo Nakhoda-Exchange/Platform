@@ -33,19 +33,20 @@ export function Hero() {
         <div className="grid items-center gap-12 py-16 lg:grid-cols-2 lg:gap-10 lg:py-24">
           <div className="flex flex-col items-center text-center lg:items-start lg:text-right">
             <h1 className="mb-4 text-[34px] font-extrabold leading-[1.15] text-ink sm:text-[44px] lg:text-[54px]">
+              میم‌کوین بخر،
+              <br />
               با
-              <span className="text-brand"> ناخدا </span>
-              سکاندار دارایی‌هایت باش!
+              <span className="text-brand"> تومان</span>.
             </h1>
             <p className="mb-7 max-w-130 text-[16px] leading-[1.9] text-muted sm:text-[18px]">
-              سکان بازار رمزارز را به دست بگیر. خرید و فروش صدها ارز، سریع و
-              ساده! با شماره موبایلت در کمتر از یک دقیقه سوار شو و اولین
-              معامله‌ات را انجام بده.
+              نه کیف پول می‌خواهد، نه رمز خصوصی. شماره‌ات را وارد کن، با تومان
+              پرداخت کن، و هر توکن آنچین را همان لحظه روی زنجیره تحویل بگیر —
+              ساده، بدون دانش کریپتو.
             </p>
             <PhoneCtaCard />
             <p className="mt-3.5 flex items-center gap-1.5 text-[13px] text-muted">
               <CheckCircleIcon size={15} className="text-brand" />
-              بدون کارمزد ثبت‌نام · احراز هویت سریع
+              بدون کیف پول و رمز خصوصی · پرداخت با تومان
             </p>
           </div>
 

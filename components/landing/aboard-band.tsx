@@ -21,10 +21,10 @@ export function AboardBand() {
           <path d="M10 5v13M10 5a1.7 1.7 0 100-3.3A1.7 1.7 0 0010 5zM15.8 10.8l1.7-.8a7.5 7.5 0 01-15 0l1.7.8M7.5 9.2h5" />
         </svg>
         <h2 className="relative mb-3 text-[30px] font-extrabold sm:text-[34px]">
-          بیا روی عرشه.
+          آماده‌ای اولین میم‌کوینت را بخری؟
         </h2>
         <p className="relative mb-7 text-[16px] text-white/85">
-          ثبت‌نام رایگان است و کمتر از یک دقیقه طول می‌کشد.
+          ثبت‌نام رایگان است و کمتر از یک دقیقه طول می‌کشد. با تومان، بی‌دردسر.
         </p>
         {/* The CTA is a flat field + brand button — on the brand band it would
             blend in, so it sits on a paper card here to keep contrast. */}
