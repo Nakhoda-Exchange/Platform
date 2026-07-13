@@ -19,6 +19,12 @@ TokenInsightsService.getInsights(token, usdToIrt)
    ▼
 UI: 5 panels, each its own <Suspense> — slow providers never block the chart;
     unavailable metrics show «در دسترس نیست»; stale metrics show a stale badge.
+   ▼
+InsightsLive ("use client", seeded with the RSC's TokenInsights) ── every 30s
+   while the tab is visible, plus once on regaining visibility ──▶
+   GET /api/insights/{chain}/{address}?usdToIrt= ── same TokenInsightsPort +
+   per-capability cache, no forked logic ── on failure: keep last rendered
+   data, no toast, panels never blank.
 ```
 
 ## Where the math lives

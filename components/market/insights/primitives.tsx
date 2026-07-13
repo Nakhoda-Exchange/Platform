@@ -5,9 +5,10 @@ import { formatIrt, formatUsd } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 
 /**
- * Shared render primitives for the insight panels. Server components (no
- * interactivity): a metric is either a value + freshness, or an explicit
- * «در دسترس نیست». Copy is factual — signals with context, never advice.
+ * Shared render primitives for the insight panels. Rendered from both the RSC
+ * first paint and the client-refreshed panels: a metric is either a value +
+ * freshness, or an explicit «در دسترس نیست». Copy is factual — signals with
+ * context, never advice.
  */
 
 const SOURCE_LABEL: Record<Source, string> = {
@@ -21,7 +22,11 @@ const SOURCE_LABEL: Record<Source, string> = {
   derived: "محاسبه‌ی ناخدا",
 };
 
-/** Relative time in Persian. Server-rendered, so `Date.now()` is safe here. */
+/**
+ * Relative time in Persian. Uses `Date.now()`, so the server-rendered string
+ * and the client hydration pass can straddle a minute boundary — callers
+ * rendering this in a client component should suppress the hydration warning.
+ */
 export function relTime(ts: number | null): string {
   if (ts == null) return "";
   const m = Math.max(0, Math.floor((Date.now() - ts) / 60_000));
@@ -135,7 +140,7 @@ export function SourceFootnote({ metrics }: { metrics: Metric<unknown>[] }) {
   ].join("، ");
   const newest = Math.max(...available.map((m) => m.lastUpdatedAt as number));
   return (
-    <p className="text-[11px] text-placeholder">
+    <p className="text-[11px] text-placeholder" suppressHydrationWarning>
       منبع: {sources} · {relTime(newest)}
     </p>
   );
