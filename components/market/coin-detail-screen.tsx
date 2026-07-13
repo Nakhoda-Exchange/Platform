@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
+import { InsightsSection } from "./insights/insights-section";
+import { InsightsSkeleton } from "./insights/insights-skeleton";
 import { summarizeIndicators } from "@/lib/core/domain/market/indicator-summary";
 import { pastPerformance } from "@/lib/core/domain/market/past-performance";
 import { PriceChart } from "./price-chart";
@@ -93,6 +96,12 @@ export function CoinDetailScreen({
       ) : null}
 
       <PriceChart coin={coin} series={detail.series} candles={detail.candles} />
+
+      {/* Meme-coin insight panels — stream in their own Suspense so slow
+          providers never block the chart; a null section for non-on-chain coins. */}
+      <Suspense fallback={<InsightsSkeleton />}>
+        <InsightsSection coin={coin} />
+      </Suspense>
 
       <IndicatorSummaryCard
         summary={summarizeIndicators(coin.change24h, detail.series)}

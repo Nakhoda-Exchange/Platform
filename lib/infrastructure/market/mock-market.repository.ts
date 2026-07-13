@@ -129,6 +129,12 @@ const COINS: Coin[] = [
     change24h: 9.8,
     marketCap: 93,
     isNew: false,
+    // Public mainnet token identities — DexScreener/RugCheck are keyless, so the
+    // insights panels render live for these. Verify/replace Solana mints.
+    token: {
+      chain: "ethereum",
+      address: "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+    },
   },
   {
     id: "wif",
@@ -140,6 +146,10 @@ const COINS: Coin[] = [
     change24h: 12.4,
     marketCap: 32,
     isNew: true,
+    token: {
+      chain: "solana",
+      address: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+    },
   },
   {
     id: "bome",
@@ -151,6 +161,10 @@ const COINS: Coin[] = [
     change24h: 8.7,
     marketCap: 18,
     isNew: true,
+    token: {
+      chain: "solana",
+      address: "ukHH6c7mMyiWCf1b9pnWe25TSpkDDt3H5pQZgZ7tvT",
+    },
   },
   {
     id: "mew",
@@ -162,6 +176,10 @@ const COINS: Coin[] = [
     change24h: 15.2,
     marketCap: 9,
     isNew: true,
+    token: {
+      chain: "solana",
+      address: "MEW1gQWJ3nEXg2qgERiKu7FAFj79PHvQVREQUdj9CG",
+    },
   },
   // More tradeable coins. No bundled logo yet → iconUrl "" so CoinIcon shows
   // the brand letter-badge fallback (add public/coins/<id>.png to give them a
