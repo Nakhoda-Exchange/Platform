@@ -31,6 +31,8 @@ import type { ReferralRepository } from "@/lib/core/application/referral/ports/r
 import type { GetReferralOverviewUseCase } from "@/lib/core/application/referral/use-cases/get-referral-overview.use-case";
 import type { ConfigRepository } from "@/lib/core/application/config/ports/config-repository.port";
 import type { GetCurrencyUnitsUseCase } from "@/lib/core/application/config/use-cases/get-currency-units.use-case";
+import type { TokenInsightsPort } from "@/lib/core/application/insights/ports/insights.port";
+import type { GetTokenInsightsUseCase } from "@/lib/core/application/insights/use-cases/get-token-insights.use-case";
 
 /** Central registry of injection tokens, grouped by layer. */
 export const TOKENS = {
@@ -39,6 +41,7 @@ export const TOKENS = {
   IdentityInquiryPort: token<IdentityInquiryPort>("IdentityInquiryPort"),
   BankInquiryPort: token<BankInquiryPort>("BankInquiryPort"),
   MarketRepository: token<MarketRepository>("MarketRepository"),
+  TokenInsightsPort: token<TokenInsightsPort>("TokenInsightsPort"),
   PortfolioRepository: token<PortfolioRepository>("PortfolioRepository"),
   TradeRepository: token<TradeRepository>("TradeRepository"),
   TransactionsRepository: token<TransactionsRepository>(
@@ -62,6 +65,9 @@ export const TOKENS = {
     "GetMarketOverviewUseCase",
   ),
   GetCoinDetailUseCase: token<GetCoinDetailUseCase>("GetCoinDetailUseCase"),
+  GetTokenInsightsUseCase: token<GetTokenInsightsUseCase>(
+    "GetTokenInsightsUseCase",
+  ),
   GetPortfolioUseCase: token<GetPortfolioUseCase>("GetPortfolioUseCase"),
   GetPortfolioHistoryUseCase: token<GetPortfolioHistoryUseCase>(
     "GetPortfolioHistoryUseCase",

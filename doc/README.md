@@ -9,6 +9,7 @@ implementation notes). Keep them in sync with the code they describe.
 | Login, OTP, two-step password      | [`auth/`](./auth/)                 |
 | Identity verification (احراز هویت) | [`kyc/`](./kyc/)                   |
 | Market discovery, search, PDP      | [`market/`](./market/)             |
+| Token insights (PDP meme signals)  | [`insights/`](./insights/)         |
 | Buy/sell (معامله)                  | [`trade/`](./trade/)               |
 | Wallet home (کیف پول)              | [`portfolio/`](./portfolio/)       |
 | Deposit (واریز)                    | [`deposit/`](./deposit/)           |

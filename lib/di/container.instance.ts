@@ -44,6 +44,11 @@ import { HttpUserRepository } from "@/lib/infrastructure/account/http-user.repos
 import { HttpAnnouncementsRepository } from "@/lib/infrastructure/account/http-announcements.repository";
 import { HttpReferralRepository } from "@/lib/infrastructure/referral/http-referral.repository";
 import { HttpConfigRepository } from "@/lib/infrastructure/config/http-config.repository";
+import { GetTokenInsightsUseCase } from "@/lib/core/application/insights/use-cases/get-token-insights.use-case";
+import { TokenInsightsService } from "@/lib/infrastructure/insights/token-insights.service";
+import { DexScreenerProvider } from "@/lib/infrastructure/insights/providers/dexscreener.provider";
+import { RugCheckProvider } from "@/lib/infrastructure/insights/providers/rugcheck.provider";
+import { SeededNakhodaFlowProvider } from "@/lib/infrastructure/insights/providers/nakhoda-flow.provider";
 import { Container } from "./container";
 import { TOKENS } from "./tokens";
 
@@ -204,6 +209,24 @@ function registerUseCases(container: Container): void {
   container.register(
     TOKENS.GetCoinDetailUseCase,
     (c) => new GetCoinDetailUseCase(c.resolve(TOKENS.MarketRepository)),
+  );
+  // Token insights always uses the real on-chain providers (no mock/http
+  // split): each fails soft to `unavailable` without its key. Chain→capability
+  // routing is this provider map; empty slots (EVM safety, holders, flow) yield
+  // unavailable metrics until those adapters land.
+  container.registerSingleton(TOKENS.TokenInsightsPort, () => {
+    const dex = new DexScreenerProvider();
+    return new TokenInsightsService({
+      marketStats: { solana: dex, ethereum: dex, bsc: dex, base: dex },
+      safety: { solana: new RugCheckProvider() },
+      holders: {},
+      flow: {},
+      nakhoda: new SeededNakhodaFlowProvider(),
+    });
+  });
+  container.register(
+    TOKENS.GetTokenInsightsUseCase,
+    (c) => new GetTokenInsightsUseCase(c.resolve(TOKENS.TokenInsightsPort)),
   );
   container.register(
     TOKENS.GetPortfolioUseCase,
