@@ -1,0 +1,33 @@
+# Platform (Next.js) app service. Designed to be composed WITH Substructure's
+# docker-compose (the Nakhoda monorepo runs both together via
+# `docker compose -f Substructure/docker-compose.yml -f Platform/docker-compose.yml`),
+# so it references the `substructure` service by name. Running this file on its
+# own won't resolve that dependency — use the monorepo's `make` targets.
+services:
+  platform:
+    build:
+      # Defaults to this directory standalone. The Nakhoda monorepo runs compose
+      # from the repo root (project directory), so it passes
+      # PLATFORM_BUILD_CONTEXT=Platform to keep the build pointed here.
+      context: ${PLATFORM_BUILD_CONTEXT:-.}
+      args:
+        # Browser-facing (inlined into the client bundle at build): the live
+        # feed connects to the host-published backend port.
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:4000/ws}
+    container_name: platform
+    restart: unless-stopped
+    depends_on:
+      substructure:
+        condition: service_healthy
+    environment:
+      # Server-side (SSR/actions) calls go container→container over the shared
+      # compose network, so the base URL is fixed to the backend's service name
+      # (with the /v1 prefix — adapters use bare paths). Deliberately NOT read
+      # from the ambient .env, whose API_BASE_URL is the host value
+      # (localhost:4000) used when Platform runs on the host, not in a container.
+      API_BASE_URL: http://substructure:4000/v1
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "${PLATFORM_PORT:-3000}:3000"
