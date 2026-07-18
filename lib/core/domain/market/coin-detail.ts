@@ -37,10 +37,13 @@ export interface CoinDetail {
   high24h: number; // 24h high price, Toman
   low24h: number; // 24h low price, Toman
   volume24h: number; // 24h traded volume, همت
-  holders: number; // how many people hold this coin on the platform
   description: string; // short Persian «about» blurb
-  history: string; // longer Persian background / history
-  blogPosts: BlogPost[]; // related articles
   series: Record<ChartRange, PricePoint[]>; // price points per range (oldest → newest)
   candles: Record<ChartRange, Candle[]>; // OHLC buckets per range (oldest → newest)
+  // Optional editorial extras — the backend market feed does not carry these
+  // yet, so they are present only where a richer source (or the mock) supplies
+  // them. The PDP renders each only when set.
+  holders?: number; // how many people hold this coin on the platform
+  history?: string; // longer Persian background / history
+  blogPosts?: BlogPost[]; // related articles
 }

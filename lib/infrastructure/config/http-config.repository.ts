@@ -8,6 +8,6 @@ export class HttpConfigRepository implements ConfigRepository {
   constructor(private readonly http: HttpClient) {}
 
   getCurrencyUnits(): Promise<Result<CurrencyUnits>> {
-    return this.http.get<CurrencyUnits>("/config/currency-units");
+    return this.http.get<CurrencyUnits>("/reference-data/currency-units");
   }
 }
