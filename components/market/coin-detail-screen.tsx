@@ -104,7 +104,9 @@ export function CoinDetailScreen({
       <section className="flex flex-col gap-2">
         <h2 className="text-[16px] font-bold text-ink">درباره‌ی {coin.name}</h2>
         <p className="text-[15px] leading-7 text-muted">{detail.description}</p>
-        <p className="text-[15px] leading-7 text-muted">{detail.history}</p>
+        {detail.history && (
+          <p className="text-[15px] leading-7 text-muted">{detail.history}</p>
+        )}
       </section>
 
       {/* Sticky action bar → Trade screen. «فروش» shows only when the viewer

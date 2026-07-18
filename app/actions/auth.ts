@@ -6,7 +6,11 @@ import { TOKENS } from "@/lib/di/tokens";
 import { cookies } from "next/headers";
 import type { AuthFormState } from "./auth-state";
 import { REFERRAL_COOKIE } from "./referral-state";
-import { SESSION_COOKIE, safeNextPath } from "./session-state";
+import {
+  AUTH_TOKEN_COOKIE,
+  SESSION_COOKIE,
+  safeNextPath,
+} from "./session-state";
 import {
   clearLoginChallenge,
   clearLoginStatus,
@@ -23,6 +27,21 @@ import {
  */
 async function startSession(): Promise<void> {
   (await cookies()).set(SESSION_COOKIE, crypto.randomUUID(), {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+}
+
+/**
+ * Persist the backend auth token so the HTTP request interceptor can forward it
+ * as `Authorization: Bearer` on every backend call. Set at OTP verify — before
+ * the (optional) two-step gate — because the gate itself calls authenticated
+ * endpoints. Cleared on logout. In mock mode nothing reads it; harmless.
+ */
+async function storeAuthToken(token: string): Promise<void> {
+  (await cookies()).set(AUTH_TOKEN_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
@@ -127,6 +146,10 @@ export async function verifyLogin(
   }
 
   const next = challenge.next;
+
+  // Persist the backend token now so subsequent authenticated calls (the
+  // profile check below, and the two-step gate) carry a valid Bearer.
+  await storeAuthToken(result.data.token);
 
   // Declined users never get a session and never see the gate — straight to
   // the review screen.

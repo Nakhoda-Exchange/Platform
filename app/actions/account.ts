@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
 import { KYC_PENDING_COOKIE } from "./kyc-state";
-import { SESSION_COOKIE } from "./session-state";
+import { AUTH_TOKEN_COOKIE, SESSION_COOKIE } from "./session-state";
 import type { TwoStepFormState } from "./account-state";
 
 /**
@@ -17,6 +17,7 @@ export async function logout(): Promise<void> {
   const store = await cookies();
   store.delete(KYC_PENDING_COOKIE);
   store.delete(SESSION_COOKIE);
+  store.delete(AUTH_TOKEN_COOKIE);
   redirect("/");
 }
 
