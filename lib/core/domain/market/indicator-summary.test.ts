@@ -44,4 +44,9 @@ describe("summarizeIndicators", () => {
     const s = summarizeIndicators(1, seriesOf([{ at: 0, priceIrt: 100 }]));
     expect(s).toEqual({ verdict: "hold", positives: 0, total: 0, signals: [] });
   });
+
+  test("no series at all (thin/discovered coin) → hold, no crash", () => {
+    const s = summarizeIndicators(1, undefined);
+    expect(s).toEqual({ verdict: "hold", positives: 0, total: 0, signals: [] });
+  });
 });

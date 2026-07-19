@@ -58,26 +58,43 @@ export function PriceChart({
   candles,
 }: {
   coin: Coin;
-  series: Record<ChartRange, PricePoint[]>;
-  candles: Record<ChartRange, Candle[]>;
+  series?: Record<ChartRange, PricePoint[]>;
+  candles?: Record<ChartRange, Candle[]>;
 }) {
   const [view, setView] = useState<"area" | "candles">("area");
-  const up = coin.change24h >= 0;
-  const ranges: ChartRangeDef[] = CHART_RANGES.map((key) => ({
+
+  // A range is chartable only with enough points to draw a line (≥2). Newly
+  // discovered / thin coins arrive with no price history at all, so the feed
+  // omits `series`/`candles` entirely — guard every read and fall back to a
+  // graceful «no chart yet» card instead of crashing SSR.
+  const areaKeys = CHART_RANGES.filter(
+    (key) => (series?.[key]?.length ?? 0) >= 2,
+  );
+  const candleKeys = CHART_RANGES.filter(
+    (key) => (candles?.[key]?.length ?? 0) >= 1,
+  );
+
+  // No price history for any range → show the price with an empty-state chart.
+  if (areaKeys.length === 0) {
+    return <NoChart coin={coin} />;
+  }
+
+  const ranges: ChartRangeDef[] = areaKeys.map((key) => ({
     key,
     label: RANGE_LABELS[key],
-    points: series[key].map((p) => ({ at: p.at, value: p.priceIrt })),
+    points: series![key].map((p) => ({ at: p.at, value: p.priceIrt })),
     showTime: key === "24h",
   }));
 
-  const candleRanges: CandleRangeDef[] = CHART_RANGES.map((key) => ({
+  const candleRanges: CandleRangeDef[] = candleKeys.map((key) => ({
     key,
     label: RANGE_LABELS[key],
-    candles: candles[key],
+    candles: candles![key],
     showTime: key === "24h",
   }));
+  const hasCandles = candleRanges.length > 0;
 
-  const toggle = (
+  const toggle = hasCandles ? (
     <div role="radiogroup" aria-label="نوع نمودار" className="flex gap-1">
       {(
         [
@@ -103,9 +120,9 @@ export function PriceChart({
         </button>
       ))}
     </div>
-  );
+  ) : null;
 
-  if (view === "candles") {
+  if (view === "candles" && hasCandles) {
     return (
       <CandleChart
         ranges={candleRanges}
@@ -122,17 +139,57 @@ export function PriceChart({
       formatValue={formatIrt}
       ariaLabel={`نمودار قیمت ${coin.name}`}
       toolbar={toggle}
-      idleSubhead={
-        <span dir="ltr" className="flex items-center gap-2">
-          <span className="text-muted">{formatUsd(coin.priceUsd)}</span>
-          <span
-            aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
-            className={cn("font-bold", up ? "text-gain" : "text-loss")}
-          >
-            {formatChangePercent(coin.change24h)}
-          </span>
-        </span>
-      }
+      idleSubhead={<PriceSubhead coin={coin} />}
     />
+  );
+}
+
+/** The USD price + 24h change line shown under the headline price. */
+function PriceSubhead({ coin }: { coin: Coin }) {
+  const up = coin.change24h >= 0;
+  return (
+    <span dir="ltr" className="flex items-center gap-2">
+      <span className="text-muted">{formatUsd(coin.priceUsd)}</span>
+      <span
+        aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
+        className={cn("font-bold", up ? "text-gain" : "text-loss")}
+      >
+        {formatChangePercent(coin.change24h)}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * Fallback for coins with no price history yet (newly discovered / thin
+ * listings). Keeps the price headline the card is built around — current
+ * price, USD, 24h change — and replaces the plot with a calm «no chart yet»
+ * message instead of crashing or showing an empty box. Same 360px card so the
+ * layout matches a coin that does have a chart.
+ */
+function NoChart({ coin }: { coin: Coin }) {
+  return (
+    <section
+      aria-label={`نمودار قیمت ${coin.name}`}
+      className="flex h-[360px] flex-col gap-3 overflow-hidden rounded-card bg-surface p-4"
+    >
+      <div className="flex flex-col gap-0.5">
+        <span className="text-[20px] font-extrabold tabular-nums text-ink">
+          {formatIrt(coin.priceIrt)}
+        </span>
+        <div className="flex h-5 items-center gap-2 text-[13px]">
+          <PriceSubhead coin={coin} />
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+        <span className="flex size-14 items-center justify-center rounded-full bg-line text-placeholder">
+          <LineChartIcon size={26} />
+        </span>
+        <p className="max-w-[240px] text-[14px] leading-7 text-muted">
+          نمودار قیمت این رمزارز هنوز در دسترس نیست.
+        </p>
+      </div>
+    </section>
   );
 }

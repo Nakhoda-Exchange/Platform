@@ -38,8 +38,12 @@ export interface CoinDetail {
   low24h: number; // 24h low price, Toman
   volume24h: number; // 24h traded volume, همت
   description: string; // short Persian «about» blurb
-  series: Record<ChartRange, PricePoint[]>; // price points per range (oldest → newest)
-  candles: Record<ChartRange, Candle[]>; // OHLC buckets per range (oldest → newest)
+  // Chart data per range (oldest → newest). Optional: newly-discovered/thin
+  // coins arrive without price history, so the market feed omits these. The
+  // PDP renders a graceful «no chart yet» state when they are absent rather
+  // than assuming a curated coin's full shape.
+  series?: Record<ChartRange, PricePoint[]>; // price points per range
+  candles?: Record<ChartRange, Candle[]>; // OHLC buckets per range
   // Optional editorial extras — the backend market feed does not carry these
   // yet, so they are present only where a richer source (or the mock) supplies
   // them. The PDP renders each only when set.

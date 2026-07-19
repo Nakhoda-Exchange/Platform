@@ -34,11 +34,11 @@ const mean = (points: PricePoint[]): number =>
  */
 export function summarizeIndicators(
   change24h: number,
-  series: Record<ChartRange, PricePoint[]>,
+  series?: Record<ChartRange, PricePoint[]>,
 ): IndicatorSummary {
-  const day = series["24h"];
-  const week = series["7d"];
-  const month = series["1m"];
+  const day = series?.["24h"] ?? [];
+  const week = series?.["7d"] ?? [];
+  const month = series?.["1m"] ?? [];
   if (day.length < 2 || week.length < 2 || month.length < 2) {
     return { verdict: "hold", positives: 0, total: 0, signals: [] };
   }

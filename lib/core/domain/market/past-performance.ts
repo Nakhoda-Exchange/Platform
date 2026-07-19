@@ -12,10 +12,10 @@ export interface PeriodPerformance {
  * than shown as a fake zero.
  */
 export function pastPerformance(
-  series: Record<ChartRange, PricePoint[]>,
+  series?: Record<ChartRange, PricePoint[]>,
 ): PeriodPerformance[] {
   return CHART_RANGES.flatMap((range) => {
-    const points = series[range];
+    const points = series?.[range] ?? [];
     if (points.length < 2 || points[0].priceIrt <= 0) return [];
     const first = points[0].priceIrt;
     const last = points[points.length - 1].priceIrt;
