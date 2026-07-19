@@ -33,6 +33,7 @@ import { HttpAnnouncementsRepository } from "@/lib/infrastructure/account/http-a
 import { HttpReferralRepository } from "@/lib/infrastructure/referral/http-referral.repository";
 import { HttpConfigRepository } from "@/lib/infrastructure/config/http-config.repository";
 import { Container } from "./container";
+import type { Token } from "./token";
 import { TOKENS } from "./tokens";
 
 /**
@@ -101,13 +102,17 @@ function registerHttpAdapters(container: Container, baseUrl: string): void {
 }
 
 export function buildContainer(): Container {
+  // `API_BASE_URL` is expected in every real environment (there is no mock
+  // fallback). It's not asserted here because this runs while Next collects page
+  // data at build time, where the env isn't set — a missing value surfaces as a
+  // failed request at runtime instead. A warning flags the misconfiguration.
   if (!API_BASE_URL) {
-    throw new Error(
-      "API_BASE_URL is required (include the /v1 prefix). The Platform has no mock fallback — set it to the Substructure base URL.",
+    console.warn(
+      "API_BASE_URL is not set — backend calls will fail. Set it (with the /v1 prefix) to the Substructure base URL.",
     );
   }
   const container = new Container();
-  registerHttpAdapters(container, API_BASE_URL);
+  registerHttpAdapters(container, API_BASE_URL ?? "");
   registerUseCases(container);
   return container;
 }
@@ -219,5 +224,16 @@ function registerUseCases(container: Container): void {
   );
 }
 
-/** Process-wide container used by the presentation layer (server actions). */
-export const container = buildContainer();
+/**
+ * Process-wide container used by the presentation layer (server actions). Built
+ * lazily on the first `resolve` (server request time) — not at module load — so
+ * a missing `API_BASE_URL` surfaces at runtime rather than breaking the Next
+ * build, which evaluates this module while collecting page data.
+ */
+let built: Container | null = null;
+export const container = {
+  resolve<T>(token: Token<T>): T {
+    built ??= buildContainer();
+    return built.resolve(token);
+  },
+};
