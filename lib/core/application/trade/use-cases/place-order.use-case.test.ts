@@ -7,7 +7,7 @@ import type {
 } from "../ports/trade-repository.port";
 import type { Coin } from "@/lib/core/domain/market/coin";
 import type { PlacedOrder, TradeSide } from "@/lib/core/domain/trade/order";
-import { ok, type Result } from "@/lib/core/domain/shared/result";
+import { fail, ok, type Result } from "@/lib/core/domain/shared/result";
 
 const BTC: Coin = {
   id: "btc",
@@ -124,6 +124,26 @@ describe("PlaceOrderUseCase", () => {
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("INSUFFICIENT_COIN");
+  });
+
+  test("preserves the repository error code (e.g. PRICE_UNAVAILABLE)", async () => {
+    // The HTTP client turns a 503 body into fail("PRICE_UNAVAILABLE", …); the
+    // use case must not flatten it, so the trade action/UI can special-case it.
+    const repo: TradeRepository = {
+      getBalances: async () => ok({ availableIrt: 1e10, coinAmounts: {} }),
+      placeOrder: async () =>
+        fail<PlacedOrder>(
+          "PRICE_UNAVAILABLE",
+          "قیمت لحظه‌ای در دسترس نیست. لطفاً کمی بعد دوباره تلاش کنید.",
+        ),
+    };
+    const result = await new PlaceOrderUseCase(marketStub, repo).execute(
+      "btc",
+      "buy",
+      2_000_000_000,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("PRICE_UNAVAILABLE");
   });
 
   test("clamps a «sell all» rounding overshoot to a full sell", async () => {
