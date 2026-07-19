@@ -25,19 +25,39 @@ const unitFirst = (label: string, number: string): string =>
 const irtFormat = new Intl.NumberFormat("fa-IR");
 const usdFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 
-/** Persian grouped number; small fractional prices (memecoins) keep 2 decimals. */
-function faNumber(toman: number): string {
-  // Never render "NaN"/"∞" to a user — a non-finite amount (a bad mock state,
-  // a divide-by-zero upstream) formats as zero.
-  if (!Number.isFinite(toman)) toman = 0;
-  if (
-    Math.abs(toman) > 0 &&
-    Math.abs(toman) < 1000 &&
-    !Number.isInteger(toman)
-  ) {
-    return toPersianDigits(toman.toFixed(2)).replace(".", "٫");
+/**
+ * Magnitude-aware fractional-digit count. `largeCap` is the max decimals once
+ * |value| ≥ 1 (0 for IRT — a Toman ≥ 1 needs no fraction; 2 for coin amounts).
+ * Below 1 we keep ~4 significant figures, capped at 8 — so a memecoin amount or
+ * sub-Toman price like 0.00001234 stays readable instead of collapsing to 0.
+ */
+function smartDecimals(abs: number, largeCap: number): number {
+  if (abs === 0 || abs >= 1) return largeCap;
+  return Math.min(8, Math.floor(-Math.log10(abs)) + 4);
+}
+
+// fa-IR formatters are ~µs to build but we format a lot; cache one per decimals.
+const faFormatCache = new Map<number, Intl.NumberFormat>();
+/** Persian grouped number with up to `maxDecimals` digits (trailing zeros dropped). */
+function faDecimal(value: number, maxDecimals: number): string {
+  let fmt = faFormatCache.get(maxDecimals);
+  if (!fmt) {
+    fmt = new Intl.NumberFormat("fa-IR", {
+      maximumFractionDigits: maxDecimals,
+    });
+    faFormatCache.set(maxDecimals, fmt);
   }
-  return irtFormat.format(Math.round(toman));
+  return fmt.format(value);
+}
+
+/**
+ * Persian grouped Toman. A value ≥ 1 shows NO fraction (whole Toman); only
+ * sub-Toman prices (memecoins) keep smart decimals. Never renders "NaN"/"∞" —
+ * a non-finite amount formats as zero.
+ */
+function faNumber(toman: number): string {
+  if (!Number.isFinite(toman)) toman = 0;
+  return faDecimal(toman, smartDecimals(Math.abs(toman), 0));
 }
 
 /** Toman amount → «تومان ۱۲٬۴۵۰٬۰۰۰» (unit left of the number; label from server config). */
@@ -76,8 +96,13 @@ export function formatMarketCap(hemat: number): string {
   return `\u2067${irtFormat.format(Math.round(hemat))} همت\u2069`;
 }
 
-/** Coin amount held → Persian digits, e.g. 0.0015 → «۰٫۰۰۱۵», 5 → «۵». */
+/**
+ * Coin amount → Persian digits with magnitude-aware precision: a value ≥ 1 keeps
+ * at most 2 decimals, while smaller amounts get up to 8 (~4 significant figures)
+ * so memecoin balances like 0.00001234 stay readable. Grouped, trailing zeros
+ * dropped — 0.0015 → «۰٫۰۰۱۵», 5 → «۵», 1234.567 → «۱٬۲۳۴٫۵۷».
+ */
 export function formatCoinAmount(amount: number): string {
-  if (amount >= 1000) return irtFormat.format(amount);
-  return toPersianDigits(String(amount)).replace(".", "٫");
+  if (!Number.isFinite(amount)) amount = 0;
+  return faDecimal(amount, smartDecimals(Math.abs(amount), 2));
 }
