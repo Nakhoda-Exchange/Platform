@@ -113,16 +113,26 @@ export function TradeScreen({
     return () => cancelAnimationFrame(id);
   }, [order]);
 
-  // Stale-price errors surface as a retry toast (fired once per action return —
-  // `state` is a fresh object each submit). Keep the confirm sheet valid so the
-  // submit button is an obvious, ready retry.
+  // Every action error surfaces as a toast — never inline text in the confirm
+  // sheet. Fired once per action return (`state` is a fresh object each submit,
+  // so keying the effect on it guards against duplicate toasts on re-render).
+  // The stale-price case keeps its own retry wording. Either way the confirm
+  // sheet stays open with a fresh window so the submit button is a ready retry.
   useEffect(() => {
-    if (!priceUnavailable) return;
-    toast({
-      variant: "error",
-      title: "قیمت لحظه‌ای در دسترس نیست",
-      description: "لطفاً کمی بعد دوباره تلاش کنید.",
-    });
+    if (state.status !== "error") return;
+    if (priceUnavailable) {
+      toast({
+        variant: "error",
+        title: "قیمت لحظه‌ای در دسترس نیست",
+        description: "لطفاً کمی بعد دوباره تلاش کنید.",
+      });
+    } else {
+      toast({
+        variant: "error",
+        title: "خطا در ثبت سفارش",
+        description: state.message || "دوباره تلاش کنید.",
+      });
+    }
     // Defer the timer reset out of the effect body (avoids a cascading render).
     const id = requestAnimationFrame(() => setSecondsLeft(CONFIRM_SECONDS));
     return () => cancelAnimationFrame(id);
@@ -433,12 +443,6 @@ export function TradeScreen({
               </div>
             ))}
           </dl>
-
-          {state.status === "error" && !priceUnavailable ? (
-            <p role="alert" className="text-[14px] font-bold text-loss">
-              {state.message}
-            </p>
-          ) : null}
 
           <p className="text-center text-[12px] text-placeholder">
             این تأیید تا {toPersianDigits(secondsLeft)} ثانیه دیگر معتبر است
