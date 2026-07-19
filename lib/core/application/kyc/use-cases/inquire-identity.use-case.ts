@@ -35,4 +35,9 @@ export class InquireIdentityUseCase {
 
     return this.inquiry.inquire(nationalCode.data, birthDate.data);
   }
+
+  /** Confirm the reviewed identity so the backend marks the user KYC-verified. */
+  confirm(): Promise<Result<void>> {
+    return this.inquiry.confirm();
+  }
 }

@@ -16,8 +16,16 @@ export class HttpMarketRepository implements MarketRepository {
     const result = await this.http.get<CoinDetail>(
       `/market/coins/${encodeURIComponent(idOrSymbol.toLowerCase())}`,
     );
-    // The port maps "unknown coin" to null (the page shows not-found).
-    if (!result.ok && result.error.code === "HTTP_404") return ok(null);
+    // The port maps "unknown coin" to null (the page shows not-found). The
+    // backend sends a domain code (COIN_NOT_FOUND) on 404; the client only
+    // falls back to HTTP_404 when there's no code, so accept either.
+    if (
+      !result.ok &&
+      (result.error.code === "COIN_NOT_FOUND" ||
+        result.error.code === "HTTP_404")
+    ) {
+      return ok(null);
+    }
     return result;
   }
 }
