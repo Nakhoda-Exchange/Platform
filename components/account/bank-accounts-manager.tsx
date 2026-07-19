@@ -151,7 +151,10 @@ export function BankAccountsManager({
           : tab === "card"
             ? await removeCard(id)
             : await removeIban(id);
-      if (!result.ok) return;
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
 
       if (action === "primary") {
         const flip = <T extends { id: string; primary: boolean }>(list: T[]) =>
@@ -323,7 +326,10 @@ export function BankAccountsManager({
       {/* Approve primary / remove */}
       <Sheet
         open={confirm !== null}
-        onClose={() => setConfirm(null)}
+        onClose={() => {
+          setConfirm(null);
+          setError(null);
+        }}
         title={
           confirm?.action === "remove"
             ? `حذف ${copy.noun}`
@@ -342,6 +348,9 @@ export function BankAccountsManager({
           >
             {confirm.display}
           </span>
+        ) : null}
+        {error ? (
+          <p className="text-right text-[13px] text-loss">{error}</p>
         ) : null}
         <div className="flex gap-3">
           <Button

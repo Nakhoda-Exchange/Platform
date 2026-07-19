@@ -13,4 +13,10 @@ export interface IdentityInquiryPort {
     nationalCode: NationalCode,
     birthDate: JalaliDate,
   ): Promise<Result<Identity>>;
+
+  /**
+   * Confirm the inquired identity — the backend marks the user KYC-verified,
+   * which unlocks the trade/wallet routes. Called after the read-only review.
+   */
+  confirm(): Promise<Result<void>>;
 }

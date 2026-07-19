@@ -18,4 +18,9 @@ export class HttpIdentityInquiryRepository implements IdentityInquiryPort {
       birthDate: birthDate.value, // Jalali YYYY/MM/DD, Latin digits
     });
   }
+
+  confirm(): Promise<Result<void>> {
+    // 204 No Content — flips the user to KYC-verified on the backend.
+    return this.http.post<void>("/kyc/confirm");
+  }
 }

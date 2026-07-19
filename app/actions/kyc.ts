@@ -47,10 +47,19 @@ export async function submitIdentity(
 }
 
 /**
- * KYC step 2 — the user confirmed the read-only identity. A real app would
- * persist verification here; the mock clears the pending record and proceeds.
+ * KYC step 2 — the user confirmed the read-only identity. Tell the backend to
+ * mark the user KYC-verified (which unlocks the trade/wallet routes); only on
+ * success do we clear the pending record, finalize referral, and proceed. On
+ * failure the pending cookie is kept so the user can retry.
  */
-export async function confirmKyc(): Promise<void> {
+export async function confirmKyc(): Promise<KycFormState> {
+  const result = await container
+    .resolve(TOKENS.InquireIdentityUseCase)
+    .confirm();
+  if (!result.ok) {
+    return { error: result.error.message };
+  }
+
   const store = await cookies();
   store.delete(KYC_PENDING_COOKIE);
 
