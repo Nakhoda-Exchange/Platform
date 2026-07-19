@@ -18,6 +18,12 @@ describe("formatCoinAmount", () => {
     expect(formatCoinAmount(5)).toBe("۵");
     expect(formatCoinAmount(12500)).toBe("۱۲٬۵۰۰");
   });
+
+  test("scales precision by magnitude (large ≤ 2 dp, tiny up to 8 dp)", () => {
+    expect(formatCoinAmount(1234.567)).toBe("۱٬۲۳۴٫۵۷"); // large → max 2 dp
+    expect(formatCoinAmount(0.00001234)).toBe("۰٫۰۰۰۰۱۲۳۴"); // tiny → 8 dp
+    expect(formatCoinAmount(0)).toBe("۰");
+  });
 });
 
 describe("formatIrt", () => {
