@@ -12,6 +12,12 @@ RUN bun install --frozen-lockfile
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HUSKY=0
+# NEXT_PUBLIC_* are inlined into the client bundle at build time, so the
+# realtime WebSocket URL must be baked here. It is browser-facing, so it points
+# at the host (localhost), not the internal compose service name. Override per
+# build with --build-arg NEXT_PUBLIC_WS_URL=…
+ARG NEXT_PUBLIC_WS_URL=ws://localhost:4000/ws
+ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
 RUN bun run build
 
 # --- Runtime stage: minimal Node image running the standalone server ---
