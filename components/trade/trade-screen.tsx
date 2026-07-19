@@ -9,8 +9,12 @@ import {
   type TradeSide,
 } from "@/lib/core/domain/trade/order";
 import { placeTradeOrder } from "@/app/actions/trade";
-import type { TradeFormState } from "@/app/actions/trade-state";
+import {
+  PRICE_UNAVAILABLE_CODES,
+  type TradeFormState,
+} from "@/app/actions/trade-state";
 import { Button, buttonClasses } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { CheckCircleIcon } from "@/components/ui/icons";
 import { Sheet } from "@/components/ui/sheet";
 import { Confetti } from "@/components/ui/confetti";
@@ -66,10 +70,18 @@ export function TradeScreen({
     placeTradeOrder,
     { status: "idle" },
   );
+  const { toast } = useToast();
 
   // The just-placed order (once), and whether its status sheet is still showing.
   const order = state.status === "success" ? state.order : null;
   const successOpen = order !== null && order.id !== ackedOrderId;
+
+  // Stale live price (HTTP 503 PRICE_UNAVAILABLE): a momentary backend state,
+  // not a bad order. It gets a retry toast instead of the inline error, and the
+  // confirm sheet stays open with the same amounts so «تلاش دوباره» re-submits.
+  const priceUnavailable =
+    state.status === "error" &&
+    (PRICE_UNAVAILABLE_CODES as readonly string[]).includes(state.code ?? "");
 
   // The confirm sheet is only valid for a short window; tick it down while open
   // (paused during submission) and auto-close when it runs out.
@@ -100,6 +112,22 @@ export function TradeScreen({
     });
     return () => cancelAnimationFrame(id);
   }, [order]);
+
+  // Stale-price errors surface as a retry toast (fired once per action return —
+  // `state` is a fresh object each submit). Keep the confirm sheet valid so the
+  // submit button is an obvious, ready retry.
+  useEffect(() => {
+    if (!priceUnavailable) return;
+    toast({
+      variant: "error",
+      title: "قیمت لحظه‌ای در دسترس نیست",
+      description: "لطفاً کمی بعد دوباره تلاش کنید.",
+    });
+    // Defer the timer reset out of the effect body (avoids a cascading render).
+    const id = requestAnimationFrame(() => setSecondsLeft(CONFIRM_SECONDS));
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   // Dismiss the status sheet → ready for another order (keep the form as it is).
   const startAnother = () => {
@@ -406,7 +434,7 @@ export function TradeScreen({
             ))}
           </dl>
 
-          {state.status === "error" ? (
+          {state.status === "error" && !priceUnavailable ? (
             <p role="alert" className="text-[14px] font-bold text-loss">
               {state.message}
             </p>
@@ -418,7 +446,11 @@ export function TradeScreen({
 
           <div className="flex flex-col gap-2">
             <Button type="submit" size="xl" fullWidth disabled={pending}>
-              {pending ? "در حال ثبت سفارش…" : `تأیید ${SIDE_LABEL[side]}`}
+              {pending
+                ? "در حال ثبت سفارش…"
+                : priceUnavailable
+                  ? "تلاش دوباره"
+                  : `تأیید ${SIDE_LABEL[side]}`}
             </Button>
             <Button
               type="button"

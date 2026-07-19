@@ -22,7 +22,11 @@ export async function placeTradeOrder(
     .execute(coinId, side, amountIrt);
 
   if (!result.ok) {
-    return { status: "error", message: result.error.message };
+    return {
+      status: "error",
+      message: result.error.message,
+      code: result.error.code,
+    };
   }
   return { status: "success", order: result.data };
 }
