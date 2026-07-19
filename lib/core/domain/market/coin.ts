@@ -9,4 +9,8 @@ export interface Coin {
   change24h: number; // signed 24h change percent (e.g. 3.2 / -2.1)
   marketCap: number; // market cap in همت (هزار میلیارد تومان)
   isNew: boolean; // recently listed
+  // Asset class: a native L1 «کوین» (coin) vs an on-chain contract «توکن»
+  // (token). Optional because the market feed may omit it for coins from a
+  // thinner source; the PDP renders the kind badge only when it is set.
+  kind?: "coin" | "token";
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Coin } from "@/lib/core/domain/market/coin";
 import { HeaderBar } from "@/components/layout/header-bar";
 import { CoinIcon } from "./coin-icon";
+import { CoinKindBadge } from "./coin-kind-badge";
 import { FavoriteButton } from "./favorite-button";
 import { ArrowRightIcon, ClockIcon } from "@/components/ui/icons";
 
@@ -25,9 +26,12 @@ export function CoinPageHeader({ coin }: { coin: Coin }) {
           <div className="flex items-center gap-2.5">
             <CoinIcon coin={coin} size={36} />
             <div className="flex flex-col">
-              <span className="text-[15px] font-extrabold leading-tight text-ink">
-                {coin.name}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[15px] font-extrabold leading-tight text-ink">
+                  {coin.name}
+                </span>
+                <CoinKindBadge kind={coin.kind} />
+              </div>
               <span className="text-[12px] text-muted">{coin.symbol}</span>
             </div>
           </div>
