@@ -30,4 +30,8 @@ describe("pastPerformance", () => {
     const perf = pastPerformance(seriesOf({ "1y": points(100) }));
     expect(perf.map((p) => p.range)).toEqual(["24h", "7d", "1m"]);
   });
+
+  test("no series at all (thin/discovered coin) → empty, no crash", () => {
+    expect(pastPerformance(undefined)).toEqual([]);
+  });
 });
