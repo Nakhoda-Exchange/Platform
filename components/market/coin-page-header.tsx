@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Coin } from "@/lib/core/domain/market/coin";
+import { coinDisplayName, type Coin } from "@/lib/core/domain/market/coin";
 import { HeaderBar } from "@/components/layout/header-bar";
 import { CoinIcon } from "./coin-icon";
 import { CoinKindBadge } from "./coin-kind-badge";
@@ -28,7 +28,7 @@ export function CoinPageHeader({ coin }: { coin: Coin }) {
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="text-[15px] font-extrabold leading-tight text-ink">
-                  {coin.name}
+                  {coinDisplayName(coin)}
                 </span>
                 <CoinKindBadge kind={coin.kind} />
               </div>

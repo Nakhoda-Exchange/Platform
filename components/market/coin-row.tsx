@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRef, useState, type PointerEvent } from "react";
 import { useRouter } from "next/navigation";
-import type { Coin } from "@/lib/core/domain/market/coin";
+import { coinDisplayName, type Coin } from "@/lib/core/domain/market/coin";
 import { CoinIcon } from "./coin-icon";
 import { ChevronRightIcon, CoinsIcon, WalletIcon } from "@/components/ui/icons";
 import { formatChangePercent, formatIrtShort } from "@/lib/utils/money";
@@ -199,7 +199,7 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
             <CoinIcon coin={coin} size={42} />
             <div className="flex flex-col">
               <span className="text-[15px] font-bold text-ink">
-                {coin.name}
+                {coinDisplayName(coin)}
               </span>
               <span className="text-[12px] text-muted">{coin.symbol}</span>
             </div>
