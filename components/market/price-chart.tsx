@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Coin } from "@/lib/core/domain/market/coin";
 import {
   CHART_RANGES,
   type Candle,
   type ChartRange,
+  type CoinChart,
   type PricePoint,
 } from "@/lib/core/domain/market/coin-detail";
 import type { ChartRangeDef } from "@/components/ui/live-area-chart";
@@ -68,35 +69,91 @@ export function PriceChart({
   const { prices } = useLivePrices();
   const liveValue = prices[coin.id]?.priceIrt ?? null;
 
-  // A range is chartable only with enough points to draw a line (≥2). Newly
-  // discovered / thin coins arrive with no price history at all, so the feed
-  // omits `series`/`candles` entirely — guard every read and fall back to a
-  // graceful «no chart yet» card instead of crashing SSR.
-  const areaKeys = CHART_RANGES.filter(
-    (key) => (series?.[key]?.length ?? 0) >= 2,
+  // The detail payload carries only the 24h range inline; 7d/1m/1y load lazily
+  // from the chart endpoint on range toggle. Seed the loaded map with whatever
+  // ranges arrived inline (24h in practice). Guard every read: a brand-new /
+  // thin coin arrives with no history at all and must never crash.
+  const [loaded, setLoaded] = useState<Partial<Record<ChartRange, CoinChart>>>(
+    () => {
+      const seed: Partial<Record<ChartRange, CoinChart>> = {};
+      for (const key of CHART_RANGES) {
+        const s = series?.[key];
+        const c = candles?.[key];
+        if ((s?.length ?? 0) > 0 || (c?.length ?? 0) > 0) {
+          seed[key] = { series: s ?? [], candles: c ?? [] };
+        }
+      }
+      return seed;
+    },
   );
-  const candleKeys = CHART_RANGES.filter(
-    (key) => (candles?.[key]?.length ?? 0) >= 1,
+  const [status, setStatus] = useState<
+    Partial<Record<ChartRange, "loading" | "error">>
+  >({});
+
+  // Fetch-on-range-toggle: pull one range's real history from the BFF the first
+  // time it's selected. Empty payload → the range renders an honest "no data for
+  // this range yet" note (stored so we don't refetch); a failure → a retry note.
+  const loadRange = useCallback(
+    async (key: ChartRange) => {
+      if (loaded[key] || status[key] === "loading") return;
+      setStatus((s) => ({ ...s, [key]: "loading" }));
+      try {
+        const res = await fetch(
+          `/api/market/${encodeURIComponent(coin.id)}/chart?timeframe=${key}`,
+          { headers: { Accept: "application/json" } },
+        );
+        if (!res.ok) throw new Error("chart fetch failed");
+        const body = (await res.json()) as Partial<CoinChart>;
+        setLoaded((l) => ({
+          ...l,
+          [key]: { series: body.series ?? [], candles: body.candles ?? [] },
+        }));
+        setStatus((s) => {
+          const next = { ...s };
+          delete next[key];
+          return next;
+        });
+      } catch {
+        setStatus((s) => ({ ...s, [key]: "error" }));
+      }
+    },
+    [loaded, status, coin.id],
   );
 
-  // No price history for any range → show the price with an empty-state chart.
-  if (areaKeys.length === 0) {
+  // The 24h range is the gate: with no 24h line, the coin has no history yet →
+  // show the price with a graceful empty-state card (never a blank/broken plot).
+  const has24h = (loaded["24h"]?.series.length ?? 0) >= 2;
+  if (!has24h) {
     return <NoChart coin={coin} />;
   }
 
-  const ranges: ChartRangeDef[] = areaKeys.map((key) => ({
+  // All four ranges are always offered; each resolves to real data, a loading
+  // note, or an honest "no data yet" note — so the chart is truthful about how
+  // much history actually exists instead of faking a full past.
+  const ranges: ChartRangeDef[] = CHART_RANGES.map((key) => ({
     key,
     label: RANGE_LABELS[key],
-    points: series![key].map((p) => ({ at: p.at, value: p.priceIrt })),
+    points: (loaded[key]?.series ?? []).map((p) => ({
+      at: p.at,
+      value: p.priceIrt,
+    })),
     showTime: key === "24h",
+    status: status[key],
   }));
 
-  const candleRanges: CandleRangeDef[] = candleKeys.map((key) => ({
-    key,
-    label: RANGE_LABELS[key],
-    candles: candles![key],
-    showTime: key === "24h",
-  }));
+  const candleRanges: CandleRangeDef[] = CHART_RANGES.flatMap((key) => {
+    const cs = loaded[key]?.candles ?? [];
+    return cs.length >= 1
+      ? [
+          {
+            key,
+            label: RANGE_LABELS[key],
+            candles: cs,
+            showTime: key === "24h",
+          },
+        ]
+      : [];
+  });
   const hasCandles = candleRanges.length > 0;
 
   const toggle = hasCandles ? (
@@ -127,26 +184,37 @@ export function PriceChart({
     </div>
   ) : null;
 
-  if (view === "candles" && hasCandles) {
-    return (
+  const chart =
+    view === "candles" && hasCandles ? (
       <CandleChart
         ranges={candleRanges}
         formatValue={formatIrt}
         ariaLabel={`نمودار شمعی ${coin.name}`}
         toolbar={toggle}
       />
+    ) : (
+      <LiveAreaChart
+        ranges={ranges}
+        formatValue={formatIrt}
+        ariaLabel={`نمودار قیمت ${coin.name}`}
+        toolbar={toggle}
+        idleSubhead={<PriceSubhead coin={coin} />}
+        liveValue={liveValue}
+        fallbackValue={liveValue ?? coin.priceIrt}
+        onRangeSelect={(k) => void loadRange(k as ChartRange)}
+      />
     );
-  }
 
   return (
-    <LiveAreaChart
-      ranges={ranges}
-      formatValue={formatIrt}
-      ariaLabel={`نمودار قیمت ${coin.name}`}
-      toolbar={toggle}
-      idleSubhead={<PriceSubhead coin={coin} />}
-      liveValue={liveValue}
-    />
+    <div className="flex flex-col gap-2">
+      {chart}
+      {coin.isNew ? (
+        <p className="px-1 text-[12px] leading-6 text-muted">
+          این رمزارز به‌تازگی فهرست شده و تاریخچه‌ی قیمت آن هنوز کامل نیست؛
+          نمودار به‌مرور تکمیل می‌شود.
+        </p>
+      ) : null}
+    </div>
   );
 }
 

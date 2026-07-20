@@ -3,6 +3,7 @@ import type { Coin } from "@/lib/core/domain/market/coin";
 import type {
   Candle,
   ChartRange,
+  CoinChart,
   CoinDetail,
   PricePoint,
 } from "@/lib/core/domain/market/coin-detail";
@@ -57,6 +58,33 @@ export class HttpMarketRepository implements MarketRepository {
       ...(candles && candles.length > 0
         ? { candles: { "24h": candles } as Record<ChartRange, Candle[]> }
         : {}),
+    });
+  }
+
+  async getCoinChart(
+    idOrSymbol: string,
+    range: ChartRange,
+  ): Promise<Result<CoinChart | null>> {
+    const result = await this.http.get<{
+      series?: PricePoint[];
+      candles?: Candle[];
+    }>(
+      `/market/coins/${encodeURIComponent(idOrSymbol.toLowerCase())}/chart?timeframe=${range}`,
+    );
+    if (
+      !result.ok &&
+      (result.error.code === "COIN_NOT_FOUND" ||
+        result.error.code === "HTTP_404")
+    ) {
+      return ok(null);
+    }
+    if (!result.ok) return result;
+    // Guard sparse payloads: a coin with no history for this range returns
+    // empty arrays (never null fields), which the PDP renders as a clear
+    // "no data for this range yet" state rather than a broken chart.
+    return ok({
+      series: result.data.series ?? [],
+      candles: result.data.candles ?? [],
     });
   }
 }

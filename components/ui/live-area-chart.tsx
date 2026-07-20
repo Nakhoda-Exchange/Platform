@@ -42,6 +42,12 @@ export interface ChartRangeDef {
   points: ChartPoint[];
   /** Subhead includes the time («— ۱۴:۰۵») for intraday ranges. */
   showTime?: boolean;
+  /**
+   * When a range has no plottable points, why: `"loading"` while its data is
+   * being fetched (range toggle), `"error"` if that fetch failed. Absent means
+   * the range is simply empty (no history yet). Drives the in-plot status note.
+   */
+  status?: "loading" | "error";
 }
 
 /**
@@ -224,6 +230,8 @@ export function LiveAreaChart({
   idleSubhead,
   toolbar,
   liveValue = null,
+  fallbackValue = null,
+  onRangeSelect,
 }: {
   ranges: ChartRangeDef[];
   formatValue: (value: number) => string;
@@ -239,6 +247,14 @@ export function LiveAreaChart({
    * only moves when a real update arrives.
    */
   liveValue?: number | null;
+  /**
+   * Headline value shown when the active range has no plottable points (loading
+   * / empty / error) — so the card still leads with the current price instead
+   * of a blank. Typically the coin's live price.
+   */
+  fallbackValue?: number | null;
+  /** Fired when a range tab is chosen — the parent lazy-loads that range's data. */
+  onRangeSelect?: (key: string) => void;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
@@ -258,10 +274,18 @@ export function LiveAreaChart({
 
   const range = ranges.find((r) => r.key === rangeKey) ?? ranges[0];
   const points = range.points;
+  // A range needs ≥2 points to draw a line. With fewer (loading / empty / error),
+  // the plot is replaced by a status note and the headline falls back to the
+  // live/current price — the card is never blank or crashing.
+  const noPlot = points.length < 2;
   const last = points[points.length - 1];
   const isLatest = peek == null || peek >= points.length - 1 || !points[peek];
-  const point = isLatest ? last : points[peek];
-  const displayValue = isLatest ? (liveValue ?? last.value) : point.value;
+  const point = isLatest || noPlot ? last : points[peek];
+  const displayValue = noPlot
+    ? (liveValue ?? fallbackValue ?? 0)
+    : isLatest
+      ? (liveValue ?? last.value)
+      : point.value;
 
   useEffect(() => {
     const chart = echarts.init(el.current!, null, { renderer: "svg" });
@@ -284,6 +308,12 @@ export function LiveAreaChart({
   // Re-read tones on every apply: they are what themeClass changes.
   useEffect(() => {
     void themeClass;
+    // No plottable data (loading / empty / error) → clear the canvas; the status
+    // overlay takes over. Guards against indexing an empty points array.
+    if (points.length < 2) {
+      chartRef.current?.clear();
+      return;
+    }
     chartRef.current?.setOption(
       buildOption(
         points,
@@ -297,7 +327,7 @@ export function LiveAreaChart({
   // A real live update only moves the dotted tail — the plotted history stays
   // put. No update ⇒ no movement (the tail rests on the last real point).
   useEffect(() => {
-    if (liveValue == null) return;
+    if (liveValue == null || points.length < 2) return;
     chartRef.current?.setOption({
       series: [
         { id: "live", data: liveTailData(points, readTones(), liveValue) },
@@ -310,17 +340,19 @@ export function LiveAreaChart({
   const scrubIndex =
     peek != null && peek >= 0 && peek < points.length ? peek : null;
   useEffect(() => {
+    if (points.length < 2) return;
     chartRef.current?.setOption({
       series: [{ id: "peek", data: peekData(points, readTones(), scrubIndex) }],
     });
   }, [scrubIndex, points, themeClass]);
 
-  const moment = (
-    <span className="text-muted">
-      {formatJalaliDay(new Date(point.at))}
-      {range.showTime ? ` — ${formatTimeFa(new Date(point.at))}` : ""}
-    </span>
-  );
+  const moment =
+    noPlot || !point ? null : (
+      <span className="text-muted">
+        {formatJalaliDay(new Date(point.at))}
+        {range.showTime ? ` — ${formatTimeFa(new Date(point.at))}` : ""}
+      </span>
+    );
 
   return (
     <section
@@ -335,8 +367,8 @@ export function LiveAreaChart({
           {/* Subhead: the peeked moment + its event, if any.
               Fixed height so the chart never jumps while scrubbing. */}
           <div className="flex h-5 items-center gap-2 text-[13px]">
-            {isLatest && idleSubhead && !point.event ? idleSubhead : moment}
-            {point.event ? (
+            {isLatest && idleSubhead && !point?.event ? idleSubhead : moment}
+            {point?.event ? (
               <span
                 className={cn(
                   "font-bold",
@@ -360,6 +392,7 @@ export function LiveAreaChart({
             onClick={() => {
               setRangeKey(r.key);
               setPeek(null);
+              onRangeSelect?.(r.key);
             }}
             aria-pressed={r.key === range.key}
             className={cn(
@@ -374,13 +407,35 @@ export function LiveAreaChart({
         ))}
       </div>
 
-      <div
-        dir="ltr"
-        ref={el}
-        role="img"
-        aria-label={`${ariaLabel} — ${range.label}`}
-        className="-mx-4 -mb-4 min-h-0 flex-1 touch-none"
-      />
+      <div className="relative -mx-4 -mb-4 min-h-0 flex-1">
+        <div
+          dir="ltr"
+          ref={el}
+          role="img"
+          aria-label={`${ariaLabel} — ${range.label}`}
+          className="size-full touch-none"
+        />
+        {/* No plottable data for the active range → an honest status note over
+            the (cleared) canvas, never an empty box pretending to be a chart. */}
+        {noPlot ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+            {range.status === "loading" ? (
+              <>
+                <span className="size-6 animate-spin rounded-full border-2 border-line border-t-brand" />
+                <p className="text-[13px] text-muted">
+                  در حال بارگذاری این بازه…
+                </p>
+              </>
+            ) : (
+              <p className="max-w-[240px] text-[14px] leading-7 text-muted">
+                {range.status === "error"
+                  ? "بارگذاری این بازه ناموفق بود؛ دوباره تلاش کنید."
+                  : "برای این بازه هنوز داده‌ای ثبت نشده است."}
+              </p>
+            )}
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }

@@ -44,10 +44,20 @@ export interface CoinDetail {
   // than assuming a curated coin's full shape.
   series?: Record<ChartRange, PricePoint[]>; // price points per range
   candles?: Record<ChartRange, Candle[]>; // OHLC buckets per range
+  // On-chain holder count (best-effort). Null/absent when no indexer source
+  // covers the coin — the PDP hides the holders row rather than showing 0 or a
+  // fabricated number. Never treat as "0 holders".
+  holdersCount?: number | null;
   // Optional editorial extras — the backend market feed does not carry these
   // yet, so they are present only where a richer source (or the mock) supplies
   // them. The PDP renders each only when set.
   holders?: number; // how many people hold this coin on the platform
   history?: string; // longer Persian background / history
   blogPosts?: BlogPost[]; // related articles
+}
+
+/** One range's chart payload from GET /market/coins/{id}/chart?timeframe=. */
+export interface CoinChart {
+  series: PricePoint[]; // line points, oldest → newest (empty when none for the range)
+  candles: Candle[]; // OHLC buckets, oldest → newest (empty when none for the range)
 }
