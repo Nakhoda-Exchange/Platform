@@ -12,9 +12,13 @@ import { Button, buttonClasses } from "./button";
 export function LoadError({
   message,
   action,
+  onRetry,
 }: {
   message: string;
   action?: { label: string; href: string };
+  /** Client-side retry (e.g. re-run a CSR fetch). When omitted, retry falls
+   *  back to `router.refresh()`, which re-runs a server render. */
+  onRetry?: () => void;
 }) {
   const router = useRouter();
   return (
@@ -23,7 +27,11 @@ export function LoadError({
         {message}
       </p>
       <div className="flex flex-wrap items-center justify-center gap-3">
-        <Button type="button" size="md" onClick={() => router.refresh()}>
+        <Button
+          type="button"
+          size="md"
+          onClick={() => (onRetry ? onRetry() : router.refresh())}
+        >
           تلاش مجدد
         </Button>
         {action ? (
