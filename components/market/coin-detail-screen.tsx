@@ -2,11 +2,9 @@ import Link from "next/link";
 import { coinDisplayName } from "@/lib/core/domain/market/coin";
 import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
 import { summarizeIndicators } from "@/lib/core/domain/market/indicator-summary";
-import { pastPerformance } from "@/lib/core/domain/market/past-performance";
 import { PriceChart } from "./price-chart";
 import { CoinInfoCard } from "./coin-info-card";
 import { IndicatorSummaryCard } from "./indicator-summary-card";
-import { PastPerformanceCard } from "./past-performance-card";
 import { buttonClasses } from "@/components/ui/button";
 import {
   formatChangePercent,
@@ -101,8 +99,6 @@ export function CoinDetailScreen({
       <IndicatorSummaryCard
         summary={summarizeIndicators(coin.change24h, detail.series)}
       />
-
-      <PastPerformanceCard performance={pastPerformance(detail.series)} />
 
       {/* About + history — rendered only when there's real editorial copy, so a
           brand-new token doesn't show an empty «درباره‌ی …» heading. */}
