@@ -1,9 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { container } from "@/lib/di/container.instance";
-import { TOKENS } from "@/lib/di/tokens";
-import { TradeScreen } from "@/components/trade/trade-screen";
-import { LoadError } from "@/components/ui/load-error";
+import { TradeClient } from "./trade-client";
 
 export async function generateMetadata({
   params,
@@ -14,33 +10,12 @@ export async function generateMetadata({
   return { title: `خرید و فروش ${symbol.toUpperCase()} | ناخدا` };
 }
 
+// Client-rendered: data is fetched in the browser via /api/trade/[symbol].
 export default async function TradePage({
   params,
-  searchParams,
 }: {
   params: Promise<{ symbol: string }>;
-  searchParams: Promise<{ side?: string }>;
 }) {
-  const [{ symbol }, { side }] = await Promise.all([params, searchParams]);
-
-  const result = await container
-    .resolve(TOKENS.GetTradeContextUseCase)
-    .execute(symbol);
-
-  if (!result.ok) {
-    return (
-      <LoadError
-        message="بارگذاری اطلاعات معامله ناموفق بود."
-        action={{ label: "بازگشت به بازار", href: "/market" }}
-      />
-    );
-  }
-  if (!result.data) notFound();
-
-  return (
-    <TradeScreen
-      context={result.data}
-      initialSide={side === "sell" ? "sell" : "buy"}
-    />
-  );
+  const { symbol } = await params;
+  return <TradeClient symbol={symbol} />;
 }
