@@ -1,40 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { formatIrt } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
-
-const TICK_MS = 1_600;
-const STEP = 0.003; // per-tick nudge, ±0.3%
-const MAX_DRIFT = 0.02; // leash to ±2% of the real price
+import { useLivePrices } from "@/lib/realtime/use-realtime";
 
 /**
- * Centered "market is live" price chip for the trade screen: the server price
- * ticks via a leashed random walk (same simulation as the PDP chart) and a
- * pulsing dot signals the feed is live.
+ * Centered "market is live" price chip for the trade screen. Shows the REAL
+ * price and updates ONLY when a live WebSocket price tick arrives — never a
+ * simulated/random movement. Until the first tick, it holds the server price
+ * (`basePrice`). A pulsing dot signals the feed; green/red shows the live price
+ * relative to the price when the screen loaded.
  *
  * Display only — the order math stays server-authoritative at `coin.priceIrt`;
  * this chip never feeds the conversion or the confirm step.
  */
-export function LivePriceChip({ basePrice }: { basePrice: number }) {
-  const driftRef = useRef(0);
-  const [price, setPrice] = useState(basePrice);
+export function LivePriceChip({
+  coinId,
+  basePrice,
+}: {
+  coinId: string;
+  basePrice: number;
+}) {
+  const { prices } = useLivePrices();
+  const tick = prices[coinId];
+  const price = tick ? tick.priceIrt : basePrice;
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      const step = (Math.random() - 0.5) * 2 * STEP;
-      driftRef.current = Math.min(
-        MAX_DRIFT,
-        Math.max(-MAX_DRIFT, driftRef.current + step),
-      );
-      setPrice(Math.round(basePrice * (1 + driftRef.current)));
-    }, TICK_MS);
-    return () => clearInterval(id);
-  }, [basePrice]);
-
-  // Green while trading above the reference price (pumping), red below
-  // (dumping). Colour-only by request; the aria-label still names the
-  // direction for screen readers.
+  // Green when the live price is at/above the load-time reference, red below.
+  // Colour-only by request; the aria-label still names the direction.
   const up = price >= basePrice;
 
   return (

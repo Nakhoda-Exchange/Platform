@@ -14,6 +14,7 @@ import type { CandleRangeDef } from "@/components/ui/candle-chart";
 import { CandlestickIcon, LineChartIcon } from "@/components/ui/icons";
 import { formatChangePercent, formatIrt, formatUsd } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
+import { useLivePrices } from "@/lib/realtime/use-realtime";
 
 // echarts only downloads when a PDP is opened, not with the app shell.
 // The fallback is a plain empty card at the real card's height (360px)
@@ -62,6 +63,10 @@ export function PriceChart({
   candles?: Record<ChartRange, Candle[]>;
 }) {
   const [view, setView] = useState<"area" | "candles">("area");
+  // Real live price from the WebSocket feed (null until the first tick / when
+  // the feed is quiet) — the chart's tail tracks this, never a simulated value.
+  const { prices } = useLivePrices();
+  const liveValue = prices[coin.id]?.priceIrt ?? null;
 
   // A range is chartable only with enough points to draw a line (≥2). Newly
   // discovered / thin coins arrive with no price history at all, so the feed
@@ -140,6 +145,7 @@ export function PriceChart({
       ariaLabel={`نمودار قیمت ${coin.name}`}
       toolbar={toggle}
       idleSubhead={<PriceSubhead coin={coin} />}
+      liveValue={liveValue}
     />
   );
 }
