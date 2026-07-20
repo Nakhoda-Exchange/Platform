@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { coinDisplayName } from "@/lib/core/domain/market/coin";
 import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
 import { summarizeIndicators } from "@/lib/core/domain/market/indicator-summary";
 import { pastPerformance } from "@/lib/core/domain/market/past-performance";
@@ -102,7 +103,9 @@ export function CoinDetailScreen({
 
       {/* About + history */}
       <section className="flex flex-col gap-2">
-        <h2 className="text-[16px] font-bold text-ink">درباره‌ی {coin.name}</h2>
+        <h2 className="text-[16px] font-bold text-ink">
+          درباره‌ی {coinDisplayName(coin)}
+        </h2>
         <p className="text-[15px] leading-7 text-muted">{detail.description}</p>
         {detail.history && (
           <p className="text-[15px] leading-7 text-muted">{detail.history}</p>
