@@ -212,7 +212,7 @@ export function TradeScreen({
   return (
     <div className="flex flex-1 flex-col gap-5 px-4 pb-6 pt-4">
       {/* Live market price — centered, green, pulsing (display only). */}
-      <LivePriceChip basePrice={coin.priceIrt} />
+      <LivePriceChip coinId={coin.id} basePrice={coin.priceIrt} />
 
       {/* Balance — no separate max button; tapping the balance fills the
           whole available amount into the entry. */}

@@ -44,12 +44,6 @@ export interface ChartRangeDef {
   showTime?: boolean;
 }
 
-// Live tail: the newest value breathes with the market — a bounded random
-// walk around the real value so it never wanders from the truth.
-const LIVE_TICK_MS = 1_600;
-const LIVE_STEP = 0.003; // per-tick nudge, ±0.3%
-const LIVE_MAX_DRIFT = 0.015; // hard leash, ±1.5% of the real value
-
 /**
  * Event points wear a marker dot — gain green for value in, loss red for
  * value out (the subhead text names the event, never color alone).
@@ -193,7 +187,9 @@ function buildOption(
         lineStyle: { type: "dotted", width: 2, color: tones.brand },
         areaStyle: { color: tones.brandSoft }, // fill under the dotted tail too
         emphasis: { disabled: true },
-        animationDurationUpdate: LIVE_TICK_MS * 0.75,
+        // Smooth transition when a real live update arrives (ticks are now
+        // event-driven from the WS feed, not a fixed interval).
+        animationDurationUpdate: 1_200,
         animationEasingUpdate: "linear",
       },
       {
@@ -227,6 +223,7 @@ export function LiveAreaChart({
   ariaLabel,
   idleSubhead,
   toolbar,
+  liveValue = null,
 }: {
   ranges: ChartRangeDef[];
   formatValue: (value: number) => string;
@@ -235,14 +232,24 @@ export function LiveAreaChart({
   idleSubhead?: ReactNode;
   /** Rendered top-right inside the card (the area⇄candles toggle). */
   toolbar?: ReactNode;
+  /**
+   * The REAL current price/value, fed by a parent subscribed to the live feed
+   * (WebSocket). When set, the dotted tail tracks it; when null, the tail rests
+   * on the last real history point. There is NO simulated movement — the tail
+   * only moves when a real update arrives.
+   */
+  liveValue?: number | null;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
-  const driftRef = useRef(0);
   const liveValueRef = useRef<number | null>(null);
   const [rangeKey, setRangeKey] = useState(ranges[0].key);
   const [peek, setPeek] = useState<number | null>(null);
-  const [liveValue, setLiveValue] = useState<number | null>(null);
+  // Keep the latest live value in a ref so the theme rebuild can read it without
+  // re-running on every tick (synced in an effect, never mutated during render).
+  useEffect(() => {
+    liveValueRef.current = liveValue;
+  }, [liveValue]);
   const themeClass = useSyncExternalStore(
     subscribeToTheme,
     () => document.documentElement.className,
@@ -287,23 +294,8 @@ export function LiveAreaChart({
     );
   }, [points, themeClass]);
 
-  // Live market tick — a leashed random walk around the real newest value.
-  useEffect(() => {
-    const base = points[points.length - 1].value;
-    const id = setInterval(() => {
-      const step = (Math.random() - 0.5) * 2 * LIVE_STEP;
-      driftRef.current = Math.min(
-        LIVE_MAX_DRIFT,
-        Math.max(-LIVE_MAX_DRIFT, driftRef.current + step),
-      );
-      const next = Math.round(base * (1 + driftRef.current));
-      liveValueRef.current = next;
-      setLiveValue(next);
-    }, LIVE_TICK_MS);
-    return () => clearInterval(id);
-  }, [points]);
-
-  // Each tick only moves the dotted tail — the plotted history stays put.
+  // A real live update only moves the dotted tail — the plotted history stays
+  // put. No update ⇒ no movement (the tail rests on the last real point).
   useEffect(() => {
     if (liveValue == null) return;
     chartRef.current?.setOption({
