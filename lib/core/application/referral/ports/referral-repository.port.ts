@@ -6,7 +6,7 @@ export interface ReferralFacts {
   code: string;
   invitedCount: number;
   activeCount: number;
-  earnedIrt: number;
+  earnedIrt: string; // lifetime rewards, Toman (decimal string on the wire)
   invitees: Invitee[];
 }
 

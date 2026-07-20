@@ -6,12 +6,18 @@ export type HoldingCoin = Pick<
   "id" | "name" | "symbol" | "iconUrl" | "change24h"
 >;
 
-/** One position in the portfolio: a coin, the amount held, and its Toman value. */
+/**
+ * One position in the portfolio: a coin, the amount held, and its Toman value.
+ * The money/quantity fields are decimal STRINGS on the wire (exact
+ * `numeric(38,18)` precision — a JS number would drop digits past 2^53 and
+ * sub-unit). Parse with `parsePrice` before any arithmetic; format with the
+ * money helpers, which already accept the string form.
+ */
 export interface Holding {
   coin: HoldingCoin;
-  amount: number; // units of the coin held
-  valueIrt: number; // amount × price, in Toman
-  costIrt: number; // what was paid for this position, in Toman (cost basis)
+  amount: string; // units of the coin held (decimal string)
+  valueIrt: string; // amount × price, in Toman (decimal string)
+  costIrt: string; // what was paid for this position, in Toman (decimal string)
 }
 
 /** The user's portfolio overview. */

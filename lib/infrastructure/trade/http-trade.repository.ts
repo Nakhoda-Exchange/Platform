@@ -9,10 +9,18 @@ import type { PlacedOrder, TradeSide } from "@/lib/core/domain/trade/order";
 import { fail, ok, type Result } from "@/lib/core/domain/shared/result";
 import type { HttpClient } from "../http/http-client";
 
-/** Portfolio response shape used to derive tradable balances (doc/portfolio/api.md). */
+/**
+ * Portfolio response shape used to derive tradable balances (doc/portfolio/api.md).
+ * Money/quantity fields are decimal STRINGS on the wire (numeric(38,18)); they
+ * are parsed into the numeric TradeBalances below (a legacy number is tolerated
+ * too — parsePrice accepts both).
+ */
 interface PortfolioDto {
-  availableIrt: number;
-  holdings: Array<{ coin: { id: string; symbol: string }; amount: number }>;
+  availableIrt: string | number;
+  holdings: Array<{
+    coin: { id: string; symbol: string };
+    amount: string | number;
+  }>;
 }
 
 /**
@@ -91,10 +99,12 @@ export class HttpTradeRepository implements TradeRepository {
     // coin by an opaque id (e.g. "dx_<contract>" for discovered tokens). Symbol
     // is the only identifier stable across both contexts, so holdings are keyed
     // and looked up by symbol — otherwise a held discovered token reads as 0.
+    // Wire money/quantity are decimal strings; parse to numbers so the trade use
+    // case (balance checks, coin-amount math) works on numbers.
     const coinAmounts: Record<string, number> = {};
     for (const h of holdings)
-      coinAmounts[h.coin.symbol.toUpperCase()] = h.amount;
-    return ok({ availableIrt, coinAmounts });
+      coinAmounts[h.coin.symbol.toUpperCase()] = parsePrice(h.amount) ?? 0;
+    return ok({ availableIrt: parsePrice(availableIrt) ?? 0, coinAmounts });
   }
 
   async getLimits(): Promise<Result<TradeLimitsMap>> {

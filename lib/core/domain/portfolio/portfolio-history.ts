@@ -10,7 +10,7 @@ export const PORTFOLIO_HISTORY_RANGES: readonly PortfolioHistoryRange[] = [
 /** A cash movement that visibly steps the account value at one point. */
 export interface PortfolioValueEvent {
   type: "deposit" | "withdraw";
-  amountIrt: number; // Toman, always positive
+  amountIrt: string; // Toman, always positive (decimal string on the wire)
 }
 
 /**
@@ -19,7 +19,7 @@ export interface PortfolioValueEvent {
  */
 export interface PortfolioValuePoint {
   at: number; // epoch ms
-  valueIrt: number; // total account value (cash + holdings), Toman
+  valueIrt: string; // total account value (cash + holdings), Toman (decimal string)
   event?: PortfolioValueEvent; // set when a deposit/withdraw landed here
 }
 

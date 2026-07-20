@@ -1,5 +1,6 @@
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import { respond } from "@/lib/utils/api-response";
 
 /**
@@ -23,7 +24,7 @@ export async function GET(): Promise<Response> {
   // stable cross-context key — matching on id misses every token holding.
   const heldSymbols = portfolioResult.ok
     ? portfolioResult.data.holdings
-        .filter((h) => h.amount > 0)
+        .filter((h) => (parsePrice(h.amount) ?? 0) > 0)
         .map((h) => h.coin.symbol.toUpperCase())
     : [];
   const availableIrt = portfolioResult.ok

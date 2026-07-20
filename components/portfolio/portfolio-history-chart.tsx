@@ -11,6 +11,7 @@ import {
   type PortfolioHistoryRange,
   type PortfolioValuePoint,
 } from "@/lib/core/domain/portfolio/portfolio-history";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import { formatIrtShort } from "@/lib/utils/money";
 
 const RANGE_LABELS: Record<PortfolioHistoryRange, string> = {
@@ -22,7 +23,8 @@ const RANGE_LABELS: Record<PortfolioHistoryRange, string> = {
 function toChartPoint(p: PortfolioValuePoint): ChartPoint {
   return {
     at: p.at,
-    value: p.valueIrt,
+    // valueIrt is a wire decimal string; the chart plots a number.
+    value: parsePrice(p.valueIrt) ?? 0,
     event: p.event
       ? {
           label: `${p.event.type === "deposit" ? "واریز" : "برداشت"} ${formatIrtShort(p.event.amountIrt)}`,

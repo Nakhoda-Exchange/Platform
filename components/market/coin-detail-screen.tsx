@@ -6,6 +6,7 @@ import { PriceChart } from "./price-chart";
 import { CoinInfoCard } from "./coin-info-card";
 import { IndicatorSummaryCard } from "./indicator-summary-card";
 import { buttonClasses } from "@/components/ui/button";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import {
   formatChangePercent,
   formatCoinAmount,
@@ -13,8 +14,11 @@ import {
 } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 
-/** What the viewer holds of this coin, when they hold any. */
-export type CoinHolding = { amount: number; valueIrt: number; costIrt: number };
+/**
+ * What the viewer holds of this coin, when they hold any. Money/quantity fields
+ * are decimal STRINGS on the wire (numeric(38,18)); parse before arithmetic.
+ */
+export type CoinHolding = { amount: string; valueIrt: string; costIrt: string };
 
 /**
  * The viewer's position, summarized above the chart: the Toman value of the
@@ -27,9 +31,12 @@ function HoldingSummary({
   holding: CoinHolding;
   symbol: string;
 }) {
-  const profit = holding.valueIrt - holding.costIrt;
+  // Money fields are wire decimal strings; parse before the P&L arithmetic.
+  const valueIrt = parsePrice(holding.valueIrt) ?? 0;
+  const costIrt = parsePrice(holding.costIrt) ?? 0;
+  const profit = valueIrt - costIrt;
   const up = profit >= 0;
-  const percent = holding.costIrt > 0 ? (profit / holding.costIrt) * 100 : 0;
+  const percent = costIrt > 0 ? (profit / costIrt) * 100 : 0;
 
   // Label on the left, figure on the right — so the figure leads in DOM order
   // (RTL puts the first flex child at the right edge).
