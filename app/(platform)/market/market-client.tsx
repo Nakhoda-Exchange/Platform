@@ -9,7 +9,7 @@ import MarketLoading from "./loading";
 
 interface MarketOverviewVM {
   overview: MarketOverview;
-  heldIds: string[];
+  heldSymbols: string[];
   availableIrt: number;
 }
 
@@ -33,7 +33,7 @@ export function MarketClient() {
   return (
     <MarketScreen
       overview={data.overview}
-      heldIds={data.heldIds}
+      heldSymbols={data.heldSymbols}
       availableIrt={data.availableIrt}
       initialQuery={query}
     />

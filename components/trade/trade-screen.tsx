@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useActionState, useEffect, useState, type CSSProperties } from "react";
 import {
   FEE_RATE,
-  MIN_ORDER_IRT,
+  maxOrderIrt,
+  minOrderIrt,
   type TradeContext,
   type TradeSide,
 } from "@/lib/core/domain/trade/order";
@@ -53,7 +54,7 @@ export function TradeScreen({
   context: TradeContext;
   initialSide: TradeSide;
 }) {
-  const { coin, availableIrt, availableCoin } = context;
+  const { coin, availableIrt, availableCoin, limits } = context;
   // No holdings of this coin → selling is impossible, so the sell button never
   // appears and the side is pinned to buy (even if arrived at with ?side=sell).
   const canSell = availableCoin > 0;
@@ -183,20 +184,30 @@ export function TradeScreen({
     }
   };
 
+  // Per-token bounds (GET /v1/trade/limits) for the active side; the global
+  // floor is the fallback min, and the API max (when set) is a hard cap on top
+  // of the balance cap.
+  const minIrt = minOrderIrt(limits, side);
+  const apiMaxIrt = maxOrderIrt(limits, side);
   // Buying beyond the Toman balance isn't a dead end — it's a nudge to top up
   // and come back with more to spend, so the CTA turns into a deposit link.
   const needsDeposit = side === "buy" && amountIrt > maxIrt;
   const error =
     side === "sell" && availableCoin <= 0
       ? "از این رمزارز موجودی ندارید."
-      : amountIrt > 0 && amountIrt < MIN_ORDER_IRT
-        ? "کمینه هر سفارش ۵۰۰٬۰۰۰ تومان است."
-        : needsDeposit
-          ? "موجودی کافی نیست. برای خرید، حساب خود را شارژ کنید."
-          : amountIrt > maxIrt
-            ? "موجودی شما کافی نیست."
-            : null;
-  const valid = amountIrt >= MIN_ORDER_IRT && amountIrt <= maxIrt;
+      : amountIrt > 0 && amountIrt < minIrt
+        ? `کمینه هر سفارش ${formatIrt(minIrt)} است.`
+        : apiMaxIrt !== null && amountIrt > apiMaxIrt
+          ? `بیشینه هر سفارش ${formatIrt(apiMaxIrt)} است.`
+          : needsDeposit
+            ? "موجودی کافی نیست. برای خرید، حساب خود را شارژ کنید."
+            : amountIrt > maxIrt
+              ? "موجودی شما کافی نیست."
+              : null;
+  const valid =
+    amountIrt >= minIrt &&
+    amountIrt <= maxIrt &&
+    (apiMaxIrt === null || amountIrt <= apiMaxIrt);
 
   return (
     <div className="flex flex-1 flex-col gap-5 px-4 pb-6 pt-4">

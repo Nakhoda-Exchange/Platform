@@ -22,14 +22,14 @@ const FILTERS: { key: FilterKey; label: string }[] = [
  */
 export function AllAssets({
   coins,
-  heldIds,
+  heldSymbols,
   title = "همه ارزها",
   showFilters = true,
   initialFilter,
   urlSync = false,
 }: {
   coins: Coin[];
-  heldIds: string[];
+  heldSymbols: string[];
   title?: string;
   showFilters?: boolean;
   initialFilter?: string;
@@ -86,7 +86,10 @@ export function AllAssets({
         <ul className="-mx-4 flex flex-col divide-y divide-line">
           {sorted.map((coin) => (
             <li key={coin.id}>
-              <CoinRow coin={coin} canSell={heldIds.includes(coin.id)} />
+              <CoinRow
+                coin={coin}
+                canSell={heldSymbols.includes(coin.symbol.toUpperCase())}
+              />
             </li>
           ))}
         </ul>

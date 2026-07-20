@@ -1,8 +1,23 @@
 import type { MarketRepository } from "@/lib/core/application/market/ports/market-repository.port";
 import type { Coin } from "@/lib/core/domain/market/coin";
-import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
+import type {
+  Candle,
+  ChartRange,
+  CoinDetail,
+  PricePoint,
+} from "@/lib/core/domain/market/coin-detail";
 import { ok, type Result } from "@/lib/core/domain/shared/result";
 import type { HttpClient } from "../http/http-client";
+
+/**
+ * The coin-detail as it comes off the wire (CoinDetailSchema): `series`/`candles`
+ * are FLAT arrays for the default 24h range only — not the range-keyed records
+ * the PDP chart consumes. The adapter reshapes them below.
+ */
+interface CoinDetailDto extends Omit<CoinDetail, "series" | "candles"> {
+  series?: PricePoint[];
+  candles?: Candle[];
+}
 
 /** HTTP adapter for market data. Contract: doc/market/api.md. */
 export class HttpMarketRepository implements MarketRepository {
@@ -13,7 +28,7 @@ export class HttpMarketRepository implements MarketRepository {
   }
 
   async getCoinDetail(idOrSymbol: string): Promise<Result<CoinDetail | null>> {
-    const result = await this.http.get<CoinDetail>(
+    const result = await this.http.get<CoinDetailDto>(
       `/market/coins/${encodeURIComponent(idOrSymbol.toLowerCase())}`,
     );
     // The port maps "unknown coin" to null (the page shows not-found). The
@@ -26,6 +41,22 @@ export class HttpMarketRepository implements MarketRepository {
     ) {
       return ok(null);
     }
-    return result;
+    if (!result.ok) return result;
+
+    // The backend serves flat 24h-only `series`/`candles`; the PDP chart reads
+    // them per range (`series?.["24h"]`). Key the flat arrays under "24h" so the
+    // 24h chart renders — indexing a flat array by "24h" would yield undefined,
+    // collapsing every range to the empty state. Other ranges stay absent until
+    // the timeframe endpoint (GET /v1/market/coins/{id}/chart) is wired.
+    const { series, candles, ...rest } = result.data;
+    return ok({
+      ...rest,
+      ...(series && series.length > 0
+        ? { series: { "24h": series } as Record<ChartRange, PricePoint[]> }
+        : {}),
+      ...(candles && candles.length > 0
+        ? { candles: { "24h": candles } as Record<ChartRange, Candle[]> }
+        : {}),
+    });
   }
 }

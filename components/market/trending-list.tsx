@@ -6,10 +6,10 @@ import { FlameIcon } from "@/components/ui/icons";
 /** «پرطرفدارها» — the most popular coins, with market cap as the subtitle. */
 export function TrendingList({
   coins,
-  heldIds,
+  heldSymbols,
 }: {
   coins: Coin[];
-  heldIds: string[];
+  heldSymbols: string[];
 }) {
   if (coins.length === 0) return null;
   return (
@@ -18,7 +18,10 @@ export function TrendingList({
       <ul className="-mx-4 flex flex-col divide-y divide-line">
         {coins.map((coin) => (
           <li key={coin.id}>
-            <CoinRow coin={coin} canSell={heldIds.includes(coin.id)} />
+            <CoinRow
+              coin={coin}
+              canSell={heldSymbols.includes(coin.symbol.toUpperCase())}
+            />
           </li>
         ))}
       </ul>

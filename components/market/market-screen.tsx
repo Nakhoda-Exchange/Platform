@@ -21,12 +21,12 @@ import { AllAssets } from "./all-assets";
  */
 export function MarketScreen({
   overview,
-  heldIds,
+  heldSymbols,
   availableIrt = 0,
   initialQuery = "",
 }: {
   overview: MarketOverview;
-  heldIds: string[];
+  heldSymbols: string[];
   availableIrt?: number;
   initialQuery?: string;
 }) {
@@ -139,7 +139,7 @@ export function MarketScreen({
         ) : (
           <AllAssets
             coins={results}
-            heldIds={heldIds}
+            heldSymbols={heldSymbols}
             title="نتایج جستجو"
             showFilters={false}
           />
@@ -147,8 +147,8 @@ export function MarketScreen({
       ) : (
         <>
           <TopGainers coins={overview.topGainers} />
-          <WatchlistSection coins={overview.all} heldIds={heldIds} />
-          <TrendingList coins={overview.trending} heldIds={heldIds} />
+          <WatchlistSection coins={overview.all} heldSymbols={heldSymbols} />
+          <TrendingList coins={overview.trending} heldSymbols={heldSymbols} />
         </>
       )}
     </div>
