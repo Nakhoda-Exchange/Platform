@@ -104,6 +104,20 @@ export function formatMarketCap(hemat: number): string {
 }
 
 /**
+ * همت figure that stays honest for SMALL values. `formatMarketCap` rounds to a
+ * whole همت — fine for a large-cap, but a discovered token's cap/FDV/volume can
+ * be a fraction of one همت, which would collapse to a misleading «۰ همت». This
+ * keeps magnitude-aware decimals below 10 (≥10 → grouped integer) so a tiny cap
+ * still shows its real figure. Same RTL isolate as the money formatters.
+ */
+export function formatHemat(hemat: number): string {
+  if (!Number.isFinite(hemat)) hemat = 0;
+  const abs = Math.abs(hemat);
+  const decimals = abs >= 10 ? 0 : smartDecimals(abs, 1);
+  return `⁧${faDecimal(hemat, decimals)} همت⁩`;
+}
+
+/**
  * Coin amount → Persian digits with magnitude-aware precision: a value ≥ 1 keeps
  * at most 2 decimals, while smaller amounts get more (~4 significant figures, up
  * to SMART_DECIMALS_CAP) so memecoin balances like 0.00001234 stay readable.

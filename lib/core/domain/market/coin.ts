@@ -16,6 +16,15 @@ export interface Coin {
   // (token). Optional because the market feed may omit it for coins from a
   // thinner source; the PDP renders the kind badge only when it is set.
   kind?: "coin" | "token";
+  // The chain the token lives on (e.g. "solana", "ethereum"). Null/absent for
+  // native L1 coins; the PDP shows a chain badge only when it is set.
+  chainId?: string | null;
+  // On-chain contract address (tokens only). Null/absent for native coins; the
+  // PDP shows the copyable contract row only when it is set.
+  contractAddress?: string | null;
+  // Fully-diluted valuation in همت (like `marketCap`). Null/absent when unknown
+  // (native coins, sparse rows); the PDP hides the FDV row rather than show 0.
+  fdv?: number | null;
 }
 
 /**

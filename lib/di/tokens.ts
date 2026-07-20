@@ -9,6 +9,7 @@ import type { MarketRepository } from "@/lib/core/application/market/ports/marke
 import type { ListCoinsUseCase } from "@/lib/core/application/market/use-cases/list-coins.use-case";
 import type { GetMarketOverviewUseCase } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
 import type { GetCoinDetailUseCase } from "@/lib/core/application/market/use-cases/get-coin-detail.use-case";
+import type { GetCoinChartUseCase } from "@/lib/core/application/market/use-cases/get-coin-chart.use-case";
 import type { PortfolioRepository } from "@/lib/core/application/portfolio/ports/portfolio-repository.port";
 import type { GetPortfolioUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio.use-case";
 import type { GetPortfolioHistoryUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio-history.use-case";
@@ -63,6 +64,7 @@ export const TOKENS = {
     "GetMarketOverviewUseCase",
   ),
   GetCoinDetailUseCase: token<GetCoinDetailUseCase>("GetCoinDetailUseCase"),
+  GetCoinChartUseCase: token<GetCoinChartUseCase>("GetCoinChartUseCase"),
   GetPortfolioUseCase: token<GetPortfolioUseCase>("GetPortfolioUseCase"),
   GetPortfolioHistoryUseCase: token<GetPortfolioHistoryUseCase>(
     "GetPortfolioHistoryUseCase",

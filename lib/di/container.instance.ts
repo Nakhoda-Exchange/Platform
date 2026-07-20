@@ -4,6 +4,7 @@ import { InquireIdentityUseCase } from "@/lib/core/application/kyc/use-cases/inq
 import { ListCoinsUseCase } from "@/lib/core/application/market/use-cases/list-coins.use-case";
 import { GetMarketOverviewUseCase } from "@/lib/core/application/market/use-cases/get-market-overview.use-case";
 import { GetCoinDetailUseCase } from "@/lib/core/application/market/use-cases/get-coin-detail.use-case";
+import { GetCoinChartUseCase } from "@/lib/core/application/market/use-cases/get-coin-chart.use-case";
 import { GetPortfolioUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio.use-case";
 import { GetPortfolioHistoryUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio-history.use-case";
 import { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/get-trade-context.use-case";
@@ -143,6 +144,10 @@ function registerUseCases(container: Container): void {
   container.register(
     TOKENS.GetCoinDetailUseCase,
     (c) => new GetCoinDetailUseCase(c.resolve(TOKENS.MarketRepository)),
+  );
+  container.register(
+    TOKENS.GetCoinChartUseCase,
+    (c) => new GetCoinChartUseCase(c.resolve(TOKENS.MarketRepository)),
   );
   container.register(
     TOKENS.GetPortfolioUseCase,

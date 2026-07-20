@@ -4,6 +4,7 @@ import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
 import { summarizeIndicators } from "@/lib/core/domain/market/indicator-summary";
 import { pastPerformance } from "@/lib/core/domain/market/past-performance";
 import { PriceChart } from "./price-chart";
+import { CoinInfoCard } from "./coin-info-card";
 import { IndicatorSummaryCard } from "./indicator-summary-card";
 import { PastPerformanceCard } from "./past-performance-card";
 import { buttonClasses } from "@/components/ui/button";
@@ -95,22 +96,31 @@ export function CoinDetailScreen({
 
       <PriceChart coin={coin} series={detail.series} candles={detail.candles} />
 
+      <CoinInfoCard detail={detail} />
+
       <IndicatorSummaryCard
         summary={summarizeIndicators(coin.change24h, detail.series)}
       />
 
       <PastPerformanceCard performance={pastPerformance(detail.series)} />
 
-      {/* About + history */}
-      <section className="flex flex-col gap-2">
-        <h2 className="text-[16px] font-bold text-ink">
-          درباره‌ی {coinDisplayName(coin)}
-        </h2>
-        <p className="text-[15px] leading-7 text-muted">{detail.description}</p>
-        {detail.history && (
-          <p className="text-[15px] leading-7 text-muted">{detail.history}</p>
-        )}
-      </section>
+      {/* About + history — rendered only when there's real editorial copy, so a
+          brand-new token doesn't show an empty «درباره‌ی …» heading. */}
+      {(detail.description.trim() || detail.history?.trim()) && (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-[16px] font-bold text-ink">
+            درباره‌ی {coinDisplayName(coin)}
+          </h2>
+          {detail.description.trim() && (
+            <p className="text-[15px] leading-7 text-muted">
+              {detail.description}
+            </p>
+          )}
+          {detail.history?.trim() && (
+            <p className="text-[15px] leading-7 text-muted">{detail.history}</p>
+          )}
+        </section>
+      )}
 
       {/* Sticky action bar → Trade screen. «فروش» shows only when the viewer
           holds this coin; otherwise it's a buy-only bar. Full bleed with its

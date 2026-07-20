@@ -24,6 +24,7 @@ const BTC: Coin = {
 const marketStub: MarketRepository = {
   listCoins: async () => ok([BTC]),
   getCoinDetail: async () => ok(null),
+  getCoinChart: async () => ok(null),
 };
 
 function tradeStub(balances: TradeBalances) {
