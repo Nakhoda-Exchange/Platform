@@ -5,6 +5,7 @@ import {
   type PlacedOrder,
   type TradeSide,
 } from "@/lib/core/domain/trade/order";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import { fail, type Result } from "@/lib/core/domain/shared/result";
 import type { MarketRepository } from "@/lib/core/application/market/ports/market-repository.port";
 import type { TradeRepository } from "../ports/trade-repository.port";
@@ -69,9 +70,19 @@ export class PlaceOrderUseCase {
     // The 0.35% fee: a buyer's fee comes out of the entered amount (they
     // receive coins for the remainder); a seller's fee comes out of the
     // proceeds. Either way the fee accrues to the platform (referral pool).
+    // The coin price is a nullable decimal string on the wire. A null price is
+    // UNAVAILABLE — the order can't be priced, so refuse it honestly (mirrors
+    // the backend's 503 PRICE_UNAVAILABLE) rather than dividing by 0/NaN.
+    const unitPriceIrt = parsePrice(coin.priceIrt);
+    if (unitPriceIrt === null) {
+      return fail(
+        "PRICE_UNAVAILABLE",
+        "قیمت لحظه‌ای در دسترس نیست. لطفاً کمی بعد دوباره تلاش کنید.",
+      );
+    }
+
     const feeIrt = Math.round(amountIrt * FEE_RATE);
-    let amountCoin =
-      (amountIrt - (side === "buy" ? feeIrt : 0)) / coin.priceIrt;
+    let amountCoin = (amountIrt - (side === "buy" ? feeIrt : 0)) / unitPriceIrt;
 
     if (side === "buy") {
       if (amountIrt > availableIrt) {

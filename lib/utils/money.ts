@@ -1,5 +1,13 @@
 import type { CurrencyUnits } from "@/lib/core/domain/config/currency-units";
+import { parsePrice, type PriceValue } from "@/lib/core/domain/market/price";
 import { toPersianDigits } from "./digits";
+
+/**
+ * The placeholder shown wherever a price is UNAVAILABLE (`null`/unparseable).
+ * A neutral em-dash — never a fabricated 0 and never a stale number. Screens
+ * with room prefer the fuller «قیمت در دسترس نیست»; inline figures use this.
+ */
+export const PRICE_UNAVAILABLE = "—";
 
 // Unit labels are SERVER CONFIG (ConfigRepository) — injected once by the
 // root layout (server) and CurrencyUnitsHydrator (client) before anything
@@ -38,7 +46,9 @@ const SMART_DECIMALS_CAP = 12;
  * low-priced asset or memecoin amount like 0.0000000123 stays readable with real
  * precision instead of collapsing to 0.
  */
-function smartDecimals(abs: number, largeCap: number): number {
+export function smartDecimals(value: PriceValue, largeCap: number): number {
+  const n = parsePrice(value);
+  const abs = n === null ? 0 : Math.abs(n);
   if (abs === 0 || abs >= 1) return largeCap;
   return Math.min(SMART_DECIMALS_CAP, Math.floor(-Math.log10(abs)) + 4);
 }
@@ -67,8 +77,14 @@ function faNumber(toman: number): string {
   return faDecimal(toman, smartDecimals(Math.abs(toman), 0));
 }
 
-/** Toman amount → «تومان ۱۲٬۴۵۰٬۰۰۰» (unit left of the number; label from server config). */
-export function formatIrt(toman: number): string {
+/**
+ * Toman amount → «تومان ۱۲٬۴۵۰٬۰۰۰» (unit left of the number; label from server
+ * config). Accepts the wire form (decimal string) or a number; an UNAVAILABLE
+ * price (`null`/unparseable) renders {@link PRICE_UNAVAILABLE} «—», never 0.
+ */
+export function formatIrt(value: PriceValue): string {
+  const toman = parsePrice(value);
+  if (toman === null) return PRICE_UNAVAILABLE;
   return unitFirst(unit("irt"), faNumber(toman));
 }
 
@@ -79,18 +95,29 @@ export function formatIrt(toman: number): string {
  */
 export const formatIrtShort = formatIrt;
 
-/** USD amount → «دلار ۴٬۱۲۰» (unit left of the number; label from server config). */
-export function formatUsd(usd: number): string {
+/**
+ * USD amount → «دلار ۴٬۱۲۰» (unit left of the number; label from server config).
+ * Accepts the wire form (decimal string) or a number; an UNAVAILABLE price
+ * (`null`/unparseable) renders {@link PRICE_UNAVAILABLE} «—», never 0.
+ */
+export function formatUsd(value: PriceValue): string {
+  const usd = parsePrice(value);
+  if (usd === null) return PRICE_UNAVAILABLE;
   const number = toPersianDigits(usdFormat.format(usd))
     .replace(/,/g, "٬")
     .replace(".", "٫");
   return unitFirst(unit("usd"), number);
 }
 
-/** Change → Persian percent, unsigned magnitude (caller shows +/− and color): 3.2 → «۳٫۲٪». */
-export function formatChangePercent(change: number): string {
-  if (!Number.isFinite(change)) change = 0;
-  return `${toPersianDigits(Math.abs(change).toFixed(1)).replace(".", "٫")}٪`;
+/**
+ * Change → Persian percent, unsigned magnitude (caller shows +/− and color):
+ * 3.2 → «۳٫۲٪». Accepts a number or its string form; an unknown value
+ * (`null`/unparseable) renders «—» rather than a misleading «۰٪».
+ */
+export function formatChangePercent(change: PriceValue): string {
+  const n = parsePrice(change);
+  if (n === null) return PRICE_UNAVAILABLE;
+  return `${toPersianDigits(Math.abs(n).toFixed(1)).replace(".", "٫")}٪`;
 }
 
 /**
@@ -123,7 +150,8 @@ export function formatHemat(hemat: number): string {
  * to SMART_DECIMALS_CAP) so memecoin balances like 0.00001234 stay readable.
  * Grouped, trailing zeros dropped — 0.0015 → «۰٫۰۰۱۵», 5 → «۵», 1234.567 → «۱٬۲۳۴٫۵۷».
  */
-export function formatCoinAmount(amount: number): string {
-  if (!Number.isFinite(amount)) amount = 0;
-  return faDecimal(amount, smartDecimals(Math.abs(amount), 2));
+export function formatCoinAmount(amount: PriceValue): string {
+  const n = parsePrice(amount);
+  if (n === null) return PRICE_UNAVAILABLE;
+  return faDecimal(n, smartDecimals(Math.abs(n), 2));
 }

@@ -14,8 +14,9 @@ const BTC: Coin = {
   name: "بیت‌کوین",
   symbol: "BTC",
   iconUrl: "",
-  priceIrt: 4_000_000_000,
-  priceUsd: 65_000,
+  // Prices are decimal strings on the wire (nullable). 4B Toman, 65k USD.
+  priceIrt: "4000000000",
+  priceUsd: "65000",
   change24h: 1,
   marketCap: 1,
   isNew: false,
@@ -54,7 +55,7 @@ function tradeStub(balances: TradeBalances) {
         amountCoin,
         totalIrt,
         feeIrt,
-        priceIrt: coin.priceIrt,
+        priceIrt: Number(coin.priceIrt),
       });
     },
   };
@@ -202,6 +203,24 @@ describe("PlaceOrderUseCase", () => {
     if (!result.ok) expect(result.error.code).toBe("PRICE_UNAVAILABLE");
   });
 
+  test("refuses to price an order when the coin price is unavailable (null)", async () => {
+    // A null wire price means UNAVAILABLE — the order can't be priced, so the
+    // use case fails with PRICE_UNAVAILABLE instead of dividing by 0/NaN.
+    const noPriceMarket: MarketRepository = {
+      ...marketStub,
+      listCoins: async () => ok([{ ...BTC, priceIrt: null }]),
+    };
+    const { repo, placed } = tradeStub({ availableIrt: 1e10, coinAmounts: {} });
+    const result = await new PlaceOrderUseCase(noPriceMarket, repo).execute(
+      "btc",
+      "buy",
+      2_000_000_000,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("PRICE_UNAVAILABLE");
+    expect(placed.length).toBe(0);
+  });
+
   test("clamps a «sell all» rounding overshoot to a full sell", async () => {
     // «همه» enters floor(held × price) Toman; the derived amount can exceed
     // the held units by a rounding hair and must clamp, not fail.
@@ -210,7 +229,7 @@ describe("PlaceOrderUseCase", () => {
       availableIrt: 0,
       coinAmounts: { BTC: held },
     });
-    const maxIrt = Math.floor(held * BTC.priceIrt) + 1_000; // overshoot ~0.02%
+    const maxIrt = Math.floor(held * Number(BTC.priceIrt)) + 1_000; // overshoot ~0.02%
     const result = await new PlaceOrderUseCase(marketStub, repo).execute(
       "btc",
       "sell",
