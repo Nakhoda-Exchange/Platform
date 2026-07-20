@@ -25,15 +25,22 @@ const unitFirst = (label: string, number: string): string =>
 const irtFormat = new Intl.NumberFormat("fa-IR");
 const usdFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 
+// The lower an asset's price, the more decimals it needs to stay non-zero and
+// keep ~4 significant figures. Capped so a truly tiny price (deep-sub-Toman
+// memecoin) still renders its figures instead of collapsing to «۰», without
+// running past JS float precision.
+const SMART_DECIMALS_CAP = 12;
+
 /**
  * Magnitude-aware fractional-digit count. `largeCap` is the max decimals once
  * |value| ≥ 1 (0 for IRT — a Toman ≥ 1 needs no fraction; 2 for coin amounts).
- * Below 1 we keep ~4 significant figures, capped at 8 — so a memecoin amount or
- * sub-Toman price like 0.00001234 stays readable instead of collapsing to 0.
+ * Below 1 we keep ~4 significant figures, capped at `SMART_DECIMALS_CAP` — so a
+ * low-priced asset or memecoin amount like 0.0000000123 stays readable with real
+ * precision instead of collapsing to 0.
  */
 function smartDecimals(abs: number, largeCap: number): number {
   if (abs === 0 || abs >= 1) return largeCap;
-  return Math.min(8, Math.floor(-Math.log10(abs)) + 4);
+  return Math.min(SMART_DECIMALS_CAP, Math.floor(-Math.log10(abs)) + 4);
 }
 
 // fa-IR formatters are ~µs to build but we format a lot; cache one per decimals.
@@ -98,9 +105,9 @@ export function formatMarketCap(hemat: number): string {
 
 /**
  * Coin amount → Persian digits with magnitude-aware precision: a value ≥ 1 keeps
- * at most 2 decimals, while smaller amounts get up to 8 (~4 significant figures)
- * so memecoin balances like 0.00001234 stay readable. Grouped, trailing zeros
- * dropped — 0.0015 → «۰٫۰۰۱۵», 5 → «۵», 1234.567 → «۱٬۲۳۴٫۵۷».
+ * at most 2 decimals, while smaller amounts get more (~4 significant figures, up
+ * to SMART_DECIMALS_CAP) so memecoin balances like 0.00001234 stay readable.
+ * Grouped, trailing zeros dropped — 0.0015 → «۰٫۰۰۱۵», 5 → «۵», 1234.567 → «۱٬۲۳۴٫۵۷».
  */
 export function formatCoinAmount(amount: number): string {
   if (!Number.isFinite(amount)) amount = 0;
