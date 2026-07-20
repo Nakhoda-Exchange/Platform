@@ -149,6 +149,9 @@ export function MarketScreen({
           <TopGainers coins={overview.topGainers} />
           <WatchlistSection coins={overview.all} heldSymbols={heldSymbols} />
           <TrendingList coins={overview.trending} heldSymbols={heldSymbols} />
+          {/* Full browsable list of every listed coin at the bottom, with its
+              own all/gainers/losers filters (curated sections above stay). */}
+          <AllAssets coins={overview.all} heldSymbols={heldSymbols} />
         </>
       )}
     </div>
