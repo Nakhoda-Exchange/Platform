@@ -261,3 +261,41 @@ input[type="range"].range-brand:focus-visible::-moz-range-thumb {
     animation: none;
   }
 }
+
+/* Live price flash — a market row's price briefly tints when a real WS tick
+ * changes it (gain up / loss down), then settles back to its resting look (the
+ * `to` keyframe equals the element's base styles, so no fill-mode is needed).
+ * Re-triggered by remounting the element with a changing React key. Uses the
+ * theme-aware gain/loss tokens, so it flips correctly in dark mode. */
+@keyframes price-flash-gain {
+  from {
+    background-color: var(--color-gain-soft);
+    color: var(--color-gain);
+  }
+  to {
+    background-color: transparent;
+    color: var(--color-ink);
+  }
+}
+@keyframes price-flash-loss {
+  from {
+    background-color: var(--color-loss-soft);
+    color: var(--color-loss);
+  }
+  to {
+    background-color: transparent;
+    color: var(--color-ink);
+  }
+}
+.animate-flash-gain {
+  animation: price-flash-gain 800ms ease-out;
+}
+.animate-flash-loss {
+  animation: price-flash-loss 800ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-flash-gain,
+  .animate-flash-loss {
+    animation: none;
+  }
+}

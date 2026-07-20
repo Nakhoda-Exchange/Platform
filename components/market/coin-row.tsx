@@ -8,6 +8,7 @@ import { CoinIcon } from "./coin-icon";
 import { ChevronRightIcon, CoinsIcon, WalletIcon } from "@/components/ui/icons";
 import { formatChangePercent, formatIrtShort } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
+import { useLivePrice, usePriceFlash } from "@/lib/realtime/use-realtime";
 
 // Swipe-action geometry, modelled on Apple's row swipe actions. The row tracks
 // the finger with rubber-band resistance past MAX_PULL; releasing past
@@ -47,7 +48,17 @@ function resist(dx: number): number {
 export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
   const router = useRouter();
   const symbol = coin.symbol.toLowerCase();
-  const up = coin.change24h >= 0;
+
+  // Overlay the REAL live price when the WS has ticked this coin (the backend
+  // pushes a tick only when the price actually changed), otherwise fall back to
+  // the server price the page loaded with. A tick's arrival is itself the
+  // "changed" signal, so `usePriceFlash` flashes the price cell on each new
+  // value — green up, red down — and stays put until the next real change.
+  const live = useLivePrice(coin.id);
+  const priceIrt = live ? live.priceIrt : coin.priceIrt;
+  const change24h = live ? live.change24h : coin.change24h;
+  const up = change24h >= 0;
+  const flash = usePriceFlash(priceIrt);
 
   const start = useRef<{ x: number; y: number } | null>(null);
   const dragged = useRef(false);
@@ -197,20 +208,29 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
           {/* Center: 24h change */}
           <span
             dir="ltr"
-            aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(coin.change24h)} در ۲۴ ساعت`}
+            aria-label={`${up ? "افزایش" : "کاهش"} ${formatChangePercent(change24h)} در ۲۴ ساعت`}
             className={cn(
               "justify-self-center text-[13px] font-bold",
               up ? "text-gain" : "text-loss",
             )}
           >
-            {formatChangePercent(coin.change24h)}
+            {formatChangePercent(change24h)}
           </span>
 
           {/* Left (RTL end): Toman price. The 24h change sits centered (above),
-              so price and percent read as the two data points — no USD. */}
+              so price and percent read as the two data points — no USD. The
+              price cell flashes on a live change; the negative margin cancels
+              the tint's padding so the number's edge never shifts. */}
           <div className="flex flex-col items-end justify-self-end">
-            <span className="text-[14px] font-bold text-ink">
-              {formatIrtShort(coin.priceIrt)}
+            <span
+              key={flash?.id}
+              className={cn(
+                "-mx-1.5 rounded-md px-1.5 text-[14px] font-bold text-ink",
+                flash?.dir === "up" && "animate-flash-gain",
+                flash?.dir === "down" && "animate-flash-loss",
+              )}
+            >
+              {formatIrtShort(priceIrt)}
             </span>
           </div>
         </Link>
