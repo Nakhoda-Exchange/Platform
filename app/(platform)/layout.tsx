@@ -7,11 +7,12 @@ import { ToastProvider } from "@/components/ui/toast";
 import { LiveTradeToaster } from "@/components/realtime/live-trade-toaster";
 
 // The platform is the app, not the marketing site: it's per-user and data-
-// driven, so nothing under this group should be prerendered at build (that
-// would bake mock/stale data into static HTML). Forcing dynamic makes every
-// platform route render on demand; only the marketing site stays static.
-// Cascades to all nested routes in the (platform) group.
-export const dynamic = "force-dynamic";
+// driven. Every route under this group now renders on the CLIENT and fetches
+// its per-user data in the browser from same-origin `/api/*` BFF handlers
+// (each of which is itself `force-dynamic`). Because no page under this layout
+// touches per-request server state anymore, the group no longer needs
+// `force-dynamic` here — the page shells prerender to static HTML and the data
+// streams in client-side, which is the intended CSR behavior.
 
 /**
  * Wraps the authenticated app (market, wallet, account) in the platform
