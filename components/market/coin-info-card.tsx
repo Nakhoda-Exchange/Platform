@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
 import { CheckIcon, CopyIcon, GlobeIcon } from "@/components/ui/icons";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import { formatChangePercent, formatHemat, formatIrt } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 
@@ -136,14 +137,18 @@ export function CoinInfoCard({ detail }: { detail: CoinDetail }) {
       </StatRow>,
     );
   }
-  if (detail.high24h > 0) {
+  // high/low are nullable decimal strings: null = unavailable → hide the row
+  // (never «۰»/stale). Show it only when a real, positive figure parses out.
+  const high24h = parsePrice(detail.high24h);
+  if (high24h !== null && high24h > 0) {
     rows.push(
       <StatRow key="high" label="بیشترین قیمت ۲۴ ساعته">
         {formatIrt(detail.high24h)}
       </StatRow>,
     );
   }
-  if (detail.low24h > 0) {
+  const low24h = parsePrice(detail.low24h);
+  if (low24h !== null && low24h > 0) {
     rows.push(
       <StatRow key="low" label="کمترین قیمت ۲۴ ساعته">
         {formatIrt(detail.low24h)}

@@ -9,6 +9,7 @@ import {
   type TradeContext,
   type TradeSide,
 } from "@/lib/core/domain/trade/order";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import { placeTradeOrder } from "@/app/actions/trade";
 import {
   PRICE_UNAVAILABLE_CODES,
@@ -55,6 +56,12 @@ export function TradeScreen({
   initialSide: TradeSide;
 }) {
   const { coin, availableIrt, availableCoin, limits } = context;
+  // The coin's REST price is a nullable decimal string; the client-side amount
+  // mirror needs a number. Parse once (0 when unavailable — a bridge only:
+  // conversions then collapse to a non-finite value that the formatters render
+  // as «—», so no fabricated figure is ever shown). Every DISPLAY of the price
+  // itself uses the raw `coin.priceIrt` so an unavailable price shows «—», not 0.
+  const unitPriceIrt = parsePrice(coin.priceIrt) ?? 0;
   // No holdings of this coin → selling is impossible, so the sell button never
   // appears and the side is pinned to buy (even if arrived at with ?side=sell).
   const canSell = availableCoin > 0;
@@ -152,15 +159,15 @@ export function TradeScreen({
   // Coin entry converts to Toman at the current price; the order (and every
   // guard and fee) stays Toman-denominated — the server action is unchanged.
   const amountIrt =
-    unit === "irt" ? entered : Math.round(entered * coin.priceIrt);
+    unit === "irt" ? entered : Math.round(entered * unitPriceIrt);
   // Mirror of the server-side fee math (PlaceOrderUseCase is authoritative):
   // buyers pay the fee out of the entered amount, sellers out of the proceeds.
   const feeIrt = Math.round(amountIrt * FEE_RATE);
   const amountCoin = roundCoin(
-    (amountIrt - (side === "buy" ? feeIrt : 0)) / coin.priceIrt,
+    (amountIrt - (side === "buy" ? feeIrt : 0)) / unitPriceIrt,
   );
   const maxIrt =
-    side === "buy" ? availableIrt : Math.floor(availableCoin * coin.priceIrt);
+    side === "buy" ? availableIrt : Math.floor(availableCoin * unitPriceIrt);
   // Sell slider (percent of holdings). Derived from the entry, so typing on
   // the keypad moves the slider too; sliding writes the entry in the active
   // unit. Sell-only — «چند درصد بفروشم؟» has no buy-side meaning.
@@ -225,7 +232,7 @@ export function TradeScreen({
               : String(
                   side === "sell"
                     ? availableCoin
-                    : roundCoin(maxIrt / coin.priceIrt),
+                    : roundCoin(maxIrt / unitPriceIrt),
                 ),
           )
         }

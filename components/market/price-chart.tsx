@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Coin } from "@/lib/core/domain/market/coin";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import {
   CHART_RANGES,
   type Candle,
@@ -200,7 +201,7 @@ export function PriceChart({
         toolbar={toggle}
         idleSubhead={<PriceSubhead coin={coin} />}
         liveValue={liveValue}
-        fallbackValue={liveValue ?? coin.priceIrt}
+        fallbackValue={liveValue ?? parsePrice(coin.priceIrt)}
         onRangeSelect={(k) => void loadRange(k as ChartRange)}
       />
     );

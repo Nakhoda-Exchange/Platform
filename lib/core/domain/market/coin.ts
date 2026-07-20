@@ -7,8 +7,12 @@ export interface Coin {
   nameFa?: string | null;
   symbol: string; // e.g. BTC
   iconUrl: string; // e.g. /coins/btc.png ("" → a brand letter-badge fallback)
-  priceIrt: number; // price in Toman
-  priceUsd: number; // price in USD
+  // Prices are decimal STRINGS on the wire (full precision preserved) and are
+  // NULLABLE: `null` means the price is UNAVAILABLE — render an «unavailable»
+  // state («قیمت در دسترس نیست» / «—»), NEVER 0 and NEVER a stale figure. Parse
+  // with `parsePrice` only for formatting/computation. (Live WS ticks stay numeric.)
+  priceIrt: string | null; // price in Toman (decimal string; null = unavailable)
+  priceUsd: string | null; // price in USD (decimal string; null = unavailable)
   change24h: number; // signed 24h change percent (e.g. 3.2 / -2.1)
   marketCap: number; // market cap in همت (هزار میلیارد تومان)
   isNew: boolean; // recently listed

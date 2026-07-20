@@ -1,5 +1,6 @@
 "use client";
 
+import { parsePrice, type PriceValue } from "@/lib/core/domain/market/price";
 import { formatIrt } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 import { useLivePrices } from "@/lib/realtime/use-realtime";
@@ -13,21 +14,42 @@ import { useLivePrices } from "@/lib/realtime/use-realtime";
  *
  * Display only — the order math stays server-authoritative at `coin.priceIrt`;
  * this chip never feeds the conversion or the confirm step.
+ *
+ * `basePrice` is the REST price in its wire form (a nullable decimal string).
+ * When there is neither a live tick nor a usable base price, the chip shows a
+ * neutral «قیمت در دسترس نیست» — never a fabricated 0.
  */
 export function LivePriceChip({
   coinId,
   basePrice,
 }: {
   coinId: string;
-  basePrice: number;
+  basePrice: PriceValue;
 }) {
   const { prices } = useLivePrices();
   const tick = prices[coinId];
-  const price = tick ? tick.priceIrt : basePrice;
+  const base = parsePrice(basePrice);
+  const price = tick ? tick.priceIrt : base;
+
+  // No live tick and no usable reference price → say so plainly, don't fake a
+  // number or a direction.
+  if (price === null) {
+    return (
+      <div className="flex justify-center">
+        <div
+          className="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-1.5 text-[14px] font-bold text-muted"
+          aria-label="قیمت زنده بازار در دسترس نیست"
+        >
+          قیمت در دسترس نیست
+        </div>
+      </div>
+    );
+  }
 
   // Green when the live price is at/above the load-time reference, red below.
-  // Colour-only by request; the aria-label still names the direction.
-  const up = price >= basePrice;
+  // Colour-only by request; the aria-label still names the direction. With no
+  // reference (base unavailable but a tick arrived) default to the calm "up".
+  const up = base === null ? true : price >= base;
 
   return (
     <div className="flex justify-center">

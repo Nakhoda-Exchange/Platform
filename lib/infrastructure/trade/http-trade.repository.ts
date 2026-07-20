@@ -4,6 +4,7 @@ import type {
   TradeRepository,
 } from "@/lib/core/application/trade/ports/trade-repository.port";
 import type { Coin } from "@/lib/core/domain/market/coin";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import type { PlacedOrder, TradeSide } from "@/lib/core/domain/trade/order";
 import { fail, ok, type Result } from "@/lib/core/domain/shared/result";
 import type { HttpClient } from "../http/http-client";
@@ -125,6 +126,11 @@ export class HttpTradeRepository implements TradeRepository {
     // unit price (Toman/coin) the order is banded against. The backend requires
     // an Idempotency-Key so a retried submit settles once; a fresh key per
     // placeOrder call marks this as a distinct order.
+    // Coin price is a nullable decimal string on the wire; the band price the
+    // order is submitted against needs a number. The caller (PlaceOrderUseCase)
+    // already refuses an unavailable price, so this is effectively non-null here
+    // — parse defensively (0 only as an unreachable bridge, never displayed).
+    const unitPriceIrt = parsePrice(coin.priceIrt) ?? 0;
     const result = await this.http.request<TradeResultDto>({
       method: "POST",
       path: "/trade/orders",
@@ -134,7 +140,7 @@ export class HttpTradeRepository implements TradeRepository {
         side: side.toUpperCase(),
         amount: String(Math.round(totalIrt)),
         amountUnit: "IRT",
-        requestedPrice: String(Math.round(coin.priceIrt)),
+        requestedPrice: String(Math.round(unitPriceIrt)),
       },
     });
     if (!result.ok) return result;
@@ -154,7 +160,7 @@ export class HttpTradeRepository implements TradeRepository {
       amountCoin,
       totalIrt,
       feeIrt,
-      priceIrt: coin.priceIrt,
+      priceIrt: unitPriceIrt,
     });
   }
 }

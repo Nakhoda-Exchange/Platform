@@ -34,8 +34,10 @@ export interface BlogPost {
 /** A coin plus the extra data the detail page (PDP) needs: chart + stats + about. */
 export interface CoinDetail {
   coin: Coin;
-  high24h: number; // 24h high price, Toman
-  low24h: number; // 24h low price, Toman
+  // 24h high/low are decimal STRINGS and NULLABLE: `null` means unavailable —
+  // hide the stat or show «—», never 0/stale. Parse with `parsePrice` to format.
+  high24h: string | null; // 24h high price, Toman (decimal string; null = unavailable)
+  low24h: string | null; // 24h low price, Toman (decimal string; null = unavailable)
   volume24h: number; // 24h traded volume, همت
   description: string; // short Persian «about» blurb
   // Chart data per range (oldest → newest). Optional: newly-discovered/thin

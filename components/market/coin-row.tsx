@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRef, useState, type PointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import { coinDisplayName, type Coin } from "@/lib/core/domain/market/coin";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import { CoinIcon } from "./coin-icon";
 import { ChevronRightIcon, CoinsIcon, WalletIcon } from "@/components/ui/icons";
 import { formatChangePercent, formatIrtShort } from "@/lib/utils/money";
@@ -55,10 +56,14 @@ export function CoinRow({ coin, canSell }: { coin: Coin; canSell: boolean }) {
   // "changed" signal, so `usePriceFlash` flashes the price cell on each new
   // value — green up, red down — and stays put until the next real change.
   const live = useLivePrice(coin.id);
+  // Live tick is numeric; the server price is a nullable decimal string. Keep
+  // the display value in its wire form (the formatter renders «—» when null),
+  // and parse a numeric copy for the flash-on-change detector.
   const priceIrt = live ? live.priceIrt : coin.priceIrt;
+  const priceNum = live ? live.priceIrt : parsePrice(coin.priceIrt);
   const change24h = live ? live.change24h : coin.change24h;
   const up = change24h >= 0;
-  const flash = usePriceFlash(priceIrt);
+  const flash = usePriceFlash(priceNum);
 
   const start = useRef<{ x: number; y: number } | null>(null);
   const dragged = useRef(false);
