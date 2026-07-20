@@ -7,6 +7,7 @@ import { GetCoinDetailUseCase } from "@/lib/core/application/market/use-cases/ge
 import { GetPortfolioUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio.use-case";
 import { GetPortfolioHistoryUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio-history.use-case";
 import { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/get-trade-context.use-case";
+import { GetTradeLimitsUseCase } from "@/lib/core/application/trade/use-cases/get-trade-limits.use-case";
 import { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
 import { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-cases/list-transactions.use-case";
 import { DepositIrtUseCase } from "@/lib/core/application/wallet/use-cases/deposit-irt.use-case";
@@ -159,6 +160,10 @@ function registerUseCases(container: Container): void {
         c.resolve(TOKENS.MarketRepository),
         c.resolve(TOKENS.TradeRepository),
       ),
+  );
+  container.register(
+    TOKENS.GetTradeLimitsUseCase,
+    (c) => new GetTradeLimitsUseCase(c.resolve(TOKENS.TradeRepository)),
   );
   container.register(
     TOKENS.PlaceOrderUseCase,

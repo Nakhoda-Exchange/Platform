@@ -27,9 +27,14 @@ export async function GET(
   }
 
   const detail = result.data;
+  // Match the holding by SYMBOL, not coin id: the portfolio/ledger keys assets
+  // by currency code (lower(symbol)) while the market keys coins by an opaque id
+  // (e.g. "dx_<contract>" for discovered tokens), so their ids diverge. Symbol
+  // is the stable cross-context key — matching on id drops every token holding.
+  const coinSymbol = detail.coin.symbol.toUpperCase();
   const held = portfolioResult.ok
     ? portfolioResult.data.holdings.find(
-        (h) => h.coin.id === detail.coin.id && h.amount > 0,
+        (h) => h.coin.symbol.toUpperCase() === coinSymbol && h.amount > 0,
       )
     : undefined;
   const holding = held

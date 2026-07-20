@@ -35,6 +35,7 @@ function tradeStub(balances: TradeBalances) {
   }> = [];
   const repo: TradeRepository = {
     getBalances: async () => ok(balances),
+    getLimits: async () => ok({}),
     placeOrder: async (
       coin,
       side,
@@ -72,6 +73,59 @@ describe("PlaceOrderUseCase", () => {
     expect(placed.length).toBe(0);
   });
 
+  test("per-token min overrides the global fallback (both directions)", async () => {
+    const limits = {
+      BTC: {
+        minBuyIrt: 200_000,
+        maxBuyIrt: null,
+        minSellIrt: null,
+        maxSellIrt: null,
+      },
+    };
+    // 300k is below the 500k global floor but above the 200k per-token min → allowed.
+    const allowed = tradeStub({ availableIrt: 1e9, coinAmounts: {} });
+    allowed.repo.getLimits = async () => ok(limits);
+    const okRes = await new PlaceOrderUseCase(marketStub, allowed.repo).execute(
+      "btc",
+      "buy",
+      300_000,
+    );
+    expect(okRes.ok).toBe(true);
+    expect(allowed.placed[0]?.totalIrt).toBe(300_000);
+
+    // 100k is below the per-token min → rejected.
+    const rejected = tradeStub({ availableIrt: 1e9, coinAmounts: {} });
+    rejected.repo.getLimits = async () => ok(limits);
+    const belowRes = await new PlaceOrderUseCase(
+      marketStub,
+      rejected.repo,
+    ).execute("btc", "buy", 100_000);
+    expect(belowRes.ok).toBe(false);
+    if (!belowRes.ok) expect(belowRes.error.code).toBe("BELOW_MIN_ORDER");
+    expect(rejected.placed.length).toBe(0);
+  });
+
+  test("rejects an order above the per-token max", async () => {
+    const { repo, placed } = tradeStub({ availableIrt: 1e12, coinAmounts: {} });
+    repo.getLimits = async () =>
+      ok({
+        BTC: {
+          minBuyIrt: null,
+          maxBuyIrt: 1_000_000,
+          minSellIrt: null,
+          maxSellIrt: null,
+        },
+      });
+    const res = await new PlaceOrderUseCase(marketStub, repo).execute(
+      "btc",
+      "buy",
+      2_000_000,
+    );
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.code).toBe("ABOVE_MAX_ORDER");
+    expect(placed.length).toBe(0);
+  });
+
   test("rejects a buy above the cash balance", async () => {
     const { repo } = tradeStub({ availableIrt: 1_000_000, coinAmounts: {} });
     const result = await new PlaceOrderUseCase(marketStub, repo).execute(
@@ -100,7 +154,7 @@ describe("PlaceOrderUseCase", () => {
   test("sell fee is charged on the proceeds, coin amount stays gross", async () => {
     const { repo, placed } = tradeStub({
       availableIrt: 0,
-      coinAmounts: { btc: 1 },
+      coinAmounts: { BTC: 1 },
     });
     const result = await new PlaceOrderUseCase(marketStub, repo).execute(
       "btc",
@@ -115,7 +169,7 @@ describe("PlaceOrderUseCase", () => {
   test("rejects a sell above the held amount", async () => {
     const { repo } = tradeStub({
       availableIrt: 0,
-      coinAmounts: { btc: 0.001 },
+      coinAmounts: { BTC: 0.001 },
     });
     const result = await new PlaceOrderUseCase(marketStub, repo).execute(
       "btc",
@@ -131,6 +185,7 @@ describe("PlaceOrderUseCase", () => {
     // use case must not flatten it, so the trade action/UI can special-case it.
     const repo: TradeRepository = {
       getBalances: async () => ok({ availableIrt: 1e10, coinAmounts: {} }),
+      getLimits: async () => ok({}),
       placeOrder: async () =>
         fail<PlacedOrder>(
           "PRICE_UNAVAILABLE",
@@ -152,7 +207,7 @@ describe("PlaceOrderUseCase", () => {
     const held = 0.0015;
     const { repo, placed } = tradeStub({
       availableIrt: 0,
-      coinAmounts: { btc: held },
+      coinAmounts: { BTC: held },
     });
     const maxIrt = Math.floor(held * BTC.priceIrt) + 1_000; // overshoot ~0.02%
     const result = await new PlaceOrderUseCase(marketStub, repo).execute(

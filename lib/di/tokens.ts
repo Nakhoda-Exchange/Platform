@@ -14,6 +14,7 @@ import type { GetPortfolioUseCase } from "@/lib/core/application/portfolio/use-c
 import type { GetPortfolioHistoryUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio-history.use-case";
 import type { TradeRepository } from "@/lib/core/application/trade/ports/trade-repository.port";
 import type { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/get-trade-context.use-case";
+import type { GetTradeLimitsUseCase } from "@/lib/core/application/trade/use-cases/get-trade-limits.use-case";
 import type { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
 import type { TransactionsRepository } from "@/lib/core/application/wallet/ports/transactions-repository.port";
 import type { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-cases/list-transactions.use-case";
@@ -69,6 +70,7 @@ export const TOKENS = {
   GetTradeContextUseCase: token<GetTradeContextUseCase>(
     "GetTradeContextUseCase",
   ),
+  GetTradeLimitsUseCase: token<GetTradeLimitsUseCase>("GetTradeLimitsUseCase"),
   PlaceOrderUseCase: token<PlaceOrderUseCase>("PlaceOrderUseCase"),
   ListTransactionsUseCase: token<ListTransactionsUseCase>(
     "ListTransactionsUseCase",

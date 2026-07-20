@@ -15,10 +15,10 @@ import { FAVORITES_EVENT, getFavorites } from "@/lib/utils/favorites";
  */
 export function WatchlistSection({
   coins,
-  heldIds,
+  heldSymbols,
 }: {
   coins: Coin[];
-  heldIds: string[];
+  heldSymbols: string[];
 }) {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
@@ -38,7 +38,10 @@ export function WatchlistSection({
       <ul className="-mx-4 flex flex-col divide-y divide-line">
         {watchlist.map((coin) => (
           <li key={coin.id}>
-            <CoinRow coin={coin} canSell={heldIds.includes(coin.id)} />
+            <CoinRow
+              coin={coin}
+              canSell={heldSymbols.includes(coin.symbol.toUpperCase())}
+            />
           </li>
         ))}
       </ul>

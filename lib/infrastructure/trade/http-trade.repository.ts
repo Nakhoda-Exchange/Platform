@@ -1,5 +1,6 @@
 import type {
   TradeBalances,
+  TradeLimitsMap,
   TradeRepository,
 } from "@/lib/core/application/trade/ports/trade-repository.port";
 import type { Coin } from "@/lib/core/domain/market/coin";
@@ -10,7 +11,33 @@ import type { HttpClient } from "../http/http-client";
 /** Portfolio response shape used to derive tradable balances (doc/portfolio/api.md). */
 interface PortfolioDto {
   availableIrt: number;
-  holdings: Array<{ coin: { id: string }; amount: number }>;
+  holdings: Array<{ coin: { id: string; symbol: string }; amount: number }>;
+}
+
+/**
+ * Backend trade-limits response (GET /v1/trade/limits, TradeLimitsSchema). Each
+ * bound is IRT notional as an integer-string in whole Toman, or null (unbounded).
+ */
+interface TradeLimitsDto {
+  limits: Array<{
+    symbol: string;
+    minBuyIrt: string | null;
+    maxBuyIrt: string | null;
+    minSellIrt: string | null;
+    maxSellIrt: string | null;
+  }>;
+}
+
+/**
+ * Parse an IRT notional string (whole Toman, no float money) to a number. IRT is
+ * scale-0, so an integer-string is exact within JS's safe range (backend caps
+ * are in the billions, well under 2^53). A null/blank/malformed bound → null,
+ * so the use case falls back to the global floor / balance cap.
+ */
+function parseIrtBound(value: string | null | undefined): number | null {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }
 
 /** Backend trade-execution result (doc/trade/api.md, SubmitTrade → TradeResult). */
@@ -58,9 +85,31 @@ export class HttpTradeRepository implements TradeRepository {
     const result = await this.http.get<PortfolioDto>("/portfolio");
     if (!result.ok) return result;
     const { availableIrt, holdings } = result.data;
+    // Key by UPPERCASE symbol, not coin.id: the portfolio/ledger identifies an
+    // asset by its currency code (lower(symbol)), while the market identifies a
+    // coin by an opaque id (e.g. "dx_<contract>" for discovered tokens). Symbol
+    // is the only identifier stable across both contexts, so holdings are keyed
+    // and looked up by symbol — otherwise a held discovered token reads as 0.
     const coinAmounts: Record<string, number> = {};
-    for (const h of holdings) coinAmounts[h.coin.id] = h.amount;
+    for (const h of holdings)
+      coinAmounts[h.coin.symbol.toUpperCase()] = h.amount;
     return ok({ availableIrt, coinAmounts });
+  }
+
+  async getLimits(): Promise<Result<TradeLimitsMap>> {
+    const result = await this.http.get<TradeLimitsDto>("/trade/limits");
+    if (!result.ok) return result;
+    const map: TradeLimitsMap = {};
+    for (const row of result.data.limits) {
+      // Key by UPPERCASE symbol — orders submit the symbol uppercased.
+      map[row.symbol.toUpperCase()] = {
+        minBuyIrt: parseIrtBound(row.minBuyIrt),
+        maxBuyIrt: parseIrtBound(row.maxBuyIrt),
+        minSellIrt: parseIrtBound(row.minSellIrt),
+        maxSellIrt: parseIrtBound(row.maxSellIrt),
+      };
+    }
+    return ok(map);
   }
 
   async placeOrder(
