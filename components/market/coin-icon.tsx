@@ -1,4 +1,4 @@
-import type { Coin } from "@/lib/core/domain/market/coin";
+import { coinDisplaySymbol, type Coin } from "@/lib/core/domain/market/coin";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -11,7 +11,7 @@ export function CoinIcon({
   size = 40,
   className,
 }: {
-  coin: Pick<Coin, "iconUrl" | "symbol">;
+  coin: Pick<Coin, "iconUrl" | "symbol" | "displaySymbol">;
   size?: number;
   className?: string;
 }) {
@@ -37,7 +37,7 @@ export function CoinIcon({
       )}
       style={{ width: size, height: size, fontSize: Math.round(size * 0.42) }}
     >
-      {coin.symbol.charAt(0)}
+      {coinDisplaySymbol(coin).charAt(0)}
     </span>
   );
 }

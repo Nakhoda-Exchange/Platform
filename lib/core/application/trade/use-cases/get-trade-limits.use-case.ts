@@ -18,10 +18,12 @@ export class GetTradeLimitsUseCase {
   async execute(): Promise<Result<SymbolTradeLimits[]>> {
     const result = await this.trade.getLimits();
     if (!result.ok) return result;
-    const list = Object.entries(result.data).map(([symbol, limits]) => ({
-      symbol,
-      ...limits,
-    }));
+    const list = Object.entries(result.data.bySymbol).map(
+      ([symbol, limits]) => ({
+        symbol,
+        ...limits,
+      }),
+    );
     return ok(list);
   }
 }

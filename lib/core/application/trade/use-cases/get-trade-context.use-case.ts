@@ -33,13 +33,17 @@ export class GetTradeContextUseCase {
     const balances = await this.trade.getBalances();
     if (!balances.ok) return balances;
 
-    // Per-token min/max bounds power the screen's validation. A limits failure
-    // must not block trading, so fall back to all-null (→ global MIN_ORDER_IRT
-    // floor + balance-capped max) rather than propagating the error.
+    // Per-token min/max bounds power the screen's validation, alongside the
+    // admin-configurable global min floor. A limits failure must not block
+    // trading, so fall back to all-null bounds + a null default floor (→ the
+    // offline MIN_ORDER_IRT floor + balance-capped max) rather than propagating.
     const limitsResult = await this.trade.getLimits();
     const limits = limitsResult.ok
-      ? (limitsResult.data[coin.symbol.toUpperCase()] ?? NO_LIMITS)
+      ? (limitsResult.data.bySymbol[coin.symbol.toUpperCase()] ?? NO_LIMITS)
       : NO_LIMITS;
+    const defaultMinIrt = limitsResult.ok
+      ? limitsResult.data.defaultMinIrt
+      : null;
 
     return ok({
       coin,
@@ -47,6 +51,7 @@ export class GetTradeContextUseCase {
       // Balances are keyed by symbol (portfolio ids ≠ market ids for tokens).
       availableCoin: balances.data.coinAmounts[coin.symbol.toUpperCase()] ?? 0,
       limits,
+      defaultMinIrt,
     });
   }
 }

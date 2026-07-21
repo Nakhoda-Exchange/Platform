@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { coinDisplaySymbol } from "@/lib/core/domain/market/coin";
 import type { TradeContext } from "@/lib/core/domain/trade/order";
 import { HeaderBar } from "@/components/layout/header-bar";
 import { ArrowRightIcon } from "@/components/ui/icons";
@@ -41,7 +42,9 @@ export function TradeHeaderClient({ symbol }: { symbol: string }) {
                 <span className="text-[15px] font-extrabold leading-tight text-ink">
                   {coin.name}
                 </span>
-                <span className="text-[12px] text-muted">{coin.symbol}</span>
+                <span className="text-[12px] text-muted">
+                  {coinDisplaySymbol(coin)}
+                </span>
               </div>
             </div>
           ) : (

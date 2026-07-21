@@ -1,5 +1,6 @@
 import type {
   TradeBalances,
+  TradeLimits,
   TradeLimitsMap,
   TradeRepository,
 } from "@/lib/core/application/trade/ports/trade-repository.port";
@@ -26,8 +27,11 @@ interface PortfolioDto {
 /**
  * Backend trade-limits response (GET /v1/trade/limits, TradeLimitsSchema). Each
  * bound is IRT notional as an integer-string in whole Toman, or null (unbounded).
+ * `defaultMinTradeIrt` is the admin-configurable global minimum order (a decimal
+ * STRING in whole Toman); optional/absent on older backends.
  */
 interface TradeLimitsDto {
+  defaultMinTradeIrt?: string | null;
   limits: Array<{
     symbol: string;
     minBuyIrt: string | null;
@@ -107,20 +111,26 @@ export class HttpTradeRepository implements TradeRepository {
     return ok({ availableIrt: parsePrice(availableIrt) ?? 0, coinAmounts });
   }
 
-  async getLimits(): Promise<Result<TradeLimitsMap>> {
+  async getLimits(): Promise<Result<TradeLimits>> {
     const result = await this.http.get<TradeLimitsDto>("/trade/limits");
     if (!result.ok) return result;
-    const map: TradeLimitsMap = {};
+    const bySymbol: TradeLimitsMap = {};
     for (const row of result.data.limits) {
       // Key by UPPERCASE symbol — orders submit the symbol uppercased.
-      map[row.symbol.toUpperCase()] = {
+      bySymbol[row.symbol.toUpperCase()] = {
         minBuyIrt: parseIrtBound(row.minBuyIrt),
         maxBuyIrt: parseIrtBound(row.maxBuyIrt),
         minSellIrt: parseIrtBound(row.minSellIrt),
         maxSellIrt: parseIrtBound(row.maxSellIrt),
       };
     }
-    return ok(map);
+    // The admin-configurable global floor is a decimal money string; parse it
+    // like any wire money field (null when absent/blank/malformed → the use case
+    // falls back to the offline MIN_ORDER_IRT constant).
+    return ok({
+      defaultMinIrt: parsePrice(result.data.defaultMinTradeIrt),
+      bySymbol,
+    });
   }
 
   async placeOrder(

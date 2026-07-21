@@ -46,9 +46,12 @@ export class PlaceOrderUseCase {
     // errored fetch degrades to no per-token bounds (→ MIN_ORDER_IRT floor).
     const limitsResult = await this.trade.getLimits();
     const limits = limitsResult.ok
-      ? limitsResult.data[coin.symbol.toUpperCase()]
+      ? limitsResult.data.bySymbol[coin.symbol.toUpperCase()]
       : undefined;
-    const minIrt = minOrderIrt(limits, side);
+    const defaultMinIrt = limitsResult.ok
+      ? limitsResult.data.defaultMinIrt
+      : null;
+    const minIrt = minOrderIrt(limits, side, defaultMinIrt);
     if (amountIrt < minIrt) {
       return fail(
         "BELOW_MIN_ORDER",
