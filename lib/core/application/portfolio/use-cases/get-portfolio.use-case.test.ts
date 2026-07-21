@@ -25,11 +25,11 @@ describe("GetPortfolioUseCase", () => {
   test("totals: holdings value is summed and cash is added on top", async () => {
     const uc = new GetPortfolioUseCase(
       repoOf({
-        availableIrt: 1_000,
-        pendingWithdrawIrt: 0,
+        availableIrt: "1000",
+        pendingWithdrawIrt: "0",
         holdings: [
-          { coin: coin(10), amount: 1, valueIrt: 100, costIrt: 80 },
-          { coin: coin(-5), amount: 1, valueIrt: 200, costIrt: 150 },
+          { coin: coin(10), amount: "1", valueIrt: "100", costIrt: "80" },
+          { coin: coin(-5), amount: "1", valueIrt: "200", costIrt: "150" },
         ],
       }),
     );
@@ -45,11 +45,11 @@ describe("GetPortfolioUseCase", () => {
   test("all-time profit = Σ(value − cost), percent over cost", async () => {
     const uc = new GetPortfolioUseCase(
       repoOf({
-        availableIrt: 0,
-        pendingWithdrawIrt: 0,
+        availableIrt: "0",
+        pendingWithdrawIrt: "0",
         holdings: [
-          { coin: coin(0), amount: 1, valueIrt: 150, costIrt: 100 }, // +50
-          { coin: coin(0), amount: 1, valueIrt: 80, costIrt: 100 }, // −20
+          { coin: coin(0), amount: "1", valueIrt: "150", costIrt: "100" }, // +50
+          { coin: coin(0), amount: "1", valueIrt: "80", costIrt: "100" }, // −20
         ],
       }),
     );
@@ -64,11 +64,11 @@ describe("GetPortfolioUseCase", () => {
   test("derives 24h P&L from each coin's change; pending passes through", async () => {
     const uc = new GetPortfolioUseCase(
       repoOf({
-        availableIrt: 0,
-        pendingWithdrawIrt: 42,
+        availableIrt: "0",
+        pendingWithdrawIrt: "42",
         holdings: [
-          { coin: coin(10), amount: 1, valueIrt: 100, costIrt: 100 }, // +10
-          { coin: coin(-5), amount: 1, valueIrt: 200, costIrt: 200 }, // −10
+          { coin: coin(10), amount: "1", valueIrt: "100", costIrt: "100" }, // +10
+          { coin: coin(-5), amount: "1", valueIrt: "200", costIrt: "200" }, // −10
         ],
       }),
     );
@@ -83,7 +83,7 @@ describe("GetPortfolioUseCase", () => {
 
   test("empty portfolio yields zeros, not NaN", async () => {
     const uc = new GetPortfolioUseCase(
-      repoOf({ availableIrt: 500, pendingWithdrawIrt: 0, holdings: [] }),
+      repoOf({ availableIrt: "500", pendingWithdrawIrt: "0", holdings: [] }),
     );
     const result = await uc.execute();
     expect(result.ok).toBe(true);

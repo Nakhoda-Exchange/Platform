@@ -2,6 +2,7 @@ import {
   PORTFOLIO_HISTORY_RANGES,
   type PortfolioHistory,
 } from "@/lib/core/domain/portfolio/portfolio-history";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import { fail, ok, type Result } from "@/lib/core/domain/shared/result";
 import type { PortfolioRepository } from "../ports/portfolio-repository.port";
 
@@ -24,8 +25,10 @@ export class GetPortfolioHistoryUseCase {
     if (!snapshotResult.ok) return snapshotResult;
 
     const { availableIrt, holdings } = snapshotResult.data;
+    // Money fields are wire strings (numeric(38,18)); parse before summing.
+    const num = (v: string | number) => parsePrice(v) ?? 0;
     const totalIrt =
-      availableIrt + holdings.reduce((sum, h) => sum + h.valueIrt, 0);
+      num(availableIrt) + holdings.reduce((sum, h) => sum + num(h.valueIrt), 0);
 
     const history = {} as PortfolioHistory;
     for (const range of PORTFOLIO_HISTORY_RANGES) {
@@ -35,7 +38,9 @@ export class GetPortfolioHistoryUseCase {
       }
       points.sort((a, b) => a.at - b.at);
       const last = points[points.length - 1];
-      points[points.length - 1] = { ...last, valueIrt: totalIrt };
+      // valueIrt is a decimal string on the wire; keep the pinned latest in the
+      // same shape.
+      points[points.length - 1] = { ...last, valueIrt: String(totalIrt) };
       history[range] = points;
     }
     return ok(history);

@@ -1,4 +1,5 @@
 import type { Portfolio } from "@/lib/core/domain/portfolio/portfolio";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import { ok, type Result } from "@/lib/core/domain/shared/result";
 import type { PortfolioRepository } from "../ports/portfolio-repository.port";
 
@@ -16,9 +17,11 @@ export class GetPortfolioUseCase {
     if (!result.ok) return result;
 
     const { holdings, availableIrt, pendingWithdrawIrt } = result.data;
-    // Coerce any non-finite field so one malformed holding can't turn the whole
-    // total (and «سود کل») into NaN.
-    const num = (n: number) => (Number.isFinite(n) ? n : 0);
+    // Money fields arrive as decimal STRINGS (numeric(38,18)); parse before any
+    // arithmetic. `parsePrice` also maps a missing/malformed field to null, so
+    // `?? 0` keeps one bad holding from turning the whole total (and «سود کل»)
+    // into NaN — the same guard the old finite-check gave.
+    const num = (v: string | number) => parsePrice(v) ?? 0;
     const holdingsValueIrt = holdings.reduce(
       (sum, h) => sum + num(h.valueIrt),
       0,
@@ -27,16 +30,19 @@ export class GetPortfolioUseCase {
     const profitIrt = holdingsValueIrt - costIrt;
     const profitPercent = costIrt > 0 ? (profitIrt / costIrt) * 100 : 0;
     const dayChangeIrt = holdings.reduce(
-      (sum, h) => sum + (h.valueIrt * h.coin.change24h) / 100,
+      (sum, h) => sum + (num(h.valueIrt) * h.coin.change24h) / 100,
       0,
     );
     const dayChangePercent =
       holdingsValueIrt > 0 ? (dayChangeIrt / holdingsValueIrt) * 100 : 0;
 
+    // availableIrt/pendingWithdrawIrt are wire strings; normalize to numbers for
+    // the computed Portfolio (its consumers do math/comparisons on them).
+    const availableIrtNum = num(availableIrt);
     return ok({
-      totalIrt: availableIrt + holdingsValueIrt,
-      availableIrt,
-      pendingWithdrawIrt,
+      totalIrt: availableIrtNum + holdingsValueIrt,
+      availableIrt: availableIrtNum,
+      pendingWithdrawIrt: num(pendingWithdrawIrt),
       holdingsValueIrt,
       profitIrt,
       profitPercent,

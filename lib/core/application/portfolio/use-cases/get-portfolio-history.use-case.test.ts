@@ -16,27 +16,27 @@ const coin = {
 };
 
 const snapshot: PortfolioSnapshot = {
-  availableIrt: 1_000,
-  pendingWithdrawIrt: 0,
+  availableIrt: "1000",
+  pendingWithdrawIrt: "0",
   holdings: [
-    { coin, amount: 1, valueIrt: 300, costIrt: 250 },
-    { coin, amount: 2, valueIrt: 200, costIrt: 180 },
+    { coin, amount: "1", valueIrt: "300", costIrt: "250" },
+    { coin, amount: "2", valueIrt: "200", costIrt: "180" },
   ],
 }; // live total = 1_500
 
 const history: PortfolioHistory = {
   daily: [
-    { at: 1, valueIrt: 900 },
-    { at: 2, valueIrt: 950 },
-    { at: 3, valueIrt: 999 },
+    { at: 1, valueIrt: "900" },
+    { at: 2, valueIrt: "950" },
+    { at: 3, valueIrt: "999" },
   ],
   weekly: [
-    { at: 10, valueIrt: 800 },
-    { at: 20, valueIrt: 900 },
+    { at: 10, valueIrt: "800" },
+    { at: 20, valueIrt: "900" },
   ],
   monthly: [
-    { at: 100, valueIrt: 700 },
-    { at: 200, valueIrt: 900 },
+    { at: 100, valueIrt: "700" },
+    { at: 200, valueIrt: "900" },
   ],
 };
 
@@ -65,29 +65,29 @@ describe("GetPortfolioHistoryUseCase", () => {
     const result = await new GetPortfolioHistoryUseCase(repoOf()).execute();
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.daily.at(-1)?.valueIrt).toBe(1_500);
-      expect(result.data.weekly.at(-1)?.valueIrt).toBe(1_500);
-      expect(result.data.monthly.at(-1)?.valueIrt).toBe(1_500);
+      expect(result.data.daily.at(-1)?.valueIrt).toBe("1500");
+      expect(result.data.weekly.at(-1)?.valueIrt).toBe("1500");
+      expect(result.data.monthly.at(-1)?.valueIrt).toBe("1500");
       // Earlier points untouched.
-      expect(result.data.daily[0].valueIrt).toBe(900);
+      expect(result.data.daily[0].valueIrt).toBe("900");
     }
   });
 
   test("pinning keeps a deposit/withdraw event on the last point", async () => {
-    const event = { type: "deposit" as const, amountIrt: 100 };
+    const event = { type: "deposit" as const, amountIrt: "100" };
     const result = await new GetPortfolioHistoryUseCase(
       repoOf({
         ...history,
         daily: [
-          { at: 1, valueIrt: 900 },
-          { at: 2, valueIrt: 999, event },
+          { at: 1, valueIrt: "900" },
+          { at: 2, valueIrt: "999", event },
         ],
       }),
     ).execute();
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.daily.at(-1)?.event).toEqual(event);
-      expect(result.data.daily.at(-1)?.valueIrt).toBe(1_500);
+      expect(result.data.daily.at(-1)?.valueIrt).toBe("1500");
     }
   });
 
@@ -96,16 +96,16 @@ describe("GetPortfolioHistoryUseCase", () => {
       repoOf({
         ...history,
         daily: [
-          { at: 3, valueIrt: 999 },
-          { at: 1, valueIrt: 900 },
-          { at: 2, valueIrt: 950 },
+          { at: 3, valueIrt: "999" },
+          { at: 1, valueIrt: "900" },
+          { at: 2, valueIrt: "950" },
         ],
       }),
     ).execute();
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.daily.map((p) => p.at)).toEqual([1, 2, 3]);
-      expect(result.data.daily.at(-1)?.valueIrt).toBe(1_500); // newest pinned
+      expect(result.data.daily.at(-1)?.valueIrt).toBe("1500"); // newest pinned
     }
   });
 

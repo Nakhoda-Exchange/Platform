@@ -10,11 +10,11 @@ export interface Transaction {
   type: TransactionType;
   status: TransactionStatus;
   at: Date;
-  amountIrt: number; // Toman value of the transaction (always positive)
+  amountIrt: string; // Toman value of the transaction, always positive (decimal string)
   // Trade-only fields — absent for Toman deposits/withdrawals.
   symbol?: string; // e.g. BTC
   coinName?: string; // Persian name, e.g. «بیت‌کوین»
-  amountCoin?: number; // coin units traded
+  amountCoin?: string; // coin units traded (decimal string)
   iconUrl?: string; // coin logo
 }
 

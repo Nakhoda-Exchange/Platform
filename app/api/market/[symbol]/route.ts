@@ -1,5 +1,6 @@
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import { respond } from "@/lib/utils/api-response";
 
 /**
@@ -34,7 +35,9 @@ export async function GET(
   const coinSymbol = detail.coin.symbol.toUpperCase();
   const held = portfolioResult.ok
     ? portfolioResult.data.holdings.find(
-        (h) => h.coin.symbol.toUpperCase() === coinSymbol && h.amount > 0,
+        (h) =>
+          h.coin.symbol.toUpperCase() === coinSymbol &&
+          (parsePrice(h.amount) ?? 0) > 0,
       )
     : undefined;
   const holding = held
