@@ -28,9 +28,12 @@ const POLL_MS = 3_000;
 export function IrtDepositForm({
   initialCards,
   firstDeposit = false,
+  minDepositIrt = MIN_DEPOSIT_IRT,
 }: {
   initialCards: BankCard[];
   firstDeposit?: boolean;
+  /** Minimum deposit (Toman) from the wallet config (#156); constant fallback. */
+  minDepositIrt?: number;
 }) {
   const [cards, setCards] = useState(initialCards);
   const [selectedId, setSelectedId] = useState(
@@ -46,7 +49,7 @@ export function IrtDepositForm({
   const [submitted, setSubmitted] = useState(false);
 
   const amount = Number(digits || "0");
-  const belowMin = amount > 0 && amount < MIN_DEPOSIT_IRT;
+  const belowMin = amount > 0 && amount < minDepositIrt;
 
   useEffect(() => {
     if (!deposit || submitted) return;
@@ -161,7 +164,7 @@ export function IrtDepositForm({
   }
 
   // Step 1 — amount + source-card selection.
-  const canStart = amount >= MIN_DEPOSIT_IRT && selectedId !== "" && !pending;
+  const canStart = amount >= minDepositIrt && selectedId !== "" && !pending;
   return (
     <div className="flex flex-1 flex-col gap-5">
       {firstDeposit ? (
@@ -188,7 +191,9 @@ export function IrtDepositForm({
         onChange={(e) =>
           setDigits(toEnglishDigits(e.target.value).replace(/[^\d]/g, ""))
         }
-        error={belowMin ? "کمینه واریز ۱۰۰٬۰۰۰ تومان است." : error}
+        error={
+          belowMin ? `کمینه واریز ${formatIrt(minDepositIrt)} است.` : error
+        }
       />
 
       {/* Additive top-up chips: each tap bumps the amount, so they stack. */}
@@ -211,7 +216,7 @@ export function IrtDepositForm({
 
       {!belowMin ? (
         <p className="-mt-1 text-[12px] text-placeholder">
-          کمینه واریز: {formatIrt(MIN_DEPOSIT_IRT)}
+          کمینه واریز: {formatIrt(minDepositIrt)}
         </p>
       ) : null}
 

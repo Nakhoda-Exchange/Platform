@@ -11,6 +11,10 @@ interface WithdrawVM {
   ibans: Iban[];
   cards: BankCard[];
   availableIrt: number;
+  minWithdrawIrt: number;
+  feeBps: number;
+  feeCapIrt: number;
+  otpRequired: boolean;
 }
 
 /**
@@ -35,6 +39,10 @@ export function WithdrawClient() {
         initialIbans={data.ibans}
         cards={data.cards}
         availableIrt={data.availableIrt}
+        minWithdrawIrt={data.minWithdrawIrt}
+        feeBps={data.feeBps}
+        feeCapIrt={data.feeCapIrt}
+        otpRequired={data.otpRequired}
       />
     </div>
   );
