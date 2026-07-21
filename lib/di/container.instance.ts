@@ -10,6 +10,9 @@ import { GetPortfolioHistoryUseCase } from "@/lib/core/application/portfolio/use
 import { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/get-trade-context.use-case";
 import { GetTradeLimitsUseCase } from "@/lib/core/application/trade/use-cases/get-trade-limits.use-case";
 import { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
+import { PollOrderUseCase } from "@/lib/core/application/trade/use-cases/poll-order.use-case";
+import { ListOpenOrdersUseCase } from "@/lib/core/application/trade/use-cases/list-open-orders.use-case";
+import { CancelOrderUseCase } from "@/lib/core/application/trade/use-cases/cancel-order.use-case";
 import { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-cases/list-transactions.use-case";
 import { DepositIrtUseCase } from "@/lib/core/application/wallet/use-cases/deposit-irt.use-case";
 import { ManageCardsUseCase } from "@/lib/core/application/wallet/use-cases/manage-cards.use-case";
@@ -183,6 +186,18 @@ function registerUseCases(container: Container): void {
         c.resolve(TOKENS.MarketRepository),
         c.resolve(TOKENS.TradeRepository),
       ),
+  );
+  container.register(
+    TOKENS.PollOrderUseCase,
+    (c) => new PollOrderUseCase(c.resolve(TOKENS.TradeRepository)),
+  );
+  container.register(
+    TOKENS.ListOpenOrdersUseCase,
+    (c) => new ListOpenOrdersUseCase(c.resolve(TOKENS.TradeRepository)),
+  );
+  container.register(
+    TOKENS.CancelOrderUseCase,
+    (c) => new CancelOrderUseCase(c.resolve(TOKENS.TradeRepository)),
   );
   container.register(
     TOKENS.ListTransactionsUseCase,

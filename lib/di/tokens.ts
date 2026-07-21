@@ -17,6 +17,9 @@ import type { TradeRepository } from "@/lib/core/application/trade/ports/trade-r
 import type { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/get-trade-context.use-case";
 import type { GetTradeLimitsUseCase } from "@/lib/core/application/trade/use-cases/get-trade-limits.use-case";
 import type { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
+import type { PollOrderUseCase } from "@/lib/core/application/trade/use-cases/poll-order.use-case";
+import type { ListOpenOrdersUseCase } from "@/lib/core/application/trade/use-cases/list-open-orders.use-case";
+import type { CancelOrderUseCase } from "@/lib/core/application/trade/use-cases/cancel-order.use-case";
 import type { TransactionsRepository } from "@/lib/core/application/wallet/ports/transactions-repository.port";
 import type { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-cases/list-transactions.use-case";
 import type { WalletRepository } from "@/lib/core/application/wallet/ports/wallet-repository.port";
@@ -79,6 +82,9 @@ export const TOKENS = {
   ),
   GetTradeLimitsUseCase: token<GetTradeLimitsUseCase>("GetTradeLimitsUseCase"),
   PlaceOrderUseCase: token<PlaceOrderUseCase>("PlaceOrderUseCase"),
+  PollOrderUseCase: token<PollOrderUseCase>("PollOrderUseCase"),
+  ListOpenOrdersUseCase: token<ListOpenOrdersUseCase>("ListOpenOrdersUseCase"),
+  CancelOrderUseCase: token<CancelOrderUseCase>("CancelOrderUseCase"),
   ListTransactionsUseCase: token<ListTransactionsUseCase>(
     "ListTransactionsUseCase",
   ),

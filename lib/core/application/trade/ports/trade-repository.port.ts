@@ -1,6 +1,9 @@
 import type { Coin } from "@/lib/core/domain/market/coin";
 import type {
-  PlacedOrder,
+  OpenOrder,
+  OrderStatusView,
+  OrderSubmission,
+  OrderType,
   TokenTradeLimits,
   TradeSide,
 } from "@/lib/core/domain/trade/order";
@@ -30,6 +33,13 @@ export interface TradeLimits {
   bySymbol: TradeLimitsMap;
 }
 
+/** Extra fields a LIMIT order carries; absent/`orderType: "MARKET"` for a market order. */
+export interface PlaceOrderOptions {
+  orderType: OrderType;
+  /** Whole IRT per whole coin (the trigger price). Required for LIMIT. */
+  targetPriceIrt?: number | null;
+}
+
 /**
  * Port for trading. Validation (min order, sufficient balance) lives in the
  * use case; the adapter executes the order and settles balances.
@@ -40,11 +50,27 @@ export interface TradeRepository {
    * The global min floor + per-token min/max order bounds (GET /v1/trade/limits).
    */
   getLimits(): Promise<Result<TradeLimits>>;
+  /**
+   * Submit an order. Returns a settled receipt (200) OR an accepted handle (202)
+   * the caller polls to completion — see {@link OrderSubmission}. A MARKET order
+   * omits `options` (or passes `orderType: "MARKET"`); a LIMIT order passes
+   * `orderType: "LIMIT"` with a `targetPriceIrt`.
+   */
   placeOrder(
     coin: Coin,
     side: TradeSide,
     amountCoin: number,
     totalIrt: number,
     feeIrt: number,
-  ): Promise<Result<PlacedOrder>>;
+    options?: PlaceOrderOptions,
+  ): Promise<Result<OrderSubmission>>;
+  /** A single status read of an order (GET /orders/{orderId}) — drives the poll loop. */
+  getOrder(orderId: string): Promise<Result<OrderStatusView>>;
+  /** The user's resting orders (GET /orders?status=open). */
+  listOpenOrders(): Promise<Result<OpenOrder[]>>;
+  /**
+   * Cancel a resting order (POST /orders/{orderId}/cancel). Fails with
+   * `ORDER_ALREADY_EXECUTED` when the backend answers 409 (it already executed).
+   */
+  cancelOrder(orderId: string): Promise<Result<void>>;
 }
