@@ -235,7 +235,7 @@ export class HttpTradeRepository implements TradeRepository {
 
     const result = await this.http.request<OrderSubmitDto>({
       method: "POST",
-      path: "/orders",
+      path: "/trade/orders",
       headers: { "Idempotency-Key": crypto.randomUUID() },
       body,
     });
@@ -278,7 +278,7 @@ export class HttpTradeRepository implements TradeRepository {
 
   async getOrder(orderId: string): Promise<Result<OrderStatusView>> {
     const result = await this.http.get<OrderStatusDto>(
-      `/orders/${encodeURIComponent(orderId)}`,
+      `/trade/orders/${encodeURIComponent(orderId)}`,
     );
     if (!result.ok) return result;
     const dto = result.data;
@@ -292,7 +292,9 @@ export class HttpTradeRepository implements TradeRepository {
   }
 
   async listOpenOrders(): Promise<Result<OpenOrder[]>> {
-    const result = await this.http.get<OpenOrdersDto>("/orders?status=open");
+    const result = await this.http.get<OpenOrdersDto>(
+      "/trade/orders?status=open",
+    );
     if (!result.ok) return result;
     const orders = (result.data.orders ?? []).map((o): OpenOrder => {
       const symbol = o.symbol.toUpperCase();
@@ -321,7 +323,7 @@ export class HttpTradeRepository implements TradeRepository {
   async cancelOrder(orderId: string): Promise<Result<void>> {
     const result = await this.http.request<unknown>({
       method: "POST",
-      path: `/orders/${encodeURIComponent(orderId)}/cancel`,
+      path: `/trade/orders/${encodeURIComponent(orderId)}/cancel`,
       headers: {},
     });
     if (result.ok) return ok(undefined);
