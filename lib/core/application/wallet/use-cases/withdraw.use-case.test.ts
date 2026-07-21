@@ -22,7 +22,7 @@ const CONFIG: WalletConfig = {
 function tradeStub(balances: TradeBalances): TradeRepository {
   return {
     getBalances: async () => ok(balances),
-    getLimits: async () => ok({}),
+    getLimits: async () => ok({ defaultMinIrt: null, bySymbol: {} }),
     placeOrder: async () => {
       throw new Error("not used");
     },

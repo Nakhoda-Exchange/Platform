@@ -9,6 +9,7 @@ import {
   type TradeContext,
   type TradeSide,
 } from "@/lib/core/domain/trade/order";
+import { coinDisplaySymbol } from "@/lib/core/domain/market/coin";
 import { parsePrice } from "@/lib/core/domain/market/price";
 import { placeTradeOrder } from "@/app/actions/trade";
 import {
@@ -55,7 +56,10 @@ export function TradeScreen({
   context: TradeContext;
   initialSide: TradeSide;
 }) {
-  const { coin, availableIrt, availableCoin, limits } = context;
+  const { coin, availableIrt, availableCoin, limits, defaultMinIrt } = context;
+  // Ticker label to show the user (GRAM alias when set); the canonical
+  // `coin.symbol` stays the identifier for the order/routes/keys.
+  const displaySymbol = coinDisplaySymbol(coin);
   // The coin's REST price is a nullable decimal string; the client-side amount
   // mirror needs a number. Parse once (0 when unavailable — a bridge only:
   // conversions then collapse to a non-finite value that the formatters render
@@ -194,7 +198,7 @@ export function TradeScreen({
   // Per-token bounds (GET /v1/trade/limits) for the active side; the global
   // floor is the fallback min, and the API max (when set) is a hard cap on top
   // of the balance cap.
-  const minIrt = minOrderIrt(limits, side);
+  const minIrt = minOrderIrt(limits, side, defaultMinIrt);
   const apiMaxIrt = maxOrderIrt(limits, side);
   // Buying beyond the Toman balance isn't a dead end — it's a nudge to top up
   // and come back with more to spend, so the CTA turns into a deposit link.
@@ -244,7 +248,7 @@ export function TradeScreen({
         <span className="font-bold text-ink">
           {side === "buy"
             ? formatIrt(availableIrt)
-            : `${formatCoinAmount(roundCoin(availableCoin))} ${coin.symbol}`}
+            : `${formatCoinAmount(roundCoin(availableCoin))} ${displaySymbol}`}
         </span>
       </button>
 
@@ -268,7 +272,7 @@ export function TradeScreen({
             )}
           >
             {digits ? toPersianDigits(digits).replace(".", "٫") : "۰"}{" "}
-            {coin.symbol}
+            {displaySymbol}
           </span>
         )}
         {/* Equivalent value — always shown as plain text so you see the amount
@@ -277,7 +281,7 @@ export function TradeScreen({
         <div className="flex items-center gap-2 text-muted">
           <span dir="ltr" className="text-[15px]">
             {unit === "irt"
-              ? `≈ ${formatCoinAmount(amountCoin)} ${coin.symbol}`
+              ? `≈ ${formatCoinAmount(amountCoin)} ${displaySymbol}`
               : `≈ ${formatIrt(amountIrt)}`}
           </span>
           <button
@@ -448,7 +452,7 @@ export function TradeScreen({
           <dl className="flex flex-col divide-y divide-line rounded-card border border-line">
             {[
               ["نوع سفارش", `${SIDE_LABEL[side]} بازار`],
-              ["مقدار", `${formatCoinAmount(amountCoin)} ${coin.symbol}`],
+              ["مقدار", `${formatCoinAmount(amountCoin)} ${displaySymbol}`],
               ["قیمت واحد", formatIrt(coin.priceIrt)],
               ["کارمزد (٪۰٫۳۵)", formatIrt(feeIrt)],
               side === "sell"
@@ -506,7 +510,7 @@ export function TradeScreen({
           ) : null}
           {order ? (
             <p className="text-[15px] leading-7 text-muted">
-              {formatCoinAmount(roundCoin(order.amountCoin))} {order.symbol} به
+              {formatCoinAmount(roundCoin(order.amountCoin))} {displaySymbol} به
               ارزش {formatIrt(order.totalIrt)}
             </p>
           ) : null}

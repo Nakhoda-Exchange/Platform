@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { coinDisplayName } from "@/lib/core/domain/market/coin";
+import {
+  coinDisplayName,
+  coinDisplaySymbol,
+} from "@/lib/core/domain/market/coin";
 import type { CoinDetail } from "@/lib/core/domain/market/coin-detail";
 import { summarizeIndicators } from "@/lib/core/domain/market/indicator-summary";
 import { PriceChart } from "./price-chart";
@@ -96,7 +99,7 @@ export function CoinDetailScreen({
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 pb-8 pt-4">
       {holding ? (
-        <HoldingSummary holding={holding} symbol={coin.symbol} />
+        <HoldingSummary holding={holding} symbol={coinDisplaySymbol(coin)} />
       ) : null}
 
       <PriceChart coin={coin} series={detail.series} candles={detail.candles} />

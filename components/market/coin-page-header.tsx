@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { coinDisplayName, type Coin } from "@/lib/core/domain/market/coin";
+import {
+  coinDisplayName,
+  coinDisplaySymbol,
+  type Coin,
+} from "@/lib/core/domain/market/coin";
 import { HeaderBar } from "@/components/layout/header-bar";
 import { CoinIcon } from "./coin-icon";
 import { CoinKindBadge } from "./coin-kind-badge";
@@ -32,7 +36,9 @@ export function CoinPageHeader({ coin }: { coin: Coin }) {
                 </span>
                 <CoinKindBadge kind={coin.kind} />
               </div>
-              <span className="text-[12px] text-muted">{coin.symbol}</span>
+              <span className="text-[12px] text-muted">
+                {coinDisplaySymbol(coin)}
+              </span>
             </div>
           </div>
         </>

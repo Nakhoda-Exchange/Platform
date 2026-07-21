@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Coin } from "@/lib/core/domain/market/coin";
+import { coinDisplaySymbol, type Coin } from "@/lib/core/domain/market/coin";
 import { CoinIcon } from "./coin-icon";
 import { SectionHeader } from "./section-header";
 import { RocketIcon } from "@/components/ui/icons";
@@ -20,7 +20,7 @@ export function TopGainers({ coins }: { coins: Coin[] }) {
           >
             <CoinIcon coin={coin} size={24} />
             <span className="text-[13px] font-bold text-ink">
-              {coin.symbol}
+              {coinDisplaySymbol(coin)}
             </span>
             <span
               dir="ltr"

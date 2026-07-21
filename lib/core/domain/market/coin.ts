@@ -5,7 +5,12 @@ export interface Coin {
   // Operator-set Persian display name. Optional/nullable: absent when unset, in
   // which case the UI falls back to `name` (or `symbol`). Prefer this when set.
   nameFa?: string | null;
-  symbol: string; // e.g. BTC
+  symbol: string; // e.g. BTC — CANONICAL ticker; the identifier for API calls/keys
+  // Operator-set display alias for the ticker (e.g. TON → GRAM). Optional/nullable:
+  // absent when unset. Purely a DISPLAY label — the canonical `symbol` stays the
+  // identifier everywhere (order submission, balance keys, routes). Prefer this
+  // over `symbol` ONLY when rendering the ticker to the user.
+  displaySymbol?: string | null;
   iconUrl: string; // e.g. /coins/btc.png ("" → a brand letter-badge fallback)
   // Prices are decimal STRINGS on the wire (full precision preserved) and are
   // NULLABLE: `null` means the price is UNAVAILABLE — render an «unavailable»
@@ -41,4 +46,16 @@ export function coinDisplayName(
   coin: Pick<Coin, "nameFa" | "name" | "symbol">,
 ): string {
   return coin.nameFa?.trim() || coin.name?.trim() || coin.symbol;
+}
+
+/**
+ * The ticker label to SHOW the user. Prefers the operator-set display alias
+ * (`displaySymbol`, e.g. GRAM), falling back to the canonical `symbol` (TON).
+ * Display only — never use this as an identifier for API calls, keys, or routes;
+ * those must always use the canonical `symbol`.
+ */
+export function coinDisplaySymbol(
+  coin: Pick<Coin, "displaySymbol" | "symbol">,
+): string {
+  return coin.displaySymbol?.trim() || coin.symbol;
 }
