@@ -10,6 +10,7 @@ import DepositLoading from "./loading";
 interface DepositVM {
   availableIrt: number;
   cards: BankCard[];
+  minDepositIrt: number;
 }
 
 /**
@@ -30,7 +31,7 @@ export function DepositClient() {
     );
   }
 
-  const { availableIrt, cards } = data;
+  const { availableIrt, cards, minDepositIrt } = data;
   const firstDeposit = availableIrt <= 0;
 
   return (
@@ -53,7 +54,11 @@ export function DepositClient() {
         </div>
       ) : null}
 
-      <IrtDepositForm initialCards={cards} firstDeposit={firstDeposit} />
+      <IrtDepositForm
+        initialCards={cards}
+        firstDeposit={firstDeposit}
+        minDepositIrt={minDepositIrt}
+      />
     </div>
   );
 }

@@ -34,9 +34,14 @@ export interface WalletRepository {
   ): Promise<Result<CardDeposit>>;
   /** Poll a started deposit until the backend reports it submitted. */
   getDepositStatus(depositId: string): Promise<Result<DepositStatus>>;
-  /** Request a Toman withdrawal to one of the user's IBANs (stays pending). */
+  /**
+   * Request a Toman withdrawal to one of the user's IBANs (stays pending). When
+   * the backend requires it (issue #154), a purpose-bound `withdraw` OTP code is
+   * included so the request passes the second factor.
+   */
   requestIrtWithdraw(
     ibanId: string,
     amountIrt: number,
+    otp?: string,
   ): Promise<Result<{ id: string }>>;
 }

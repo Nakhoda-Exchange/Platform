@@ -20,7 +20,9 @@ import type { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/p
 import type { TransactionsRepository } from "@/lib/core/application/wallet/ports/transactions-repository.port";
 import type { ListTransactionsUseCase } from "@/lib/core/application/wallet/use-cases/list-transactions.use-case";
 import type { WalletRepository } from "@/lib/core/application/wallet/ports/wallet-repository.port";
+import type { WalletConfigRepository } from "@/lib/core/application/wallet/ports/wallet-config-repository.port";
 import type { DepositIrtUseCase } from "@/lib/core/application/wallet/use-cases/deposit-irt.use-case";
+import type { GetWalletConfigUseCase } from "@/lib/core/application/wallet/use-cases/get-wallet-config.use-case";
 import type { ManageCardsUseCase } from "@/lib/core/application/wallet/use-cases/manage-cards.use-case";
 import type { ManageIbansUseCase } from "@/lib/core/application/wallet/use-cases/manage-ibans.use-case";
 import type { WithdrawUseCase } from "@/lib/core/application/wallet/use-cases/withdraw.use-case";
@@ -47,6 +49,9 @@ export const TOKENS = {
     "TransactionsRepository",
   ),
   WalletRepository: token<WalletRepository>("WalletRepository"),
+  WalletConfigRepository: token<WalletConfigRepository>(
+    "WalletConfigRepository",
+  ),
   UserRepository: token<UserRepository>("UserRepository"),
   AnnouncementsRepository: token<AnnouncementsRepository>(
     "AnnouncementsRepository",
@@ -78,6 +83,9 @@ export const TOKENS = {
     "ListTransactionsUseCase",
   ),
   DepositIrtUseCase: token<DepositIrtUseCase>("DepositIrtUseCase"),
+  GetWalletConfigUseCase: token<GetWalletConfigUseCase>(
+    "GetWalletConfigUseCase",
+  ),
   ManageCardsUseCase: token<ManageCardsUseCase>("ManageCardsUseCase"),
   ManageIbansUseCase: token<ManageIbansUseCase>("ManageIbansUseCase"),
   WithdrawUseCase: token<WithdrawUseCase>("WithdrawUseCase"),

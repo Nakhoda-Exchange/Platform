@@ -15,6 +15,7 @@ import { DepositIrtUseCase } from "@/lib/core/application/wallet/use-cases/depos
 import { ManageCardsUseCase } from "@/lib/core/application/wallet/use-cases/manage-cards.use-case";
 import { ManageIbansUseCase } from "@/lib/core/application/wallet/use-cases/manage-ibans.use-case";
 import { WithdrawUseCase } from "@/lib/core/application/wallet/use-cases/withdraw.use-case";
+import { GetWalletConfigUseCase } from "@/lib/core/application/wallet/use-cases/get-wallet-config.use-case";
 import { GetProfileUseCase } from "@/lib/core/application/account/use-cases/get-profile.use-case";
 import { TwoStepPasswordUseCase } from "@/lib/core/application/account/use-cases/two-step-password.use-case";
 import { ListAnnouncementsUseCase } from "@/lib/core/application/account/use-cases/list-announcements.use-case";
@@ -30,6 +31,7 @@ import { HttpPortfolioRepository } from "@/lib/infrastructure/portfolio/http-por
 import { HttpTradeRepository } from "@/lib/infrastructure/trade/http-trade.repository";
 import { HttpTransactionsRepository } from "@/lib/infrastructure/wallet/http-transactions.repository";
 import { HttpWalletRepository } from "@/lib/infrastructure/wallet/http-wallet.repository";
+import { HttpWalletConfigRepository } from "@/lib/infrastructure/wallet/http-wallet-config.repository";
 import { HttpUserRepository } from "@/lib/infrastructure/account/http-user.repository";
 import { HttpAnnouncementsRepository } from "@/lib/infrastructure/account/http-announcements.repository";
 import { HttpReferralRepository } from "@/lib/infrastructure/referral/http-referral.repository";
@@ -84,6 +86,10 @@ function registerHttpAdapters(container: Container, baseUrl: string): void {
   container.registerSingleton(
     TOKENS.WalletRepository,
     () => new HttpWalletRepository(http),
+  );
+  container.registerSingleton(
+    TOKENS.WalletConfigRepository,
+    () => new HttpWalletConfigRepository(http),
   );
   container.registerSingleton(
     TOKENS.UserRepository,
@@ -185,7 +191,15 @@ function registerUseCases(container: Container): void {
   );
   container.register(
     TOKENS.DepositIrtUseCase,
-    (c) => new DepositIrtUseCase(c.resolve(TOKENS.WalletRepository)),
+    (c) =>
+      new DepositIrtUseCase(
+        c.resolve(TOKENS.WalletRepository),
+        c.resolve(TOKENS.WalletConfigRepository),
+      ),
+  );
+  container.register(
+    TOKENS.GetWalletConfigUseCase,
+    (c) => new GetWalletConfigUseCase(c.resolve(TOKENS.WalletConfigRepository)),
   );
   container.register(
     TOKENS.ManageCardsUseCase,
@@ -209,6 +223,7 @@ function registerUseCases(container: Container): void {
       new WithdrawUseCase(
         c.resolve(TOKENS.TradeRepository),
         c.resolve(TOKENS.WalletRepository),
+        c.resolve(TOKENS.WalletConfigRepository),
       ),
   );
   container.register(

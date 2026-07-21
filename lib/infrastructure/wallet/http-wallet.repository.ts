@@ -77,10 +77,14 @@ export class HttpWalletRepository implements WalletRepository {
   requestIrtWithdraw(
     ibanId: string,
     amountIrt: number,
+    otp?: string,
   ): Promise<Result<{ id: string }>> {
+    // Only include `otp` when supplied so the request body is unchanged when the
+    // backend doesn't require the second factor.
     return this.http.post<{ id: string }>("/wallet/withdrawals/irt", {
       ibanId,
       amountIrt,
+      ...(otp ? { otp } : {}),
     });
   }
 }
