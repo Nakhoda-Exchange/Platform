@@ -25,14 +25,13 @@ import {
   type TradeFormState,
 } from "@/app/actions/trade-state";
 import { Button, buttonClasses } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { CheckCircleIcon } from "@/components/ui/icons";
 import { Sheet } from "@/components/ui/sheet";
 import { Confetti } from "@/components/ui/confetti";
 import { LivePriceChip } from "./live-price-chip";
 import { Keypad } from "./keypad";
-import { toEnglishDigits, toPersianDigits } from "@/lib/utils/digits";
+import { toPersianDigits } from "@/lib/utils/digits";
 import { formatCoinAmount, formatIrt } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 
@@ -42,16 +41,7 @@ function roundCoin(amount: number): number {
   return Number(amount.toPrecision(6));
 }
 
-/** Group an english-digit string with Persian thousands separators. */
-function groupFa(digits: string): string {
-  return toPersianDigits(digits.replace(/\B(?=(\d{3})+(?!\d))/g, "٬"));
-}
-
 const SIDE_LABEL: Record<TradeSide, string> = { buy: "خرید", sell: "فروش" };
-const ORDER_TYPE_LABEL: Record<OrderType, string> = {
-  MARKET: "بازار",
-  LIMIT: "حد",
-};
 
 /** Tappable slider shortcuts (also the native tick marks). */
 const SELL_PERCENT_POINTS = [10, 25, 50, 75, 100] as const;
@@ -70,13 +60,14 @@ interface Resolving {
 }
 
 /**
- * Trade screen (Moonshot-style): a MARKET/LIMIT toggle, a side toggle, a Toman
- * (or coin) amount entered on a keypad with live conversion, then an inline
- * confirm → server action. A MARKET order settles synchronously (the success
- * receipt); a LIMIT order — and any market order once async settlement is on —
- * is ACCEPTED and rests, so the screen enters a pending state and polls it to
- * completion (or hands off to the open-orders list). Server-side validation is
- * authoritative; the client checks only mirror it for instant feedback.
+ * Trade screen (Moonshot-style): a side toggle and a Toman (or coin) amount
+ * entered on a keypad with live conversion, then an inline confirm → server
+ * action. Orders are MARKET-only and settle synchronously today (the success
+ * receipt). The 202-accepted path stays wired — once async settlement is on, a
+ * market order is ACCEPTED and rests, so the screen enters a pending state and
+ * polls it to completion (or hands off to the open-orders list). Server-side
+ * validation is authoritative; the client checks only mirror it for instant
+ * feedback.
  */
 export function TradeScreen({
   context,
@@ -99,14 +90,10 @@ export function TradeScreen({
   // appears and the side is pinned to buy (even if arrived at with ?side=sell).
   const canSell = availableCoin > 0;
   const [side, setSide] = useState<TradeSide>(canSell ? initialSide : "buy");
-  const [orderType, setOrderType] = useState<OrderType>("MARKET");
-  const isLimit = orderType === "LIMIT";
   // Entry mode (issue #69): the big number is Toman OR coin units; `digits`
   // holds the raw entry in the ACTIVE unit ("." allowed only in coin mode).
   const [unit, setUnit] = useState<"irt" | "coin">("irt");
   const [digits, setDigits] = useState("");
-  // LIMIT target price — whole IRT per coin, raw english digits.
-  const [targetDigits, setTargetDigits] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(CONFIRM_SECONDS);
   const [celebrate, setCelebrate] = useState(false);
@@ -123,26 +110,6 @@ export function TradeScreen({
     { status: "idle" },
   );
   const { toast } = useToast();
-
-  // LIMIT is SPEND-committed: a BUY commits an IRT amount, a SELL commits a coin
-  // amount (the backend rejects a TARGET-output limit). So in LIMIT mode the
-  // entry unit is fixed by side — Toman for buy, coin for sell — and the ⇅ swap
-  // is hidden. The unit is re-fixed (and the stale entry cleared) in the toggle
-  // handlers below, not an effect, to avoid a cascading render.
-  const selectOrderType = (next: OrderType) => {
-    setOrderType(next);
-    if (next === "LIMIT") {
-      setUnit(side === "buy" ? "irt" : "coin");
-      setDigits("");
-    }
-  };
-  const selectSide = (next: TradeSide) => {
-    setSide(next);
-    if (isLimit) {
-      setUnit(next === "buy" ? "irt" : "coin");
-      setDigits("");
-    }
-  };
 
   // The just-placed order (synchronous 200 SETTLED) OR one resolved from a poll;
   // either drives the success receipt.
@@ -283,10 +250,8 @@ export function TradeScreen({
   };
 
   const entered = Number(digits || "0");
-  const targetPriceIrt = Number(targetDigits || "0");
-  // The price the entry converts through: a LIMIT order commits at its target;
-  // a MARKET order at the live price.
-  const priceForConv = isLimit ? targetPriceIrt : unitPriceIrt;
+  // A MARKET order converts the entry through the live price.
+  const priceForConv = unitPriceIrt;
   // Coin entry converts to Toman at the conversion price; the order (and every
   // guard and fee) stays Toman-denominated.
   const amountIrt =
@@ -330,54 +295,30 @@ export function TradeScreen({
   // Buying beyond the Toman balance isn't a dead end — it's a nudge to top up
   // and come back with more to spend, so the CTA turns into a deposit link.
   const needsDeposit = side === "buy" && amountIrt > maxIrt;
-  const missingTarget = isLimit && targetPriceIrt <= 0;
   const error =
     side === "sell" && availableCoin <= 0
       ? "از این رمزارز موجودی ندارید."
-      : missingTarget && entered > 0
-        ? "قیمت هدف را وارد کنید."
-        : amountIrt > 0 && amountIrt < minIrt
-          ? `کمینه هر سفارش ${formatIrt(minIrt)} است.`
-          : apiMaxIrt !== null && amountIrt > apiMaxIrt
-            ? `بیشینه هر سفارش ${formatIrt(apiMaxIrt)} است.`
-            : needsDeposit
-              ? "موجودی کافی نیست. برای خرید، حساب خود را شارژ کنید."
-              : amountIrt > maxIrt
-                ? "موجودی شما کافی نیست."
-                : null;
+      : amountIrt > 0 && amountIrt < minIrt
+        ? `کمینه هر سفارش ${formatIrt(minIrt)} است.`
+        : apiMaxIrt !== null && amountIrt > apiMaxIrt
+          ? `بیشینه هر سفارش ${formatIrt(apiMaxIrt)} است.`
+          : needsDeposit
+            ? "موجودی کافی نیست. برای خرید، حساب خود را شارژ کنید."
+            : amountIrt > maxIrt
+              ? "موجودی شما کافی نیست."
+              : null;
   const valid =
     amountIrt >= minIrt &&
     amountIrt <= maxIrt &&
-    (apiMaxIrt === null || amountIrt <= apiMaxIrt) &&
-    (!isLimit || targetPriceIrt > 0);
+    (apiMaxIrt === null || amountIrt <= apiMaxIrt);
 
-  // Unit price shown on the confirm receipt: the target for LIMIT, live for MARKET.
-  const receiptPriceIrt = isLimit ? targetPriceIrt : (coin.priceIrt ?? 0);
+  // Unit price shown on the confirm receipt: the live market price.
+  const receiptPriceIrt = coin.priceIrt ?? 0;
 
   return (
     <div className="flex flex-1 flex-col gap-5 px-4 pb-6 pt-4">
       {/* Live market price — centered, green, pulsing (display only). */}
       <LivePriceChip coinId={coin.id} basePrice={coin.priceIrt} />
-
-      {/* Order type — بازار (fill now) vs حد (rest until a target price). */}
-      <div className="mx-auto grid w-fit grid-cols-2 gap-1 rounded-full bg-surface p-1">
-        {(["MARKET", "LIMIT"] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => selectOrderType(t)}
-            aria-pressed={t === orderType}
-            className={cn(
-              "rounded-full px-6 py-1.5 text-[13px] font-bold transition-colors",
-              t === orderType
-                ? "bg-brand text-white"
-                : "text-muted hover:text-ink",
-            )}
-          >
-            {t === "MARKET" ? "بازار" : "قیمت حد"}
-          </button>
-        ))}
-      </div>
 
       {/* Balance — no separate max button; tapping the balance fills the
           whole available amount into the entry. */}
@@ -430,31 +371,28 @@ export function TradeScreen({
           </span>
         )}
         {/* Equivalent value — always shown as plain text so you see the amount
-            AND what it's worth in the other unit. In LIMIT mode the swap (⇅) is
-            hidden: the entry unit is fixed by side (SPEND-committed). */}
+            AND what it's worth in the other unit; tap ⇅ to swap the entry unit. */}
         <div className="flex items-center gap-2 text-muted">
           <span dir="ltr" className="text-[15px]">
             {unit === "irt"
               ? `≈ ${formatCoinAmount(amountCoin)} ${displaySymbol}`
               : `≈ ${formatIrt(amountIrt)}`}
           </span>
-          {!isLimit ? (
-            <button
-              type="button"
-              onClick={() => {
-                setUnit(unit === "irt" ? "coin" : "irt");
-                setDigits("");
-              }}
-              aria-label={
-                unit === "irt"
-                  ? "ورود مقدار بر حسب رمزارز"
-                  : "ورود مقدار به تومان"
-              }
-              className="flex size-7 items-center justify-center rounded-full bg-surface transition-colors hover:text-ink"
-            >
-              <span aria-hidden>⇅</span>
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              setUnit(unit === "irt" ? "coin" : "irt");
+              setDigits("");
+            }}
+            aria-label={
+              unit === "irt"
+                ? "ورود مقدار بر حسب رمزارز"
+                : "ورود مقدار به تومان"
+            }
+            className="flex size-7 items-center justify-center rounded-full bg-surface transition-colors hover:text-ink"
+          >
+            <span aria-hidden>⇅</span>
+          </button>
         </div>
         {/* Always mounted with a reserved line so showing/clearing an error
             doesn't shift the centred amount and jump the layout. */}
@@ -466,26 +404,6 @@ export function TradeScreen({
         </p>
       </div>
 
-      {/* LIMIT target price — whole Toman per coin; the order rests until the
-          market reaches it. */}
-      {isLimit ? (
-        <Field
-          name="targetPrice"
-          label={`قیمت هدف (تومان به ازای هر ${displaySymbol})`}
-          inputMode="numeric"
-          dir="ltr"
-          placeholder="۰"
-          value={targetDigits ? groupFa(targetDigits) : ""}
-          onChange={(e) =>
-            setTargetDigits(
-              toEnglishDigits(e.target.value)
-                .replace(/[^\d]/g, "")
-                .slice(0, 15),
-            )
-          }
-        />
-      ) : null}
-
       {/* Side toggle + sell slider + keypad read as one input cluster near the
           thumb — compact, centered, no gap between the parts. Sell only when
           the user holds this coin. */}
@@ -496,7 +414,7 @@ export function TradeScreen({
               <button
                 key={s}
                 type="button"
-                onClick={() => selectSide(s)}
+                onClick={() => setSide(s)}
                 aria-pressed={s === side}
                 className={cn(
                   "rounded-full px-6 py-1.5 text-[13px] font-bold transition-colors",
@@ -642,7 +560,7 @@ export function TradeScreen({
               amountCoin,
               totalIrt: amountIrt,
               feeIrt,
-              priceIrt: isLimit ? targetPriceIrt : unitPriceIrt,
+              priceIrt: unitPriceIrt,
             };
           }}
           className="flex flex-col gap-4"
@@ -650,19 +568,13 @@ export function TradeScreen({
           <input type="hidden" name="coinId" value={coin.id} />
           <input type="hidden" name="side" value={side} />
           <input type="hidden" name="amountIrt" value={amountIrt} />
-          <input type="hidden" name="orderType" value={orderType} />
-          {isLimit ? (
-            <input type="hidden" name="targetPriceIrt" value={targetPriceIrt} />
-          ) : null}
+          <input type="hidden" name="orderType" value="MARKET" />
 
           <dl className="flex flex-col divide-y divide-line rounded-card border border-line">
             {[
-              [
-                "نوع سفارش",
-                `${SIDE_LABEL[side]} ${ORDER_TYPE_LABEL[orderType]}`,
-              ],
+              ["نوع سفارش", `${SIDE_LABEL[side]} بازار`],
               ["مقدار", `${formatCoinAmount(amountCoin)} ${displaySymbol}`],
-              [isLimit ? "قیمت هدف" : "قیمت واحد", formatIrt(receiptPriceIrt)],
+              ["قیمت واحد", formatIrt(receiptPriceIrt)],
               ["کارمزد (٪۰٫۳۵)", formatIrt(feeIrt)],
               side === "sell"
                 ? ["دریافتی خالص", formatIrt(amountIrt - feeIrt)]
@@ -674,13 +586,6 @@ export function TradeScreen({
               </div>
             ))}
           </dl>
-
-          {isLimit ? (
-            <p className="text-center text-[12px] leading-[1.8] text-muted">
-              این سفارش تا رسیدن قیمت بازار به هدف شما باز می‌ماند و سپس انجام
-              می‌شود.
-            </p>
-          ) : null}
 
           <p className="text-center text-[12px] text-placeholder">
             این تأیید تا {toPersianDigits(secondsLeft)} ثانیه دیگر معتبر است
