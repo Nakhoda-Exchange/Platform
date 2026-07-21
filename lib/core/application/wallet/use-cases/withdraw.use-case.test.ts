@@ -26,6 +26,15 @@ function tradeStub(balances: TradeBalances): TradeRepository {
     placeOrder: async () => {
       throw new Error("not used");
     },
+    getOrder: async () => {
+      throw new Error("not used");
+    },
+    listOpenOrders: async () => {
+      throw new Error("not used");
+    },
+    cancelOrder: async () => {
+      throw new Error("not used");
+    },
   };
 }
 

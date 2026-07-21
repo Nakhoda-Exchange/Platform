@@ -30,6 +30,7 @@ export interface HeaderConfig {
 // Main tab pages are absent here, so they show the logo.
 // e.g. "/market/btc": { title: "Ø¨ÛØªâÚ©ÙÛÙ", backHref: "/market" }
 export const HEADER_CONFIG: Record<string, HeaderConfig> = {
+  "/orders": { title: "سفارش‌های باز", backHref: "/market" },
   "/wallet/history": { title: "تاریخچه", backHref: "/wallet" },
   "/wallet/deposit": { title: "واریز", backHref: "/wallet" },
   "/wallet/withdraw": { title: "برداشت", backHref: "/wallet" },

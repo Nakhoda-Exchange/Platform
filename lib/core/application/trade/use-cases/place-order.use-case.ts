@@ -2,7 +2,8 @@ import {
   FEE_RATE,
   maxOrderIrt,
   minOrderIrt,
-  type PlacedOrder,
+  type OrderSubmission,
+  type OrderType,
   type TradeSide,
 } from "@/lib/core/domain/trade/order";
 import { parsePrice } from "@/lib/core/domain/market/price";
@@ -13,10 +14,22 @@ import type { TradeRepository } from "../ports/trade-repository.port";
 /** Persian-grouped Toman (no unit-config dependency in the use-case layer). */
 const faToman = new Intl.NumberFormat("fa-IR");
 
+/** Options for a LIMIT order; omitted (or `orderType: "MARKET"`) for a market order. */
+export interface PlaceOrderInput {
+  orderType?: OrderType;
+  /** Whole IRT per whole coin (the trigger price). Required for LIMIT. */
+  targetPriceIrt?: number | null;
+}
+
 /**
- * Places a market order. The amount is entered in Toman; the coin amount is
- * derived at the current price. All guards live here (the authoritative,
- * server-side check) — the UI only mirrors them for instant feedback.
+ * Places an order. The IRT notional is entered in Toman; the coin amount is
+ * derived at the execution price (the current price for MARKET, the target
+ * price for LIMIT). All guards live here (the authoritative, server-side check)
+ * — the UI only mirrors them for instant feedback.
+ *
+ * A MARKET order settles synchronously today; a LIMIT order (and, once the async
+ * flag is on, a MARKET order too) is ACCEPTED and rests — the result is an
+ * {@link OrderSubmission} the caller resolves by polling.
  */
 export class PlaceOrderUseCase {
   constructor(
@@ -28,7 +41,18 @@ export class PlaceOrderUseCase {
     coinIdOrSymbol: string,
     side: TradeSide,
     amountIrt: number,
-  ): Promise<Result<PlacedOrder>> {
+    input: PlaceOrderInput = {},
+  ): Promise<Result<OrderSubmission>> {
+    const orderType: OrderType = input.orderType ?? "MARKET";
+    const isLimit = orderType === "LIMIT";
+    // A LIMIT order rests until the market reaches its target; the price must be
+    // a positive whole-Toman figure (the backend rejects a TARGET-unit limit,
+    // so it's always a SPEND commitment at this price).
+    const targetPriceIrt = input.targetPriceIrt ?? null;
+    if (isLimit && (targetPriceIrt === null || targetPriceIrt <= 0)) {
+      return fail("INVALID_TARGET_PRICE", "قیمت هدف را درست وارد کنید.");
+    }
+
     if (!Number.isFinite(amountIrt) || amountIrt <= 0) {
       return fail("EMPTY_AMOUNT", "مبلغ سفارش را وارد کنید.");
     }
@@ -73,19 +97,24 @@ export class PlaceOrderUseCase {
     // The 0.35% fee: a buyer's fee comes out of the entered amount (they
     // receive coins for the remainder); a seller's fee comes out of the
     // proceeds. Either way the fee accrues to the platform (referral pool).
-    // The coin price is a nullable decimal string on the wire. A null price is
-    // UNAVAILABLE — the order can't be priced, so refuse it honestly (mirrors
-    // the backend's 503 PRICE_UNAVAILABLE) rather than dividing by 0/NaN.
-    const unitPriceIrt = parsePrice(coin.priceIrt);
-    if (unitPriceIrt === null) {
+    // The conversion price is the target for a LIMIT order (it commits at that
+    // price) and the live price for a MARKET order. The live coin price is a
+    // nullable decimal string on the wire; a null price is UNAVAILABLE. A MARKET
+    // order can't be priced without it, so refuse honestly (mirrors the backend's
+    // 503 PRICE_UNAVAILABLE) rather than dividing by 0/NaN. A LIMIT order rests
+    // on its own target, so a momentarily stale live price does NOT block it.
+    const livePriceIrt = parsePrice(coin.priceIrt);
+    if (!isLimit && livePriceIrt === null) {
       return fail(
         "PRICE_UNAVAILABLE",
         "قیمت لحظه‌ای در دسترس نیست. لطفاً کمی بعد دوباره تلاش کنید.",
       );
     }
+    const conversionPriceIrt = isLimit ? targetPriceIrt! : livePriceIrt!;
 
     const feeIrt = Math.round(amountIrt * FEE_RATE);
-    let amountCoin = (amountIrt - (side === "buy" ? feeIrt : 0)) / unitPriceIrt;
+    let amountCoin =
+      (amountIrt - (side === "buy" ? feeIrt : 0)) / conversionPriceIrt;
 
     if (side === "buy") {
       if (amountIrt > availableIrt) {
@@ -103,6 +132,9 @@ export class PlaceOrderUseCase {
       }
     }
 
-    return this.trade.placeOrder(coin, side, amountCoin, amountIrt, feeIrt);
+    return this.trade.placeOrder(coin, side, amountCoin, amountIrt, feeIrt, {
+      orderType,
+      targetPriceIrt,
+    });
   }
 }

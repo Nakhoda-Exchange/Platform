@@ -3,6 +3,28 @@ import type { Coin } from "@/lib/core/domain/market/coin";
 export type TradeSide = "buy" | "sell";
 
 /**
+ * How an order executes. A MARKET order fills at the current price (today it
+ * settles synchronously); a LIMIT order rests until the market reaches its
+ * `targetPrice`. LIMIT is SPEND-committed — a BUY commits an IRT amount, a SELL
+ * commits a coin amount — see {@link OpenOrder}.
+ */
+export type OrderType = "MARKET" | "LIMIT";
+
+/**
+ * Lifecycle status of an order (GET /orders/{id} and the open-orders list).
+ * `RESERVED` is the only NON-terminal state — the order is still resting/pending
+ * with its reserve held. The other three are terminal (see {@link isTerminalStatus}).
+ */
+export type OrderStatus = "RESERVED" | "SETTLED" | "REJECTED" | "CANCELLED";
+
+/** Whether an order status is final (no further polling needed). */
+export function isTerminalStatus(status: OrderStatus): boolean {
+  return (
+    status === "SETTLED" || status === "REJECTED" || status === "CANCELLED"
+  );
+}
+
+/**
  * Last-resort smallest order the platform accepts, in Toman. Used only OFFLINE —
  * when the backend serves neither a per-token min NOR the admin-configurable
  * global floor (`defaultMinIrt`, GET /v1/trade/limits). Resolution order is
@@ -65,7 +87,7 @@ export interface TradeContext {
   defaultMinIrt: number | null;
 }
 
-/** A successfully placed (mock) market order. */
+/** A successfully placed (settled) order — the fill receipt. */
 export interface PlacedOrder {
   id: string;
   side: TradeSide;
@@ -76,4 +98,51 @@ export interface PlacedOrder {
   totalIrt: number; // total value, Toman (what the user entered)
   feeIrt: number; // platform fee charged, Toman
   priceIrt: number; // unit price at execution, Toman
+}
+
+/**
+ * The outcome of submitting an order. The backend answers in one of two ways:
+ *
+ * - `settled` — a synchronous fill (HTTP 200, `status: SETTLED`). This is what a
+ *   MARKET order returns today (the async settlement flag is OFF).
+ * - `accepted` — the order was ACCEPTED (HTTP 202) and now rests/pends
+ *   (`phase: "pending"`). A LIMIT order ALWAYS lands here (it rests until its
+ *   price trigger); a MARKET order will too once async settlement is enabled.
+ *   The caller polls `GET /orders/{orderId}` until the status is terminal.
+ */
+export type OrderSubmission =
+  | { kind: "settled"; order: PlacedOrder }
+  | { kind: "accepted"; orderId: string; phase: string };
+
+/**
+ * A point-in-time view of an order from `GET /orders/{orderId}` — its lifecycle
+ * status plus (when known) the resolved fill amounts and a rejection reason.
+ * Used by the poll loop to detect a terminal state.
+ */
+export interface OrderStatusView {
+  orderId: string;
+  status: OrderStatus;
+  reason?: string | null; // machine reason when REJECTED
+  filledCoin?: number | null; // coin units filled (SETTLED)
+  totalIrt?: number | null; // IRT notional (SETTLED)
+}
+
+/**
+ * A resting order in the user's open-orders list (`GET /orders?status=open`).
+ * Money/quantity are parsed to numbers; `targetPrice` is whole IRT per whole
+ * coin (null for a market order). `amount` is the SPEND amount in `amountCurrency`
+ * ("IRT" for a BUY, the coin symbol for a SELL).
+ */
+export interface OpenOrder {
+  orderId: string;
+  side: TradeSide;
+  symbol: string; // canonical ticker (identifier)
+  displaySymbol: string; // label to show the user (alias when set)
+  orderType: OrderType;
+  targetPrice: number | null; // whole IRT per coin (limit only)
+  amount: number; // committed spend amount
+  amountCurrency: string; // "IRT" (buy) or coin symbol (sell)
+  status: OrderStatus;
+  createdAt: string; // ISO timestamp
+  expiresAt: string | null; // ISO timestamp, when set
 }

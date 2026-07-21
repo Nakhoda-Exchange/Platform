@@ -6,7 +6,11 @@ import type {
   TradeRepository,
 } from "../ports/trade-repository.port";
 import type { Coin } from "@/lib/core/domain/market/coin";
-import type { PlacedOrder, TradeSide } from "@/lib/core/domain/trade/order";
+import type {
+  OrderSubmission,
+  OrderType,
+  TradeSide,
+} from "@/lib/core/domain/trade/order";
 import { fail, ok, type Result } from "@/lib/core/domain/shared/result";
 
 const BTC: Coin = {
@@ -34,6 +38,8 @@ function tradeStub(balances: TradeBalances) {
     amountCoin: number;
     totalIrt: number;
     feeIrt: number;
+    orderType: OrderType;
+    targetPriceIrt: number | null;
   }> = [];
   const repo: TradeRepository = {
     getBalances: async () => ok(balances),
@@ -44,20 +50,39 @@ function tradeStub(balances: TradeBalances) {
       amountCoin,
       totalIrt,
       feeIrt,
-    ): Promise<Result<PlacedOrder>> => {
-      placed.push({ side, amountCoin, totalIrt, feeIrt });
-      return ok({
-        id: "1",
+      options,
+    ): Promise<Result<OrderSubmission>> => {
+      const orderType = options?.orderType ?? "MARKET";
+      placed.push({
         side,
-        coinId: coin.id,
-        symbol: coin.symbol,
-        name: coin.name,
         amountCoin,
         totalIrt,
         feeIrt,
-        priceIrt: Number(coin.priceIrt),
+        orderType,
+        targetPriceIrt: options?.targetPriceIrt ?? null,
+      });
+      // A MARKET order settles synchronously; a LIMIT order is accepted (202).
+      if (orderType === "LIMIT") {
+        return ok({ kind: "accepted", orderId: "ord_1", phase: "pending" });
+      }
+      return ok({
+        kind: "settled",
+        order: {
+          id: "1",
+          side,
+          coinId: coin.id,
+          symbol: coin.symbol,
+          name: coin.name,
+          amountCoin,
+          totalIrt,
+          feeIrt,
+          priceIrt: Number(coin.priceIrt),
+        },
       });
     },
+    getOrder: async () => ok({ orderId: "ord_1", status: "SETTLED" as const }),
+    listOpenOrders: async () => ok([]),
+    cancelOrder: async () => ok(undefined),
   };
   return { repo, placed };
 }
@@ -221,10 +246,14 @@ describe("PlaceOrderUseCase", () => {
       getBalances: async () => ok({ availableIrt: 1e10, coinAmounts: {} }),
       getLimits: async () => ok({ defaultMinIrt: null, bySymbol: {} }),
       placeOrder: async () =>
-        fail<PlacedOrder>(
+        fail<OrderSubmission>(
           "PRICE_UNAVAILABLE",
           "قیمت لحظه‌ای در دسترس نیست. لطفاً کمی بعد دوباره تلاش کنید.",
         ),
+      getOrder: async () =>
+        ok({ orderId: "ord_1", status: "SETTLED" as const }),
+      listOpenOrders: async () => ok([]),
+      cancelOrder: async () => ok(undefined),
     };
     const result = await new PlaceOrderUseCase(marketStub, repo).execute(
       "btc",
@@ -251,6 +280,73 @@ describe("PlaceOrderUseCase", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("PRICE_UNAVAILABLE");
     expect(placed.length).toBe(0);
+  });
+
+  test("a MARKET order settles synchronously (200 path unchanged)", async () => {
+    const { repo, placed } = tradeStub({ availableIrt: 1e10, coinAmounts: {} });
+    const result = await new PlaceOrderUseCase(marketStub, repo).execute(
+      "btc",
+      "buy",
+      2_000_000_000,
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.kind).toBe("settled");
+    expect(placed[0]?.orderType).toBe("MARKET");
+  });
+
+  test("a LIMIT buy is ACCEPTED (202) and converts at the target price", async () => {
+    const { repo, placed } = tradeStub({ availableIrt: 1e10, coinAmounts: {} });
+    const result = await new PlaceOrderUseCase(marketStub, repo).execute(
+      "btc",
+      "buy",
+      2_000_000_000,
+      { orderType: "LIMIT", targetPriceIrt: 2_000_000_000 }, // half the live price
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.kind).toBe("accepted");
+      if (result.data.kind === "accepted") {
+        expect(result.data.orderId).toBe("ord_1");
+        expect(result.data.phase).toBe("pending");
+      }
+    }
+    // Coin amount is derived at the TARGET (2B), not the live price (4B):
+    // fee = 0.35% of 2B = 7,000,000; (2B − fee) / 2B.
+    expect(placed[0]?.orderType).toBe("LIMIT");
+    expect(placed[0]?.targetPriceIrt).toBe(2_000_000_000);
+    expect(placed[0]?.amountCoin).toBe(1_993_000_000 / 2_000_000_000);
+  });
+
+  test("a LIMIT order with no/invalid target price is rejected before submit", async () => {
+    const { repo, placed } = tradeStub({ availableIrt: 1e10, coinAmounts: {} });
+    const result = await new PlaceOrderUseCase(marketStub, repo).execute(
+      "btc",
+      "buy",
+      2_000_000_000,
+      { orderType: "LIMIT", targetPriceIrt: 0 },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("INVALID_TARGET_PRICE");
+    expect(placed.length).toBe(0);
+  });
+
+  test("a LIMIT order is placeable even when the live price is unavailable", async () => {
+    // A limit rests on its own target, so a momentarily null live price must
+    // NOT block it (unlike a market order).
+    const noPriceMarket: MarketRepository = {
+      ...marketStub,
+      listCoins: async () => ok([{ ...BTC, priceIrt: null }]),
+    };
+    const { repo, placed } = tradeStub({ availableIrt: 1e10, coinAmounts: {} });
+    const result = await new PlaceOrderUseCase(noPriceMarket, repo).execute(
+      "btc",
+      "buy",
+      2_000_000_000,
+      { orderType: "LIMIT", targetPriceIrt: 3_000_000_000 },
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.kind).toBe("accepted");
+    expect(placed[0]?.orderType).toBe("LIMIT");
   });
 
   test("clamps a «sell all» rounding overshoot to a full sell", async () => {
