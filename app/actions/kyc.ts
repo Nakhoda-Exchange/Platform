@@ -10,6 +10,7 @@ import {
   type KycFormState,
 } from "./kyc-state";
 import { REFERRAL_COOKIE } from "./referral-state";
+import { COOKIE_OPTIONS } from "@/lib/utils/cookie-options";
 
 /**
  * KYC step 1 — validate national code + Jalali birth date and run the identity
@@ -37,11 +38,11 @@ export async function submitIdentity(
     return { error: result.error.message };
   }
 
-  (await cookies()).set(KYC_PENDING_COOKIE, encodeIdentity(result.data), {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-  });
+  (await cookies()).set(
+    KYC_PENDING_COOKIE,
+    encodeIdentity(result.data),
+    COOKIE_OPTIONS,
+  );
 
   redirect("/kyc/confirm");
 }

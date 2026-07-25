@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { safeNextPath } from "./session-state";
+import { COOKIE_OPTIONS } from "@/lib/utils/cookie-options";
 
 /**
  * Short-lived httpOnly cookies that carry the in-flight login state so it never
@@ -17,7 +18,7 @@ const STATUS_COOKIE = "login_status";
 const CHALLENGE_MAX_AGE = 60 * 10; // 10 min
 const STATUS_MAX_AGE = 60 * 20; // 20 min
 
-const BASE = { httpOnly: true, sameSite: "lax", path: "/" } as const;
+const BASE = COOKIE_OPTIONS;
 
 export interface LoginChallenge {
   cid: string;
