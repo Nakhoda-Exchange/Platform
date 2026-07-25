@@ -9,6 +9,7 @@ import { GetPortfolioUseCase } from "@/lib/core/application/portfolio/use-cases/
 import { GetPortfolioHistoryUseCase } from "@/lib/core/application/portfolio/use-cases/get-portfolio-history.use-case";
 import { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/get-trade-context.use-case";
 import { GetTradeLimitsUseCase } from "@/lib/core/application/trade/use-cases/get-trade-limits.use-case";
+import { GetTradeQuoteUseCase } from "@/lib/core/application/trade/use-cases/get-trade-quote.use-case";
 import { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
 import { PollOrderUseCase } from "@/lib/core/application/trade/use-cases/poll-order.use-case";
 import { ListOpenOrdersUseCase } from "@/lib/core/application/trade/use-cases/list-open-orders.use-case";
@@ -178,6 +179,10 @@ function registerUseCases(container: Container): void {
   container.register(
     TOKENS.GetTradeLimitsUseCase,
     (c) => new GetTradeLimitsUseCase(c.resolve(TOKENS.TradeRepository)),
+  );
+  container.register(
+    TOKENS.GetTradeQuoteUseCase,
+    (c) => new GetTradeQuoteUseCase(c.resolve(TOKENS.TradeRepository)),
   );
   container.register(
     TOKENS.PlaceOrderUseCase,

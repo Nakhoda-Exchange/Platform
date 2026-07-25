@@ -7,6 +7,7 @@ import type {
 } from "@/lib/core/application/trade/ports/trade-repository.port";
 import { coinDisplaySymbol, type Coin } from "@/lib/core/domain/market/coin";
 import { parsePrice } from "@/lib/core/domain/market/price";
+import type { TradeQuote } from "@/lib/core/domain/trade/quote";
 import type {
   OpenOrder,
   OrderStatus,
@@ -59,6 +60,16 @@ function parseIrtBound(value: string | null | undefined): number | null {
   if (value == null || value === "") return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Backend quote response (POST /v1/trade/quotes, QuoteResponseSchema). Only the
+ * display figures the screen uses are read; `expectedSlippageBps` is a plain
+ * number in bps (0 is a real answer) or null when routing couldn't be priced.
+ * Older backends omit the field entirely — also treated as unknown.
+ */
+interface QuoteDto {
+  expectedSlippageBps?: number | null;
 }
 
 /**
@@ -185,6 +196,35 @@ export class HttpTradeRepository implements TradeRepository {
     return ok({
       defaultMinIrt: parsePrice(result.data.defaultMinTradeIrt),
       bySymbol,
+    });
+  }
+
+  async getQuote(
+    symbol: string,
+    side: TradeSide,
+    amountIrt: number,
+  ): Promise<Result<TradeQuote>> {
+    // Same amount contract as a MARKET submission: whole Toman notional with
+    // `amountUnit: "IRT"` on both sides (a buy spends it, a sell receives it),
+    // so the quote prices exactly the order the user is about to place.
+    const result = await this.http.request<QuoteDto>({
+      method: "POST",
+      path: "/trade/quotes",
+      headers: {},
+      body: {
+        symbol: symbol.toUpperCase(),
+        side: side.toUpperCase(),
+        amount: String(Math.round(amountIrt)),
+        amountUnit: "IRT",
+      },
+    });
+    if (!result.ok) return result;
+    const bps = result.data.expectedSlippageBps;
+    // Absent/null/non-numeric ⇒ unknown. `0` must survive as 0 (a firm-price
+    // route), so this is a typeof check, not a falsy one.
+    return ok({
+      expectedSlippageBps:
+        typeof bps === "number" && Number.isFinite(bps) ? bps : null,
     });
   }
 

@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from "react";
 import {
   FEE_RATE,
@@ -30,6 +31,12 @@ import { CheckCircleIcon } from "@/components/ui/icons";
 import { Sheet } from "@/components/ui/sheet";
 import { Confetti } from "@/components/ui/confetti";
 import { LivePriceChip } from "./live-price-chip";
+import {
+  SlippageChip,
+  SlippageInfoButton,
+  slippageLabel,
+} from "./slippage-info";
+import { useSlippageQuote } from "@/lib/client/use-slippage-quote";
 import { Keypad } from "./keypad";
 import { toPersianDigits } from "@/lib/utils/digits";
 import { formatCoinAmount, formatIrt } from "@/lib/utils/money";
@@ -315,10 +322,84 @@ export function TradeScreen({
   // Unit price shown on the confirm receipt: the live market price.
   const receiptPriceIrt = coin.priceIrt ?? 0;
 
+  // Expected price impact for THIS order, priced by the backend once the amount
+  // settles. Only quoted for an order the backend would accept — an invalid
+  // amount would just be refused, and a figure for it would mean nothing.
+  const { bps: slippageBps } = useSlippageQuote({
+    symbol: coin.symbol,
+    side,
+    amountIrt,
+    enabled: valid && amountIrt > 0,
+  });
+  const slippageText = slippageLabel(slippageBps);
+
+  // Confirm-receipt lines. The slippage row appears only when the backend could
+  // actually price one — never as a blank or a fabricated zero.
+  const receiptRows: Array<{ key: string; label: ReactNode; value: string }> = [
+    { key: "type", label: "نوع سفارش", value: `${SIDE_LABEL[side]} بازار` },
+    {
+      key: "amount",
+      label: "مقدار",
+      value: `${formatCoinAmount(amountCoin)} ${displaySymbol}`,
+    },
+    { key: "price", label: "قیمت واحد", value: formatIrt(receiptPriceIrt) },
+    { key: "fee", label: "کارمزد (٪۰٫۳۵)", value: formatIrt(feeIrt) },
+    ...(slippageText
+      ? [
+          {
+            key: "slippage",
+            label: (
+              <span className="inline-flex items-center gap-1.5">
+                لغزش تخمینی
+                <SlippageInfoButton />
+              </span>
+            ),
+            value: slippageText,
+          },
+        ]
+      : []),
+    side === "sell"
+      ? {
+          key: "total",
+          label: "دریافتی خالص",
+          value: formatIrt(amountIrt - feeIrt),
+        }
+      : { key: "total", label: "مجموع پرداختی", value: formatIrt(amountIrt) },
+  ];
+
   return (
     <div className="flex flex-1 flex-col gap-5 px-4 pb-6 pt-4">
+      {/* Side toggle — the first decision on the screen, so it sits at the top,
+          above the price it reframes. Sell only when the user holds this coin
+          (with none, the screen is buy-only and the toggle would be a dead end). */}
+      {canSell ? (
+        <div className="mx-auto grid w-fit grid-cols-2 gap-1 rounded-full bg-surface p-1">
+          {(["buy", "sell"] as const).map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSide(s)}
+              aria-pressed={s === side}
+              className={cn(
+                "rounded-full px-6 py-1.5 text-[13px] font-bold transition-colors",
+                s === side
+                  ? "bg-brand text-white"
+                  : "text-muted hover:text-ink",
+              )}
+            >
+              {SIDE_LABEL[s]}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       {/* Live market price — centered, green, pulsing (display only). */}
       <LivePriceChip coinId={coin.id} basePrice={coin.priceIrt} />
+
+      {/* Expected price impact for the amount being entered, with the ⓘ that
+          explains what slippage is. Keeps a reserved line so it can appear and
+          clear without moving the amount below it. */}
+      <SlippageChip bps={slippageBps} />
 
       {/* Balance — no separate max button; tapping the balance fills the
           whole available amount into the entry. */}
@@ -404,31 +485,9 @@ export function TradeScreen({
         </p>
       </div>
 
-      {/* Side toggle + sell slider + keypad read as one input cluster near the
-          thumb — compact, centered, no gap between the parts. Sell only when
-          the user holds this coin. */}
+      {/* Sell slider + keypad read as one input cluster near the thumb —
+          compact, centered, no gap between the parts. */}
       <div className="flex flex-col gap-2">
-        {canSell ? (
-          <div className="mx-auto grid w-fit grid-cols-2 gap-1 rounded-full bg-surface p-1">
-            {(["buy", "sell"] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setSide(s)}
-                aria-pressed={s === side}
-                className={cn(
-                  "rounded-full px-6 py-1.5 text-[13px] font-bold transition-colors",
-                  s === side
-                    ? "bg-brand text-white"
-                    : "text-muted hover:text-ink",
-                )}
-              >
-                {SIDE_LABEL[s]}
-              </button>
-            ))}
-          </div>
-        ) : null}
-
         {/* Kept mounted (not toggled) so switching buy⇄sell doesn't change the
             cluster height and jump the layout — just hidden on buy. */}
         {canSell ? (
@@ -571,18 +630,13 @@ export function TradeScreen({
           <input type="hidden" name="orderType" value="MARKET" />
 
           <dl className="flex flex-col divide-y divide-line rounded-card border border-line">
-            {[
-              ["نوع سفارش", `${SIDE_LABEL[side]} بازار`],
-              ["مقدار", `${formatCoinAmount(amountCoin)} ${displaySymbol}`],
-              ["قیمت واحد", formatIrt(receiptPriceIrt)],
-              ["کارمزد (٪۰٫۳۵)", formatIrt(feeIrt)],
-              side === "sell"
-                ? ["دریافتی خالص", formatIrt(amountIrt - feeIrt)]
-                : ["مجموع پرداختی", formatIrt(amountIrt)],
-            ].map(([k, v]) => (
-              <div key={k} className="flex items-center justify-between p-4">
-                <dt className="text-[15px] text-muted">{k}</dt>
-                <dd className="text-[15px] font-bold text-ink">{v}</dd>
+            {receiptRows.map((row) => (
+              <div
+                key={row.key}
+                className="flex items-center justify-between p-4"
+              >
+                <dt className="text-[15px] text-muted">{row.label}</dt>
+                <dd className="text-[15px] font-bold text-ink">{row.value}</dd>
               </div>
             ))}
           </dl>

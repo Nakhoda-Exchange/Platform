@@ -5,6 +5,7 @@ import {
   formatIrt,
   formatIrtShort,
   formatMarketCap,
+  formatSlippagePercent,
   formatUsd,
   setCurrencyUnits,
 } from "./money";
@@ -62,5 +63,18 @@ describe("formatChangePercent", () => {
   test("unsigned, Persian decimal + percent", () => {
     expect(formatChangePercent(3.2)).toBe("۳٫۲٪");
     expect(formatChangePercent(-2.1)).toBe("۲٫۱٪");
+  });
+});
+
+describe("formatSlippagePercent", () => {
+  test("bps → Persian percent, sign first, trailing zeros dropped", () => {
+    expect(formatSlippagePercent(37)).toBe("٪۰٫۳۷");
+    expect(formatSlippagePercent(50)).toBe("٪۰٫۵");
+    expect(formatSlippagePercent(250)).toBe("٪۲٫۵");
+    expect(formatSlippagePercent(0)).toBe("٪۰");
+  });
+
+  test("a non-finite figure is «—», never a fabricated number", () => {
+    expect(formatSlippagePercent(Number.NaN)).toBe("—");
   });
 });

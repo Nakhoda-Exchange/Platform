@@ -44,6 +44,7 @@ function tradeStub(balances: TradeBalances) {
   const repo: TradeRepository = {
     getBalances: async () => ok(balances),
     getLimits: async () => ok({ defaultMinIrt: null, bySymbol: {} }),
+    getQuote: async () => ok({ expectedSlippageBps: null }),
     placeOrder: async (
       coin,
       side,
@@ -245,6 +246,7 @@ describe("PlaceOrderUseCase", () => {
     const repo: TradeRepository = {
       getBalances: async () => ok({ availableIrt: 1e10, coinAmounts: {} }),
       getLimits: async () => ok({ defaultMinIrt: null, bySymbol: {} }),
+      getQuote: async () => ok({ expectedSlippageBps: null }),
       placeOrder: async () =>
         fail<OrderSubmission>(
           "PRICE_UNAVAILABLE",
