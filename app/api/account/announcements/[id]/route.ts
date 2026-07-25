@@ -1,13 +1,14 @@
-import { marked } from "marked";
 import { container } from "@/lib/di/container.instance";
 import { TOKENS } from "@/lib/di/tokens";
 import { respond } from "@/lib/utils/api-response";
+import { renderMarkdown } from "@/lib/utils/safe-markdown";
 
 /**
  * GET /api/account/announcements/[id] — a single announcement for the CSR
  * detail screen, as JSON: the announcement plus its body rendered to HTML.
- * Bodies are first-party markdown, so they're parsed server-side here (keeping
- * `marked` out of the client bundle). A missing id is a 404 the client renders
+ * Bodies are first-party markdown, parsed server-side here (keeping `marked` out
+ * of the client bundle) and SANITIZED — raw HTML dropped, URL schemes checked —
+ * because the result is handed to `dangerouslySetInnerHTML` (issue #67). A missing id is a 404 the client renders
  * as a load error. The auth token is read server-side by the HTTP interceptor.
  */
 export async function GET(
@@ -27,7 +28,7 @@ export async function GET(
     );
   }
 
-  const html = await marked.parse(result.data.body);
+  const html = await renderMarkdown(result.data.body);
   return Response.json({ announcement: result.data, html });
 }
 

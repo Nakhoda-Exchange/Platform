@@ -19,6 +19,7 @@ import {
   setLoginChallenge,
   setLoginStatus,
 } from "./login-flow-state";
+import { COOKIE_OPTIONS } from "@/lib/utils/cookie-options";
 
 /**
  * Start the login session (issue #78). Opaque presence cookie until full
@@ -27,9 +28,7 @@ import {
  */
 async function startSession(): Promise<void> {
   (await cookies()).set(SESSION_COOKIE, crypto.randomUUID(), {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
+    ...COOKIE_OPTIONS,
     maxAge: 60 * 60 * 24 * 30,
   });
 }
@@ -42,9 +41,7 @@ async function startSession(): Promise<void> {
  */
 async function storeAuthToken(token: string): Promise<void> {
   (await cookies()).set(AUTH_TOKEN_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
+    ...COOKIE_OPTIONS,
     maxAge: 60 * 60 * 24 * 30,
   });
 }
@@ -72,9 +69,7 @@ export async function startLogin(
   const ref = String(formData.get("ref") ?? "").trim();
   if (/^[A-Za-z0-9]{6}$/.test(ref)) {
     (await cookies()).set(REFERRAL_COOKIE, ref.toUpperCase(), {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
+      ...COOKIE_OPTIONS,
       maxAge: 60 * 60 * 24 * 30,
     });
   }
