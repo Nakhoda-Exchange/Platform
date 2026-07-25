@@ -23,6 +23,7 @@ function tradeStub(balances: TradeBalances): TradeRepository {
   return {
     getBalances: async () => ok(balances),
     getLimits: async () => ok({ defaultMinIrt: null, bySymbol: {} }),
+    getQuote: async () => ok({ expectedSlippageBps: null }),
     placeOrder: async () => {
       throw new Error("not used");
     },

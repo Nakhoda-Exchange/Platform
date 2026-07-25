@@ -7,6 +7,7 @@ import type {
   TokenTradeLimits,
   TradeSide,
 } from "@/lib/core/domain/trade/order";
+import type { TradeQuote } from "@/lib/core/domain/trade/quote";
 import type { Result } from "@/lib/core/domain/shared/result";
 
 /**
@@ -50,6 +51,17 @@ export interface TradeRepository {
    * The global min floor + per-token min/max order bounds (GET /v1/trade/limits).
    */
   getLimits(): Promise<Result<TradeLimits>>;
+  /**
+   * Price an order WITHOUT placing it (POST /v1/trade/quotes) — the pre-commit
+   * quote the trade screen reads the expected slippage from. `amountIrt` is the
+   * order's Toman notional (what a buy spends / a sell receives), matching how
+   * a market order is submitted.
+   */
+  getQuote(
+    symbol: string,
+    side: TradeSide,
+    amountIrt: number,
+  ): Promise<Result<TradeQuote>>;
   /**
    * Submit an order. Returns a settled receipt (200) OR an accepted handle (202)
    * the caller polls to completion — see {@link OrderSubmission}. A MARKET order

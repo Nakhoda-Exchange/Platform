@@ -121,6 +121,17 @@ export function formatChangePercent(change: PriceValue): string {
 }
 
 /**
+ * Slippage (basis points) → Persian percent with the sign in front, as the rest
+ * of the trade screen writes percentages: 37 → «٪۰٫۳۷», 50 → «٪۰٫۵», 250 → «٪۲٫۵».
+ * Two decimals max with trailing zeros dropped — a bps figure never needs more,
+ * and more would read as false precision on an estimate.
+ */
+export function formatSlippagePercent(bps: number): string {
+  if (!Number.isFinite(bps)) return PRICE_UNAVAILABLE;
+  return `٪${faDecimal(bps / 100, 2)}`;
+}
+
+/**
  * Market cap → «۸۵٬۰۰۰ همت». «همت» is NOT a currency unit — it is the common
  * shorthand for «هزار میلیارد تومان» (a scale word, like «میلیون»), so it is
  * vocabulary here, not server config. Same RTL isolate as the money
