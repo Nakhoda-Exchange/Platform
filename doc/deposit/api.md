@@ -40,25 +40,36 @@ Errors: `NO_CARD`, `EMPTY_AMOUNT`, `BELOW_MIN_DEPOSIT` (min ۱۰۰٬۰۰۰ تو�
 Polled (~3s) while the countdown runs. The client stops polling once the deposit
 window elapses (a late `done` must not flip an already-expired screen — #71).
 
+### Shipped contract
+
+What the backend returns today (Substructure `DepositStatusSchema`), and what the
+client models as `DepositStatusView` (lib/core/domain/wallet/deposit.ts):
+
 ```jsonc
-// 200 — DepositStatusReport (lib/core/domain/wallet/deposit.ts)
+// 200 — DepositStatusView (lib/core/domain/wallet/deposit.ts)
 {
-  "status": "done", // pending | done | expired | amount_mismatch | failed
-  "creditedIrt": 1000000, // present on `done`: the bank-confirmed SETTLED amount
-  "observedIrt": 950000, // present on `amount_mismatch`: what actually arrived
-  "reason": null, // present on `failed`: house-fault reason
+  "status": "done", // pending | done | unknown
+  // Money crosses as decimal STRINGS, null until `done`. The HTTP adapter
+  // parses them to numbers; never consume these raw.
+  "creditedIrt": "900000", // what the ledger ACTUALLY credited
+  "requestedIrt": "1000000", // what the user typed at start
 }
 ```
 
-**Status meanings (#64/#74)** — the old `unknown` is removed:
+| `status`  | Meaning                                      | Money                             |
+| --------- | -------------------------------------------- | --------------------------------- |
+| `pending` | Waiting for the bank transfer to be observed | Not yet moved; `creditedIrt` null |
+| `done`    | Transfer settled and credited                | `creditedIrt` credited            |
+| `unknown` | State not determinable (yet)                 | Nothing asserted                  |
 
-| `status`          | Meaning                                      | Money                                           |
-| ----------------- | -------------------------------------------- | ----------------------------------------------- |
-| `pending`         | Waiting for the bank transfer to be observed | Not yet moved                                   |
-| `done`            | Transfer settled and credited                | `creditedIrt` credited                          |
-| `expired`         | Window closed with no matching transfer      | Nothing arrived (or arrived late → reconcile)   |
-| `amount_mismatch` | A different sum than requested arrived       | `observedIrt` received, held pending resolution |
-| `failed`          | House/back-office fault                      | `reason` set; refund/retry per back-office      |
+### Backend follow-up (#74) — NOT yet emitted
+
+The richer state machine below is a documented requirement, not the current wire
+format. Do not branch on these until the backend actually sends them:
+`expired` (window closed with no matching transfer), `amount_mismatch` (a
+different sum arrived than requested — `observedIrt` held pending resolution),
+and `failed` (house/back-office fault, with a `reason`). They would replace
+`unknown`.
 
 - **`creditedIrt` is the bank-confirmed settled amount — NOT the user-typed
   amount (#64).** The receipt and the history row MUST render `creditedIrt`; the

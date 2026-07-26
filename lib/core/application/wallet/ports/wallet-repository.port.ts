@@ -2,7 +2,7 @@ import type { BankCard } from "@/lib/core/domain/wallet/bank-card";
 import type { Iban } from "@/lib/core/domain/wallet/bank-account";
 import type {
   CardDeposit,
-  DepositStatusReport,
+  DepositStatusView,
 } from "@/lib/core/domain/wallet/deposit";
 import type { Result } from "@/lib/core/domain/shared/result";
 
@@ -33,10 +33,11 @@ export interface WalletRepository {
     amountIrt: number,
   ): Promise<Result<CardDeposit>>;
   /**
-   * Poll a started deposit. The report carries the server/bank-confirmed
-   * `creditedIrt` on `done` (never the client-typed amount, #64).
+   * Poll a started deposit until the backend reports it submitted. The view
+   * carries the ledger-confirmed `creditedIrt` on `done` (never the
+   * client-typed amount, #64).
    */
-  getDepositStatus(depositId: string): Promise<Result<DepositStatusReport>>;
+  getDepositStatus(depositId: string): Promise<Result<DepositStatusView>>;
   /**
    * Request a Toman withdrawal to one of the user's IBANs (stays pending). When
    * the backend requires it (issue #154), a purpose-bound `withdraw` OTP code is

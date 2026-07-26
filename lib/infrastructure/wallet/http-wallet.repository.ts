@@ -3,8 +3,10 @@ import type { BankCard } from "@/lib/core/domain/wallet/bank-card";
 import type { Iban } from "@/lib/core/domain/wallet/bank-account";
 import type {
   CardDeposit,
-  DepositStatusReport,
+  DepositStatus,
+  DepositStatusView,
 } from "@/lib/core/domain/wallet/deposit";
+import { parsePrice } from "@/lib/core/domain/market/price";
 import type { Result } from "@/lib/core/domain/shared/result";
 import type { HttpClient } from "../http/http-client";
 
@@ -68,12 +70,25 @@ export class HttpWalletRepository implements WalletRepository {
 
   async getDepositStatus(
     depositId: string,
-  ): Promise<Result<DepositStatusReport>> {
-    // The endpoint returns the status plus, on `done`, the bank-confirmed
+  ): Promise<Result<DepositStatusView>> {
+    // The endpoint returns the status plus, on `done`, the ledger-confirmed
     // `creditedIrt` (the settled amount, not the client-typed one — #64).
-    return this.http.get<DepositStatusReport>(
-      `/wallet/deposits/${encodeURIComponent(depositId)}/status`,
-    );
+    const result = await this.http.get<{
+      status: DepositStatus;
+      creditedIrt?: string | null;
+      requestedIrt?: string | null;
+    }>(`/wallet/deposits/${encodeURIComponent(depositId)}/status`);
+    if (!result.ok) return result;
+    // Money crosses as decimal strings; parse to numbers for display. An absent
+    // field (older backend) is null — "unknown", never a fabricated figure.
+    return {
+      ok: true,
+      data: {
+        status: result.data.status,
+        creditedIrt: parsePrice(result.data.creditedIrt),
+        requestedIrt: parsePrice(result.data.requestedIrt),
+      },
+    };
   }
 
   requestIrtWithdraw(

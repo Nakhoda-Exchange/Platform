@@ -14,27 +14,37 @@ export interface CardDeposit {
 }
 
 /**
- * Terminal + in-flight states of a card-to-card deposit. `done` means the bank
- * transfer settled; `amount_mismatch` means a different sum arrived than was
- * requested; `expired` means the deposit window closed with no matching
- * transfer; `failed` is a house/back-office fault. (Replaces the old `unknown`.)
- * See doc/deposit/api.md.
+ * States the polling endpoint reports. Mirrors the SHIPPED backend enum
+ * (`DepositStatusSchema` in Substructure's wallet-ops.schemas.ts): the wire only
+ * ever carries these three.
+ *
+ * Richer states (`expired` / `amount_mismatch` / `failed`) are documented in
+ * doc/deposit/api.md as a backend follow-up (#74) and are deliberately NOT
+ * modelled here yet — narrowing to what the server actually sends keeps the
+ * client from branching on statuses it can never receive.
  */
-export type DepositStatus =
-  "pending" | "done" | "expired" | "amount_mismatch" | "failed";
+export type DepositStatus = "pending" | "done" | "unknown";
 
 /**
- * Full status report from `GET /wallet/deposits/{id}/status`. The credited
- * amount is the SERVER/bank-confirmed settled sum — never the client-typed
- * amount (#64). The receipt and history must render `creditedIrt`, not the
- * amount the user entered.
+ * A polled deposit, as `GET /wallet/deposits/{id}/status` reports it.
+ *
+ * `creditedIrt` is what the ledger ACTUALLY credited — the only figure a receipt
+ * may truthfully state. The amount the user typed on the deposit screen is an
+ * INTENT: people transfer a slightly different amount than they typed, and
+ * showing the typed figure as if it had been credited is a money dispute
+ * waiting to happen (audit #64).
+ *
+ * Null until the deposit is `done`, because nothing has been credited before
+ * then. Older backends omit it, which reads the same way.
+ *
+ * `requestedIrt` is what the user asked to send, so a mismatch can be stated
+ * plainly rather than one figure quietly substituting for the other.
+ *
+ * Both cross the wire as decimal STRINGS and are parsed to numbers in the HTTP
+ * adapter — never consumed raw.
  */
-export interface DepositStatusReport {
+export interface DepositStatusView {
   status: DepositStatus;
-  /** Bank-confirmed credited amount in Toman; present when `status === "done"`. */
-  creditedIrt?: number;
-  /** Bank-observed amount in Toman; present when `status === "amount_mismatch"`. */
-  observedIrt?: number;
-  /** House-fault reason; present when `status === "failed"`. */
-  reason?: string;
+  creditedIrt: number | null;
+  requestedIrt: number | null;
 }

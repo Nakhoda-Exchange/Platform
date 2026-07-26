@@ -47,9 +47,9 @@ export function IrtDepositForm({
   const [deposit, setDeposit] = useState<CardDeposit | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [submitted, setSubmitted] = useState(false);
-  // Server/bank-confirmed credited amount (Toman) on `done` (#64). We render
-  // THIS on the receipt — never the client-typed `amount`, which may differ
-  // from what actually settled.
+  // What the ledger ACTUALLY credited (Toman) on `done` (#64). We render THIS
+  // on the receipt — never the client-typed `amount`, which may differ from
+  // what actually settled.
   const [creditedIrt, setCreditedIrt] = useState<number | null>(null);
 
   const amount = Number(digits || "0");
@@ -60,6 +60,11 @@ export function IrtDepositForm({
     // Absolute end of the deposit window; once it passes we stop polling (#71).
     // A late `done` must not flip an already-expired screen, and idle polling
     // after expiry is wasted server load.
+    //
+    // Deliberately derived from a deadline rather than gating the effect on
+    // `secondsLeft`: that would put `secondsLeft` in the dep array, tearing down
+    // and recreating both intervals every second, so the 3s poll would be reset
+    // before it ever fired and the receipt would never appear.
     const deadline = Date.now() + deposit.expiresInSeconds * 1_000;
     const tick = setInterval(
       () => setSecondsLeft((s) => Math.max(0, s - 1)),
@@ -72,7 +77,9 @@ export function IrtDepositForm({
       }
       const result = await checkDeposit(deposit.id);
       if (result.ok && result.data.status === "done") {
-        setCreditedIrt(result.data.creditedIrt ?? null);
+        // Keep what was ACTUALLY credited so the receipt states that figure
+        // rather than the amount typed on the keypad (#64).
+        setCreditedIrt(result.data.creditedIrt);
         setSubmitted(true);
       }
     }, POLL_MS);
@@ -91,11 +98,23 @@ export function IrtDepositForm({
           <h2 className="text-[22px] font-extrabold text-ink">
             واریز شما تأیید شد
           </h2>
+          {/* The CREDITED figure, never the typed one. They differ whenever the
+              user transferred a different amount than they entered, which is
+              ordinary — and asserting the typed amount there was the dispute
+              this closes (#64). When the backend reports no credited figure
+              (older backend) we state no number at all rather than fall back to
+              the typed amount, which would reintroduce exactly that bug. */}
           <p className="text-[16px] text-muted">
             {creditedIrt != null
               ? `${formatIrt(creditedIrt)} به موجودی شما اضافه شد.`
               : "مبلغ واریزی شما به موجودی‌تان اضافه شد."}
           </p>
+          {creditedIrt !== null && creditedIrt !== amount ? (
+            <p className="text-[13px] text-muted">
+              مبلغ درخواستی شما {formatIrt(amount)} بود؛ مبلغ واریزشده به حساب
+              شما اضافه شد.
+            </p>
+          ) : null}
         </div>
         <div className="flex w-full max-w-[360px] flex-col gap-3">
           <Link
