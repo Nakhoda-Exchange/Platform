@@ -273,6 +273,12 @@ export class HttpTradeRepository implements TradeRepository {
           requestedPrice: String(Math.round(unitPriceIrt)),
         };
 
+    // The user's own tolerance rides along when they set one; omitted entirely
+    // otherwise so the backend resolves the coin's configured value.
+    if (options?.slippageBps != null && Number.isFinite(options.slippageBps)) {
+      body.slippageBps = String(Math.round(options.slippageBps));
+    }
+
     const result = await this.http.request<OrderSubmitDto>({
       method: "POST",
       path: "/trade/orders",

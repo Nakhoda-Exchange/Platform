@@ -37,6 +37,12 @@ export interface TradeLimits {
 /** Extra fields a LIMIT order carries; absent/`orderType: "MARKET"` for a market order. */
 export interface PlaceOrderOptions {
   orderType: OrderType;
+  /**
+   * The USER's own slippage tolerance in bps, when they set one in the trade
+   * settings sheet. It OVERRIDES the coin's configured tolerance — their money,
+   * their call. Absent/null ⇒ the backend resolves the coin's own value.
+   */
+  slippageBps?: number | null;
   /** Whole IRT per whole coin (the trigger price). Required for LIMIT. */
   targetPriceIrt?: number | null;
 }

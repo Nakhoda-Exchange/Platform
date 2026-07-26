@@ -37,6 +37,7 @@ import {
   slippageLabel,
 } from "./slippage-info";
 import { useSlippageQuote } from "@/lib/client/use-slippage-quote";
+import { useTradePreferences } from "@/lib/client/use-trade-preferences";
 import { Keypad } from "./keypad";
 import { toPersianDigits } from "@/lib/utils/digits";
 import { formatCoinAmount, formatIrt } from "@/lib/utils/money";
@@ -53,7 +54,10 @@ const SIDE_LABEL: Record<TradeSide, string> = { buy: "خرید", sell: "فروش
 /** Tappable slider shortcuts (also the native tick marks). */
 const SELL_PERCENT_POINTS = [10, 25, 50, 75, 100] as const;
 
-/** How long the confirm sheet stays valid before it auto-closes. */
+/**
+ * Fallback confirm window, used until the user's saved preference loads (and for
+ * anyone who never set one). The user's own value wins — see the settings sheet.
+ */
 const CONFIRM_SECONDS = 30;
 /** Per-device flag: the first trade earns the confetti welcome, once. */
 const FIRST_TRADE_KEY = "nakhoda_has_traded";
@@ -103,6 +107,11 @@ export function TradeScreen({
   const [digits, setDigits] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(CONFIRM_SECONDS);
+  // The user's saved trade preferences. `confirmSeconds` sets how long the
+  // confirm sheet stays valid; `slippageBps` is submitted with the order and
+  // OVERRIDES the coin's configured tolerance.
+  const preferences = useTradePreferences();
+  const confirmSeconds = preferences.confirmSeconds;
   const [celebrate, setCelebrate] = useState(false);
   const [ackedOrderId, setAckedOrderId] = useState<string | null>(null);
   // A 202-accepted order being polled to completion, and the receipt it resolves
@@ -242,7 +251,7 @@ export function TradeScreen({
       });
     }
     // Defer the timer reset out of the effect body (avoids a cascading render).
-    const id = requestAnimationFrame(() => setSecondsLeft(CONFIRM_SECONDS));
+    const id = requestAnimationFrame(() => setSecondsLeft(confirmSeconds));
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
@@ -589,7 +598,7 @@ export function TradeScreen({
           fullWidth
           disabled={!valid}
           onClick={() => {
-            setSecondsLeft(CONFIRM_SECONDS);
+            setSecondsLeft(confirmSeconds);
             setConfirming(true);
           }}
         >
@@ -628,6 +637,15 @@ export function TradeScreen({
           <input type="hidden" name="side" value={side} />
           <input type="hidden" name="amountIrt" value={amountIrt} />
           <input type="hidden" name="orderType" value="MARKET" />
+          {/* The user's own tolerance, when they set one. Absent ⇒ the backend
+              resolves the coin's own value. */}
+          {preferences.slippageBps !== null ? (
+            <input
+              type="hidden"
+              name="slippageBps"
+              value={preferences.slippageBps}
+            />
+          ) : null}
 
           <dl className="flex flex-col divide-y divide-line rounded-card border border-line">
             {receiptRows.map((row) => (

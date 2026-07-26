@@ -19,6 +19,12 @@ export interface PlaceOrderInput {
   orderType?: OrderType;
   /** Whole IRT per whole coin (the trigger price). Required for LIMIT. */
   targetPriceIrt?: number | null;
+  /**
+   * The USER's own slippage tolerance in bps (trade settings sheet). Passed
+   * through untouched — the backend decides how it combines with the coin's
+   * configured value, and it wins. Absent ⇒ the coin's own tolerance applies.
+   */
+  slippageBps?: number | null;
 }
 
 /**
@@ -135,6 +141,9 @@ export class PlaceOrderUseCase {
     return this.trade.placeOrder(coin, side, amountCoin, amountIrt, feeIrt, {
       orderType,
       targetPriceIrt,
+      // Pass the user's tolerance through untouched — the backend decides how it
+      // combines with the coin's own value (it wins).
+      slippageBps: input.slippageBps ?? null,
     });
   }
 }
