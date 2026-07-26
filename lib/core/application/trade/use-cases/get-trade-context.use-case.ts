@@ -34,9 +34,10 @@ export class GetTradeContextUseCase {
     if (!balances.ok) return balances;
 
     // Per-token min/max bounds power the screen's validation, alongside the
-    // admin-configurable global min floor. A limits failure must not block
-    // trading, so fall back to all-null bounds + a null default floor (→ the
-    // offline MIN_ORDER_IRT floor + balance-capped max) rather than propagating.
+    // admin-configurable global min floor. On a limits FETCH FAILURE the screen
+    // still opens (best-effort offline fallbacks), but `limitsAvailable: false`
+    // lets it warn — and the authoritative placement guard BLOCKS rather than
+    // trading below the venue minimum (issue #53).
     const limitsResult = await this.trade.getLimits();
     const limits = limitsResult.ok
       ? (limitsResult.data.bySymbol[coin.symbol.toUpperCase()] ?? NO_LIMITS)
@@ -48,10 +49,15 @@ export class GetTradeContextUseCase {
     return ok({
       coin,
       availableIrt: balances.data.availableIrt,
-      // Balances are keyed by symbol (portfolio ids ≠ market ids for tokens).
+      // Balances are keyed by symbol (portfolio ids ≠ market ids for tokens);
+      // `coinAmounts` is already AVAILABLE (net of anything locked — issue #73).
       availableCoin: balances.data.coinAmounts[coin.symbol.toUpperCase()] ?? 0,
       limits,
       defaultMinIrt,
+      limitsAvailable: limitsResult.ok,
+      effectiveFeeRateBps: limitsResult.ok
+        ? (limitsResult.data.effectiveFeeRateBps ?? null)
+        : null,
     });
   }
 }

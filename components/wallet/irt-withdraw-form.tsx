@@ -54,6 +54,10 @@ export function IrtWithdrawForm({
   const [awaitingOtp, setAwaitingOtp] = useState(false);
   const [otp, setOtp] = useState("");
   const [resendIn, setResendIn] = useState(0);
+  // Server-issued challenge id bound to THIS amount + destination IBAN (#69).
+  // We echo it back on verify so the second factor proves approval of *this*
+  // withdrawal, not merely that the phone approved *a* withdrawal.
+  const [challengeId, setChallengeId] = useState("");
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -90,28 +94,41 @@ export function IrtWithdrawForm({
     );
   }
 
-  /** Actually submit the withdrawal (with the OTP when one was collected). */
+  /** Actually submit the withdrawal (with the OTP + its challenge when one was
+   *  collected). The challengeId ties the code to this amount + IBAN (#69). */
   const submitWithdraw = () =>
     startTransition(async () => {
       setError(null);
       const result = await requestIrtWithdraw(
         selectedId,
         digits,
-        otpRequired ? otp : undefined,
+        otpRequired ? { challengeId, otp } : undefined,
       );
       if (!result.ok) setError(result.message);
       else setDone(true);
     });
 
-  /** Send the withdraw OTP, then reveal the code field. */
+  /**
+   * Send the withdraw OTP, then reveal the code field. The challenge is bound
+   * server-side to the CURRENT amount + destination IBAN (#69) and returned as
+   * `challengeId`, which we submit on verify.
+   *
+   * SECURITY: the `resendIn` countdown below is UX only. The real anti-abuse
+   * control (SMS-bombing / brute force) is server-side rate-limiting — the OTP
+   * endpoint MUST return 429 on repeat requests; never trust this client timer.
+   */
   const sendOtp = () =>
     startTransition(async () => {
       setError(null);
-      const result = await requestWithdrawOtp();
+      const result = await requestWithdrawOtp({
+        ibanId: selectedId,
+        amountIrt: amount,
+      });
       if (!result.ok) {
         setError(result.message);
         return;
       }
+      setChallengeId(result.data.challengeId);
       setAwaitingOtp(true);
       setResendIn(result.data.resendAfterSeconds);
     });

@@ -10,7 +10,9 @@ import {
   type KycFormState,
 } from "./kyc-state";
 import { REFERRAL_COOKIE } from "./referral-state";
+import { ACCESS_CLAIM_COOKIE } from "./session-state";
 import { COOKIE_OPTIONS } from "@/lib/utils/cookie-options";
+import { signAccessClaim } from "@/lib/auth/access-claim";
 
 /**
  * KYC step 1 — validate national code + Jalali birth date and run the identity
@@ -63,6 +65,18 @@ export async function confirmKyc(): Promise<KycFormState> {
 
   const store = await cookies();
   store.delete(KYC_PENDING_COOKIE);
+
+  // Re-mint the route-gate claim as `verified` (issue #68): the user just
+  // cleared KYC, so the proxy must let them into /wallet and /trade without a
+  // re-login. `null` ⇒ signing disabled (no secret, dev/mock) — gate stays
+  // presence-only there, same as startSession.
+  const claim = await signAccessClaim("verified");
+  if (claim) {
+    store.set(ACCESS_CLAIM_COOKIE, claim, {
+      ...COOKIE_OPTIONS,
+      maxAge: 60 * 60 * 24 * 30,
+    });
+  }
 
   // Referral attribution finalizes here: KYC passed with a stored ?ref code.
   const ref = store.get(REFERRAL_COOKIE)?.value;

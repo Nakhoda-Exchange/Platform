@@ -24,13 +24,41 @@ ownership. **Reserve the funds and keep the request `pending`**
 
 Errors: `NO_IBAN`, `EMPTY_AMOUNT`, `BELOW_MIN_WITHDRAW`, `INSUFFICIENT_IRT` — 422.
 
+## OTP second factor — bound to amount + IBAN (#69)
+
+When the backend requires a `withdraw` OTP for the user, the flow is two-step and
+the challenge is **bound server-side to the specific `{ ibanId, amountIrt }`**, so
+the code approves _this_ withdrawal — not merely _a_ withdrawal within a validity
+window:
+
+```jsonc
+// 1) request the OTP — bound to this exact amount + destination
+// POST /wallet/withdrawals/irt/otp        (or the auth OTP endpoint, purpose "withdraw")
+// request
+{ "ibanId": "iban_1", "amountIrt": 2000000 }
+// 200
+{ "challengeId": "chl_1", "resendAfterSeconds": 60 }
+
+// 2) submit the withdrawal, echoing the challenge + the typed code
+// POST /wallet/withdrawals/irt
+{ "ibanId": "iban_1", "amountIrt": 2000000, "challengeId": "chl_1", "otp": "123456" }
+```
+
+The backend MUST reject the submit if `{ibanId, amountIrt}` differ from what the
+`challengeId` was issued for. The mobile is read from the authenticated profile
+server-side (never trusted from the client).
+
+> **Rate-limiting is server-side (#69).** The UI resend countdown is UX only. The
+> real anti-abuse control (SMS-bombing / brute-force) is a **429** from the OTP
+> request/verify endpoints — never rely on the client timer.
+
 ## Notes for backend
 
 - The Toman path debits/reserves immediately and surfaces as `pending` in
   `/wallet/transactions`; approval/failure later flips the status
   (`done`/`failed`, releasing funds on failure).
-- OTP/2FA confirmation for withdrawals is a planned frontend step — design
-  the endpoint to accept an optional `otp` field forward-compatibly.
+- **Populate `withdrawals.approved_at` (#75)** on back-office approval — it is
+  currently unset and is required for reconciliation and user statements.
 
 ## Removed in V0 — crypto withdrawal
 

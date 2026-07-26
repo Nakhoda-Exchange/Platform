@@ -47,19 +47,34 @@ export function IrtDepositForm({
   const [deposit, setDeposit] = useState<CardDeposit | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  // Server/bank-confirmed credited amount (Toman) on `done` (#64). We render
+  // THIS on the receipt — never the client-typed `amount`, which may differ
+  // from what actually settled.
+  const [creditedIrt, setCreditedIrt] = useState<number | null>(null);
 
   const amount = Number(digits || "0");
   const belowMin = amount > 0 && amount < minDepositIrt;
 
   useEffect(() => {
     if (!deposit || submitted) return;
+    // Absolute end of the deposit window; once it passes we stop polling (#71).
+    // A late `done` must not flip an already-expired screen, and idle polling
+    // after expiry is wasted server load.
+    const deadline = Date.now() + deposit.expiresInSeconds * 1_000;
     const tick = setInterval(
       () => setSecondsLeft((s) => Math.max(0, s - 1)),
       1_000,
     );
     const poll = setInterval(async () => {
+      if (Date.now() >= deadline) {
+        clearInterval(poll);
+        return;
+      }
       const result = await checkDeposit(deposit.id);
-      if (result.ok && result.data === "done") setSubmitted(true);
+      if (result.ok && result.data.status === "done") {
+        setCreditedIrt(result.data.creditedIrt ?? null);
+        setSubmitted(true);
+      }
     }, POLL_MS);
     return () => {
       clearInterval(tick);
@@ -77,7 +92,9 @@ export function IrtDepositForm({
             واریز شما تأیید شد
           </h2>
           <p className="text-[16px] text-muted">
-            {formatIrt(amount)} به موجودی شما اضافه شد.
+            {creditedIrt != null
+              ? `${formatIrt(creditedIrt)} به موجودی شما اضافه شد.`
+              : "مبلغ واریزی شما به موجودی‌تان اضافه شد."}
           </p>
         </div>
         <div className="flex w-full max-w-[360px] flex-col gap-3">

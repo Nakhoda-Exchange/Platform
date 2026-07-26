@@ -16,6 +16,15 @@ export const SESSION_COOKIE = "session";
  */
 export const AUTH_TOKEN_COOKIE = "auth_token";
 
+/**
+ * The route-gate access claim (issue #68). A signed statement of the user's
+ * KYC/approval level that the proxy reads to keep pre-KYC (OTP-only) users out
+ * of the money routes (/wallet, /trade) — presence of a session alone is not
+ * enough. Signed (HMAC) so it can't be forged from the client; see
+ * `lib/auth/access-claim.ts`. Set beside the session at login.
+ */
+export const ACCESS_CLAIM_COOKIE = "access";
+
 /** Only same-origin paths may be used as post-login destinations. */
 export function safeNextPath(raw: string | undefined): string | null {
   if (!raw) return null;

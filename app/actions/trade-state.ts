@@ -7,11 +7,15 @@ import type { OrderStatus, PlacedOrder } from "@/lib/core/domain/trade/order";
  * `success` is a synchronous fill (200 SETTLED). `accepted` is a 202 ACCEPTED
  * order that now rests/pends — the screen enters a pending state and polls
  * `resolveOrder(orderId)` until terminal.
+ *
+ * `duplicate` on `success` marks a backend idempotency replay (the same intent
+ * was already placed) — the screen says «already placed» instead of celebrating
+ * a second fill (issue #55).
  */
 export type TradeFormState =
   | { status: "idle" }
   | { status: "error"; message: string; code?: string }
-  | { status: "success"; order: PlacedOrder }
+  | { status: "success"; order: PlacedOrder; duplicate?: boolean }
   | {
       status: "accepted";
       orderId: string;
