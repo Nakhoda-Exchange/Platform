@@ -30,6 +30,9 @@ interface PortfolioDto {
   holdings: Array<{
     coin: { id: string; symbol: string };
     amount: string | number;
+    // Units LOCKED by open orders, when the backend surfaces a per-coin lock
+    // (issue #73). Absent ⇒ nothing locked; `amount` is then fully available.
+    locked?: string | number | null;
   }>;
 }
 
@@ -41,6 +44,9 @@ interface PortfolioDto {
  */
 interface TradeLimitsDto {
   defaultMinTradeIrt?: string | null;
+  // The caller's EFFECTIVE fee rate in basis points, when the backend surfaces
+  // one on this authed payload (a referral invitee is discounted — issue #76).
+  effectiveFeeRateBps?: number | null;
   limits: Array<{
     symbol: string;
     minBuyIrt: string | null;
@@ -70,6 +76,14 @@ function parseIrtBound(value: string | null | undefined): number | null {
  */
 interface QuoteDto {
   expectedSlippageBps?: number | null;
+  // Server-minted quote fields (issue #59) — present once the backend mints a
+  // fixed-price, short-TTL quote the order can reference. All optional: an older
+  // backend that only prices slippage omits them.
+  quoteId?: string | null;
+  priceIrt?: string | number | null;
+  expiresAt?: string | null;
+  // The caller's effective fee rate for this quote, bps (issue #76).
+  feeRateBps?: number | null;
 }
 
 /**
@@ -83,7 +97,13 @@ interface OrderSubmitDto {
   orderId?: string;
   phase?: string;
   reason?: string;
-  amountOut?: string;
+  // What ACTUALLY settled — the executed coin amount, and (when returned) the
+  // executed unit price and fee. The receipt is built from these, not the client
+  // estimate (issue #56). Decimal strings on the wire.
+  amountOut?: string | null;
+  executedPriceIrt?: string | null;
+  feeIrt?: string | null;
+  // The backend REPLAYED a prior submit for this Idempotency-Key (issue #55).
   duplicate?: boolean;
 }
 
@@ -171,10 +191,27 @@ export class HttpTradeRepository implements TradeRepository {
     // and looked up by symbol — otherwise a held discovered token reads as 0.
     // Wire money/quantity are decimal strings; parse to numbers so the trade use
     // case (balance checks, coin-amount math) works on numbers.
+    // Keep BOTH the parsed number (display) and the raw decimal string (exact
+    // money-correct comparison / «sell all» derivation — issue #57). `locked`
+    // (issue #73) is netted out so `coinAmounts` reports AVAILABLE units.
     const coinAmounts: Record<string, number> = {};
-    for (const h of holdings)
-      coinAmounts[h.coin.symbol.toUpperCase()] = parsePrice(h.amount) ?? 0;
-    return ok({ availableIrt: parsePrice(availableIrt) ?? 0, coinAmounts });
+    const coinAmountsRaw: Record<string, string> = {};
+    const lockedCoinAmountsRaw: Record<string, string> = {};
+    for (const h of holdings) {
+      const sym = h.coin.symbol.toUpperCase();
+      const total = parsePrice(h.amount) ?? 0;
+      const locked = parsePrice(h.locked) ?? 0;
+      coinAmounts[sym] = Math.max(total - locked, 0);
+      coinAmountsRaw[sym] = h.amount == null ? "0" : String(h.amount);
+      if (h.locked != null) lockedCoinAmountsRaw[sym] = String(h.locked);
+    }
+    return ok({
+      availableIrt: parsePrice(availableIrt) ?? 0,
+      coinAmounts,
+      availableIrtRaw: availableIrt == null ? "0" : String(availableIrt),
+      coinAmountsRaw,
+      lockedCoinAmountsRaw,
+    });
   }
 
   async getLimits(): Promise<Result<TradeLimits>> {
@@ -193,9 +230,14 @@ export class HttpTradeRepository implements TradeRepository {
     // The admin-configurable global floor is a decimal money string; parse it
     // like any wire money field (null when absent/blank/malformed → the use case
     // falls back to the offline MIN_ORDER_IRT constant).
+    const feeBps = result.data.effectiveFeeRateBps;
     return ok({
       defaultMinIrt: parsePrice(result.data.defaultMinTradeIrt),
       bySymbol,
+      // The caller's effective fee rate (issue #76); a finite number survives,
+      // anything else ⇒ null (the use case falls back to FEE_RATE_BPS).
+      effectiveFeeRateBps:
+        typeof feeBps === "number" && Number.isFinite(feeBps) ? feeBps : null,
     });
   }
 
@@ -220,11 +262,19 @@ export class HttpTradeRepository implements TradeRepository {
     });
     if (!result.ok) return result;
     const bps = result.data.expectedSlippageBps;
+    const feeBps = result.data.feeRateBps;
     // Absent/null/non-numeric ⇒ unknown. `0` must survive as 0 (a firm-price
     // route), so this is a typeof check, not a falsy one.
     return ok({
       expectedSlippageBps:
         typeof bps === "number" && Number.isFinite(bps) ? bps : null,
+      // Server-minted quote reference (issue #59): threaded through so the order
+      // can commit to a fixed price. Absent on an older backend ⇒ null/undefined.
+      quoteId: result.data.quoteId ?? null,
+      priceIrt: parsePrice(result.data.priceIrt),
+      expiresAt: result.data.expiresAt ?? null,
+      feeRateBps:
+        typeof feeBps === "number" && Number.isFinite(feeBps) ? feeBps : null,
     });
   }
 
@@ -234,10 +284,15 @@ export class HttpTradeRepository implements TradeRepository {
     amountCoin: number,
     totalIrt: number,
     feeIrt: number,
+    idempotencyKey: string,
     options?: PlaceOrderOptions,
   ): Promise<Result<OrderSubmission>> {
     const orderType: OrderType = options?.orderType ?? "MARKET";
     const isLimit = orderType === "LIMIT";
+    // The EXACT coin amount for the wire — the raw held string on a «sell all»
+    // (issue #57), else the derived number stringified. Avoids re-introducing
+    // float loss when serializing the committed amount.
+    const coinAmountWire = options?.amountCoinRaw ?? String(amountCoin);
     // Coin price is a nullable decimal string on the wire; the band price the
     // order is submitted against needs a number. For a MARKET order the caller
     // (PlaceOrderUseCase) already refuses an unavailable price, so this is
@@ -249,8 +304,9 @@ export class HttpTradeRepository implements TradeRepository {
     // backward-compatible contract. A LIMIT order is SPEND-committed, so the
     // spend unit differs by side: a BUY commits an IRT amount, a SELL commits a
     // coin amount (the backend rejects a TARGET-unit limit). `targetPrice` is
-    // the whole-Toman trigger. The backend requires an Idempotency-Key so a
-    // retried submit settles once; a fresh key marks this as a distinct order.
+    // the whole-Toman trigger. A server-minted `quoteId` (issue #59) rides along
+    // when the screen obtained a fixed-price quote — the backend then prices the
+    // fill at the quote instead of the client `requestedPrice` band.
     const body: Record<string, string> = isLimit
       ? {
           symbol: coin.symbol.toUpperCase(),
@@ -260,7 +316,7 @@ export class HttpTradeRepository implements TradeRepository {
           ...(side === "buy"
             ? { amount: String(Math.round(totalIrt)), amountUnit: "IRT" }
             : {
-                amount: String(amountCoin),
+                amount: coinAmountWire,
                 amountUnit: coin.symbol.toUpperCase(),
               }),
         }
@@ -278,14 +334,21 @@ export class HttpTradeRepository implements TradeRepository {
     if (options?.slippageBps != null && Number.isFinite(options.slippageBps)) {
       body.slippageBps = String(Math.round(options.slippageBps));
     }
+    if (options?.quoteId) body.quoteId = options.quoteId;
 
+    // The Idempotency-Key is the caller's, minted ONCE per user intent and
+    // REUSED on retry — so a retry after a lost response replays the original
+    // settlement instead of executing twice (issue #55). NOT minted here.
     const result = await this.http.request<OrderSubmitDto>({
       method: "POST",
       path: "/trade/orders",
-      headers: { "Idempotency-Key": crypto.randomUUID() },
+      headers: { "Idempotency-Key": idempotencyKey },
       body,
     });
     if (!result.ok) return result;
+
+    // The backend replays the original response for a repeated key and flags it.
+    const duplicate = result.data.duplicate === true;
 
     // 202 ACCEPTED — the order rests/pends; hand back its id so the caller polls
     // it to completion. (A LIMIT order always lands here; a MARKET order will
@@ -295,6 +358,7 @@ export class HttpTradeRepository implements TradeRepository {
         kind: "accepted",
         orderId: result.data.orderId ?? "",
         phase: result.data.phase ?? "pending",
+        duplicate,
       });
     }
 
@@ -303,8 +367,13 @@ export class HttpTradeRepository implements TradeRepository {
       return fail("ORDER_REJECTED", messageForRejection(result.data.reason));
     }
 
-    // 200 SETTLED — build the receipt from the validated request inputs plus the
-    // order id; the backend result carries settlement status, not display fields.
+    // 200 SETTLED — build the receipt from what ACTUALLY settled (issue #56): the
+    // backend's executed `amountOut` (and executed price/fee when returned), not
+    // the client estimate. Only when the backend returns no `amountOut` do we
+    // fall back to the pre-trade estimate, flagged `estimated` for the UI marker.
+    const settledCoin = parsePrice(result.data.amountOut);
+    const executedPrice = parsePrice(result.data.executedPriceIrt);
+    const executedFee = parsePrice(result.data.feeIrt);
     return ok({
       kind: "settled",
       order: {
@@ -313,11 +382,16 @@ export class HttpTradeRepository implements TradeRepository {
         coinId: coin.id,
         symbol: coin.symbol,
         name: coin.name,
-        amountCoin,
+        amountCoin: settledCoin ?? amountCoin,
         totalIrt,
-        feeIrt,
-        // A LIMIT fill executed at its target; a MARKET fill at the live price.
-        priceIrt: isLimit ? (options?.targetPriceIrt ?? 0) : unitPriceIrt,
+        feeIrt: executedFee ?? feeIrt,
+        // Executed price when the backend returns one; else a LIMIT fill executed
+        // at its target and a MARKET fill at the live price (the estimate).
+        priceIrt:
+          executedPrice ??
+          (isLimit ? (options?.targetPriceIrt ?? 0) : unitPriceIrt),
+        estimated: settledCoin === null,
+        duplicate,
       },
     });
   }

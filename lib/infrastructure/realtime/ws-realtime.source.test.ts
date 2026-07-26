@@ -3,7 +3,11 @@ import { WsRealtimeSource } from "@/lib/infrastructure/realtime/ws-realtime.sour
 import type {
   PriceTick,
   RealtimeEvent,
+  TradeUpdate,
 } from "@/lib/core/domain/realtime/events";
+
+/** Flush pending microtasks so the async auth-then-subscribe step completes. */
+const flush = () => new Promise((r) => setTimeout(r, 0));
 
 type Handler = (event: unknown) => void;
 
@@ -50,12 +54,29 @@ const price: PriceTick = {
   at: 1,
 };
 
-function makeSource() {
+const trade: TradeUpdate = {
+  type: "trade.update",
+  tradeId: "t1",
+  coinId: "btc",
+  symbol: "BTC",
+  side: "buy",
+  status: "done",
+  amountCoin: 0.5,
+  priceIrt: 3_900_000_000,
+  totalIrt: 1_950_000_000,
+  at: 2,
+};
+
+function makeSource(ticketProvider?: () => Promise<string | null>) {
   let socket: FakeSocket | undefined;
-  const source = new WsRealtimeSource("ws://test/ws", (url) => {
-    socket = new FakeSocket(url);
-    return socket as unknown as WebSocket;
-  });
+  const source = new WsRealtimeSource(
+    "ws://test/ws",
+    (url) => {
+      socket = new FakeSocket(url);
+      return socket as unknown as WebSocket;
+    },
+    ticketProvider,
+  );
   return { source, socket: () => socket! };
 }
 
@@ -93,5 +114,39 @@ describe("WsRealtimeSource", () => {
     off();
     expect(socket().readyState).toBe(3);
     expect(source.status).toBe("closed");
+  });
+
+  test("sends an auth frame before subscribe and delivers trades (#65)", async () => {
+    const { source, socket } = makeSource(async () => "ticket-123");
+    const received: RealtimeEvent[] = [];
+    source.subscribe(["trades"], (e) => received.push(e));
+    socket().open();
+    await flush();
+
+    // auth first, then subscribe.
+    expect(socket().sent[0]).toBe(
+      JSON.stringify({ type: "auth", ticket: "ticket-123" }),
+    );
+    expect(socket().sent).toContain(
+      JSON.stringify({ type: "subscribe", channels: ["trades"] }),
+    );
+
+    socket().message(trade);
+    expect(received).toEqual([trade]);
+  });
+
+  test("drops trade frames on an unauthenticated connection (#65)", async () => {
+    // Ticket provider yields nothing → connection is unauthenticated.
+    const { source, socket } = makeSource(async () => null);
+    const received: RealtimeEvent[] = [];
+    source.subscribe(["prices", "trades"], (e) => received.push(e));
+    socket().open();
+    await flush();
+
+    expect(socket().sent.some((f) => f.includes('"type":"auth"'))).toBe(false);
+
+    socket().message(trade); // spoofed money confirmation — must be suppressed
+    socket().message(price); // public data — still flows
+    expect(received).toEqual([price]);
   });
 });

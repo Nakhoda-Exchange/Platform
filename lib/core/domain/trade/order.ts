@@ -70,10 +70,25 @@ export function maxOrderIrt(
 }
 
 /**
- * Market-order fee (0.35%, competitive with Nobitex/Wallex). The revenue
- * engine the referral program shares — see doc/referral/PRD.md.
+ * Default market-order fee (0.35%, competitive with Nobitex/Wallex). The revenue
+ * engine the referral program shares — see doc/referral/PRD.md. This is the
+ * FALLBACK rate: a caller's EFFECTIVE rate (a referral invitee is discounted, so
+ * a fixed 0.35% would mismatch the backend — issue #76) rides on the trade
+ * context / quote as `effectiveFeeRateBps` and wins when present.
  */
 export const FEE_RATE = 0.0035;
+
+/**
+ * The default fee expressed in basis points (35 bps = 0.35%). Fee IRT is derived
+ * with integer bps math — `round(amountIrt × bps / 10000)` — not a float
+ * multiply, so it stays exact against the whole-Toman notional (issue #57).
+ */
+export const FEE_RATE_BPS = 35;
+
+/** Platform fee on an IRT notional at a given rate, exact integer (whole Toman). */
+export function feeIrtFor(amountIrt: number, feeRateBps: number): number {
+  return Math.round((amountIrt * feeRateBps) / 10000);
+}
 
 /** Everything the trade screen needs to open for a coin. */
 export interface TradeContext {
@@ -85,6 +100,15 @@ export interface TradeContext {
   // floor when this token has no per-token min. `null` when the API omits it
   // (→ the offline MIN_ORDER_IRT fallback). See {@link minOrderIrt}.
   defaultMinIrt: number | null;
+  // Whether the trade-limits fetch SUCCEEDED. `false` means the minimum/maximum
+  // shown are the offline fallbacks (a transient limits outage) — the screen
+  // should warn, and placement is blocked server-side rather than silently
+  // trading below the venue minimum (issue #53).
+  limitsAvailable: boolean;
+  // The caller's EFFECTIVE fee rate in basis points, from the backend (a
+  // referral invitee is discounted). `null` when the backend does not surface
+  // one → the offline FEE_RATE_BPS default applies (issue #76).
+  effectiveFeeRateBps: number | null;
 }
 
 /** A successfully placed (settled) order — the fill receipt. */
@@ -94,10 +118,18 @@ export interface PlacedOrder {
   coinId: string;
   symbol: string;
   name: string; // Persian coin name for the receipt
-  amountCoin: number; // units bought/sold
+  amountCoin: number; // units bought/sold — the backend `amountOut` when it settles one
   totalIrt: number; // total value, Toman (what the user entered)
   feeIrt: number; // platform fee charged, Toman
   priceIrt: number; // unit price at execution, Toman
+  // The receipt is APPROXIMATE — the backend returned no executed `amountOut`, so
+  // `amountCoin`/`priceIrt`/`feeIrt` are the client's pre-trade estimates, not
+  // what actually settled. The UI marks these «تقریبی» (issue #56).
+  estimated?: boolean;
+  // The backend REPLAYED a prior submit for this Idempotency-Key — this is the
+  // original order, not a second execution. The UI says «قبلاً ثبت شده» rather
+  // than reporting a fresh success (issue #55).
+  duplicate?: boolean;
 }
 
 /**
@@ -112,7 +144,7 @@ export interface PlacedOrder {
  */
 export type OrderSubmission =
   | { kind: "settled"; order: PlacedOrder }
-  | { kind: "accepted"; orderId: string; phase: string };
+  | { kind: "accepted"; orderId: string; phase: string; duplicate?: boolean };
 
 /**
  * A point-in-time view of an order from `GET /orders/{orderId}` — its lifecycle

@@ -4,102 +4,135 @@ Port: `lib/core/application/trade/ports/trade-repository.port.ts` ·
 Adapter: `lib/infrastructure/trade/http-trade.repository.ts` ·
 Conventions: [`doc/api-conventions.md`](../api-conventions.md)
 
-## GET `/trade/balances` — auth
+All money is a **decimal string** on the wire (see conventions). IRT notional is
+whole Toman as a string; coin quantities are decimal strings. The **canonical
+uppercased `symbol`** is the identifier — never `coinId`/`displaySymbol`.
 
-```json
-// 200
-{ "availableIrt": 250000000, "coinAmounts": { "btc": 0.0015, "eth": 0.02 } }
-```
+## Balances — via `GET /portfolio` (no dedicated endpoint)
 
-## POST `/trade/orders` — auth
+There is **no** `GET /trade/balances`. The adapter reads the portfolio snapshot
+and derives tradable balances from it (`getBalances` → `GET /portfolio`):
 
-Market order. The frontend pre-computes with FEE_RATE = 0.35% for instant
-feedback, but the BACKEND IS AUTHORITATIVE — re-validate everything: min
-order (۵۰۰٬۰۰۰ تومان), balances, and the fee.
+- cash = `availableIrt`;
+- per-coin units = each holding's `amount`, keyed by **UPPERCASE symbol** (not
+  `coin.id`, which differs between the market and ledger contexts).
 
-```json
-// request
-{
-  "coinId": "btc",
-  "side": "buy",             // buy | sell
-  "amountCoin": 0.000498,     // buy: net of fee; sell: gross units sold
-  "totalIrt": 2000000,        // what the user entered
-  "feeIrt": 7000              // 0.35% of totalIrt — verify, don't trust
-}
-// 200 — PlacedOrder
-{
-  "id": "ord_1", "side": "buy", "coinId": "btc", "symbol": "BTC",
-  "name": "بیت‌کوین", "amountCoin": 0.000498, "totalIrt": 2000000,
-  "feeIrt": 7000, "priceIrt": 4000000000
-}
-```
+See [`doc/portfolio/api.md`](../portfolio/api.md) for the full snapshot shape,
+including `available`/`locked` and `pendingWithdrawIrt` (#73).
 
-Errors: `EMPTY_AMOUNT`, `BELOW_MIN_ORDER`, `UNKNOWN_COIN`,
-`INSUFFICIENT_IRT`, `INSUFFICIENT_COIN` (all 422 with Persian messages —
-the exact codes/messages already exist in `place-order.use-case.ts`).
+## GET `/trade/limits` — auth
 
-## Notes for backend
-
-- Fee semantics: buyers pay the fee out of `totalIrt` (coins bought with the
-  remainder); sellers receive `totalIrt − feeIrt`. Fees feed the referral
-  pool (`doc/referral/api.md`).
-- A filled order must appear in `/wallet/transactions` immediately.
-
----
-
-## Async order lifecycle (#154 PR5) — the client contract
-
-The Platform client now speaks the async order lifecycle. Submit, status, list
-and cancel all live under `/orders` (the adapter posts submits to **`POST
-/orders`**, not the legacy `/trade/orders` — see the assumption note below).
-
-### POST `/orders` — auth — submit
-
-The current wire DTO the adapter sends (unchanged from today plus the two LIMIT
-fields):
+Admin-configurable global order floor plus per-token min/max **IRT notional**
+bounds. Each bound is a whole-Toman integer string, or `null` (unbounded).
 
 ```jsonc
-// MARKET (backward-compatible)
+// 200 — TradeLimitsDto
+{
+  "defaultMinTradeIrt": "500000", // global floor (string) or null/absent
+  "limits": [
+    {
+      "symbol": "BTC",
+      "minBuyIrt": "500000",
+      "maxBuyIrt": null,
+      "minSellIrt": "500000",
+      "maxSellIrt": null,
+    },
+  ],
+}
+```
+
+Resolution order for the effective minimum: per-token min → `defaultMinTradeIrt`
+→ offline `MIN_ORDER_IRT` (500,000). Keyed by uppercased symbol.
+
+## POST `/trade/quotes` — auth
+
+Price an order **without placing it** — the pre-commit quote the ticket reads the
+expected slippage from. Same amount contract as a MARKET submit.
+
+```jsonc
+// request
+{ "symbol": "BTC", "side": "BUY", "amount": "2000000", "amountUnit": "IRT" }
+// 200 — QuoteResponse (only the field the screen reads today)
+{ "expectedSlippageBps": 12 }   // number in bps; 0 = firm price; null/absent = unknown
+```
+
+`0` is a real answer (firm-price route) and must survive as `0`; `null`/absent =
+could not price (venue down / no liquidity) → the UI shows nothing.
+
+## POST `/trade/orders` — auth — submit
+
+The frontend pre-computes fee (`FEE_RATE = 0.35%`) and coin amount for instant
+feedback, but the **backend is authoritative** — re-validate min order, balances,
+fee and price band. An **`Idempotency-Key`** header rides every submit so a retry
+settles once.
+
+```jsonc
+// MARKET — `amount` is whole-Toman IRT notional for BOTH sides
 { "symbol": "BTC", "side": "BUY", "orderType": "MARKET",
   "amount": "2000000", "amountUnit": "IRT", "requestedPrice": "4000000000" }
 
-// LIMIT — SPEND-committed. BUY commits IRT; SELL commits the coin amount.
+// LIMIT — SPEND-committed: BUY commits IRT, SELL commits the coin amount
 { "symbol": "BTC", "side": "BUY", "orderType": "LIMIT",
   "targetPrice": "3500000000", "amount": "2000000", "amountUnit": "IRT" }
 { "symbol": "BTC", "side": "SELL", "orderType": "LIMIT",
   "targetPrice": "4500000000", "amount": "0.5", "amountUnit": "BTC" }
+
+// optional on either: the user's own slippage tolerance (overrides the coin's)
+"slippageBps": "50"
 ```
 
-`Idempotency-Key` header per submit. `amount`/`targetPrice` are whole-Toman
-strings (coin `amount` is a decimal string). Two response shapes:
+Two success shapes plus an in-body rejection:
 
 ```jsonc
-// 200 — synchronous fill (MARKET today, async flag OFF)
-{ "status": "SETTLED", "orderId": "ord_1" }
+// 200 — synchronous fill (MARKET today, async settlement flag OFF)
+{ "status": "SETTLED", "orderId": "ord_1", "duplicate": false }
 // 202 — accepted, now rests/pends (LIMIT always; MARKET once async is ON)
 { "status": "ACCEPTED", "orderId": "ord_1", "phase": "pending" }
-// 200 — rejected
+// 200 — rejected (reason mapped to Persian client-side)
 { "status": "REJECTED", "reason": "NO_LIQUIDITY" }
 ```
 
-On 202 the client polls `GET /orders/{orderId}` (~1s interval, bounded budget)
-until terminal; a LIMIT gets a short budget then hands off to the open-orders
-list.
+- On `ACCEPTED` the client polls `GET /trade/orders/{orderId}` (~1s, bounded
+  budget) until terminal; a LIMIT gets a short budget then hands off to the
+  open-orders list.
+- **Reject reasons**: `PRICE_BAND_BREACHED`, `NO_LIQUIDITY`/`NO_ROUTE`,
+  `INSUFFICIENT_BALANCE`/`INSUFFICIENT_FUNDS` (see `messageForRejection`).
+- **User-fault validation** (the use case, before submit): `EMPTY_AMOUNT`,
+  `BELOW_MIN_ORDER`, `UNKNOWN_COIN`, `INSUFFICIENT_IRT`, `INSUFFICIENT_COIN`
+  (422). **House faults** (`PRICE_UNAVAILABLE`, `VENUE_UNAVAILABLE`,
+  `INSUFFICIENT_LIQUIDITY`, `TRADING_HALTED` — 503 + `retryAfter`) per the
+  taxonomy in `doc/api-conventions.md`.
+- The receipt (`PlacedOrder`) is built **client-side** from the validated request
+  inputs plus the returned `orderId`; the submit result carries settlement
+  status, not display fields.
 
-### GET `/orders/{orderId}` — auth — status
+A settled/filled order must appear in `/wallet/transactions` immediately. Fees
+are live (0.35%): buyers pay it out of `totalIrt`, sellers receive
+`totalIrt − feeIrt`; fees feed the referral pool (`doc/referral/api.md`).
+
+## GET `/trade/orders/{orderId}` — auth — status
+
+Single status read; drives the post-`ACCEPTED` poll loop.
 
 ```jsonc
 {
-  "orderId": "ord_1",
-  "status": "RESERVED", // RESERVED = still resting/pending
-  "reason": null,
-  "filledAmount": null,
-  "totalIrt": null,
+  "orderId": "ord_1", // `id` also accepted
+  "status": "RESERVED", // RESERVED (resting) | SETTLED | REJECTED | CANCELLED
+  "reason": null, // machine reason when REJECTED
+  "filledAmount": null, // coin units filled (`amountOut` also accepted)
+  "totalIrt": null, // IRT notional
 }
-// terminal: status ∈ SETTLED | REJECTED | CANCELLED
 ```
 
-### GET `/orders?status=open` — auth — open (resting) orders
+**All-or-nothing (#72):** the order model has **no `partially_filled` state** —
+`status` is terminal at `SETTLED`/`REJECTED`/`CANCELLED` and a fill is complete or
+not at all. `filledAmount` reflects the settled coin units (equal to the ordered
+amount on `SETTLED`, `null`/`0` otherwise); there is no separate
+`filledAmountCoin`/`filledTotalIrt` partial-progress pair. If partial venue fills
+are ever surfaced, add an explicit `partially_filled` terminal plus those two
+fields — until then the contract is explicitly all-or-nothing.
+
+## GET `/trade/orders?status=open` — auth — resting orders
 
 ```jsonc
 {
@@ -121,16 +154,46 @@ list.
 }
 ```
 
-### POST `/orders/{orderId}/cancel` — auth — cancel
+`amount` is the committed **spend** in `amountCurrency` (`"IRT"` for a BUY, the
+coin symbol for a SELL). `displaySymbol`/`coinDisplaySymbol` are display aliases.
 
-`200` on success (order CANCELLED, reserve released); **`409`** if it already
-executed → the client maps this to `ORDER_ALREADY_EXECUTED`, drops the row and
+## POST `/trade/orders/{orderId}/cancel` — auth
+
+`200` on success (order `CANCELLED`, reserve released); **`409`** if it already
+executed → the client maps it to `ORDER_ALREADY_EXECUTED`, drops the row and
 refreshes the list.
 
-### Assumptions (please confirm)
+## Refund / reserve timing per terminal state (#72/#73)
 
-- **Submit path** moved to `POST /orders` to sit with the rest of the lifecycle
-  (task spec: `POST /v1/orders`). If the backend keeps submit at
-  `/trade/orders`, only the path constant in `http-trade.repository.ts` changes.
-- **LIMIT SELL amount unit** is the coin symbol (`amountUnit: "BTC"`), since a
-  LIMIT is SPEND-committed and TARGET-unit limits are rejected.
+An accepted order **locks** its spend (`amount` in `amountCurrency`); the lock
+resolves at the terminal state:
+
+| Terminal    | Reserve outcome                                                       |
+| ----------- | --------------------------------------------------------------------- |
+| `SETTLED`   | Reserve consumed; balances net out (coins in / IRT out or vice versa) |
+| `REJECTED`  | Reserve released **immediately**, in full                             |
+| `CANCELLED` | Reserve released immediately, in full                                 |
+| `expired`   | (realtime lifecycle) Reserve released immediately on expiry           |
+
+The released amount must be reflected in the portfolio's `available`/`locked`
+split (see #73 below) and any resulting movement mirrored into
+`/wallet/transactions`.
+
+## Reconciliation & proof-of-solvency (#75) — **backend follow-up**
+
+These are treasury/Substructure requirements; documented here as the contract the
+Platform relies on. None live in Platform code (no treasury tables here):
+
+- **`venueTradeId`** (hedge/leg id): every SETTLED trade MUST persist the upstream
+  venue trade/leg id so a user fill maps to its hedge. It is **not** in the
+  trade/history/realtime contracts yet — add it to the order-status and
+  `trade.update` payloads and to the transaction detail.
+- **Solvency invariant**: Σ(user ledger per asset) ≤ Σ(treasury balances: Vault
+  wallets + Wallex balance). A periodic check MUST alert on breach. Blocked while
+  `te_treasury_balances`/`te_treasury_transactions`/`te_inventory` are empty and
+  `EXECUTION_MODE=dry_run`.
+- **`withdrawals.approved_at`** MUST be populated on back-office approval (today
+  unpopulated) — needed for reconciliation and the statement below.
+- **User-facing periodic statements** (per-asset balances + movements, exportable)
+  are a launch requirement; `doc/history/PRD.md` currently lists export as a
+  non-goal — revisit before public launch.

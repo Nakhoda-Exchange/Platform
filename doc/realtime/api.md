@@ -44,6 +44,14 @@ Frames that don't match get an `error` control frame; the connection stays open.
 On connect the server sends `welcome` followed by a **price snapshot** (one
 `price` per coin) so the UI paints immediately, then streams updates.
 
+> **Gap (#72): no trade-state snapshot on subscribe.** The server sends a _price_
+> snapshot but **no `trade.update` snapshot** for the user's in-flight orders, so
+> a terminal `done`/`expired`/`failed` that fires during a WS disconnect is
+> unrecoverable over the socket. **Required:** on `subscribe` to `trades`, replay
+> the current state of each open/recently-terminal order — and/or let the client
+> reconcile after reconnect via REST `GET /trade/orders/{id}` + the open-orders
+> list (`doc/trade/api.md`).
+
 **`price`** (channel `prices`):
 
 ```jsonc
@@ -79,6 +87,28 @@ On connect the server sends `welcome` followed by a **price snapshot** (one
 `status` transitions: `pending → open → done`, or `→ expired` once `expiresAt`
 passes, or `→ failed`. The platform surfaces the terminal states (done /
 expired / failed) as toasts; `pending`/`open` churn is consumed silently.
+
+### Required additions (contract gaps)
+
+The current frame (`lib/core/domain/realtime/events.ts`) carries a single
+`amountCoin` and no reason/leg id. To line up with the REST order lifecycle:
+
+- **`reason` on `failed` (#72):** a `failed` frame MUST carry a machine `reason`
+  (same vocabulary as the REST reject reasons — `PRICE_BAND_BREACHED`,
+  `NO_LIQUIDITY`, …) so the terminal toast can explain itself.
+- **Partial fills / all-or-nothing (#72):** there is **no `filledAmountCoin` and
+  no `partial` state** — `amountCoin` is the whole order and the model is
+  all-or-nothing (matching `GET /trade/orders/{id}`). If partial venue fills are
+  ever surfaced, add `filledAmountCoin`/`filledTotalIrt` and a `partially_filled`
+  status in **both** this frame and the REST status; until then, all-or-nothing
+  is the explicit contract.
+- **Refund timing (#72):** `expired` and `failed` release the order's reserve
+  **immediately** (see the refund-timing table in `doc/trade/api.md`); the
+  released funds re-appear in the portfolio `available`/`locked` split (#73) and
+  the movement lands in `/wallet/transactions` (which still needs an `expired`
+  status — `doc/history/api.md`).
+- **`venueTradeId` (#75, backend):** a `done`/settled frame SHOULD carry the
+  upstream venue trade/leg id for reconciliation; not present in the contract yet.
 
 ## Consuming it
 

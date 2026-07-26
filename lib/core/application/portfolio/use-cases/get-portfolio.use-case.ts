@@ -29,10 +29,16 @@ export class GetPortfolioUseCase {
     const costIrt = holdings.reduce((sum, h) => sum + num(h.costIrt), 0);
     const profitIrt = holdingsValueIrt - costIrt;
     const profitPercent = costIrt > 0 ? (profitIrt / costIrt) * 100 : 0;
-    const dayChangeIrt = holdings.reduce(
-      (sum, h) => sum + (num(h.valueIrt) * h.coin.change24h) / 100,
-      0,
-    );
+    // 24h P&L per holding. A holding worth `v` NOW after a 24h change of `c%` was
+    // worth `v/(1+c/100)` a day ago, so the gain is `v − v/(1+c/100) = v·c/(100+c)`
+    // — NOT `v·c/100`, which prices the change off the current value and thus
+    // overstates gains / understates losses. The `100+c === 0` case (c = −100%, a
+    // coin worth nothing 24h ago) is degenerate — contribute 0 rather than ∞.
+    const dayChangeIrt = holdings.reduce((sum, h) => {
+      const c = h.coin.change24h;
+      const denom = 100 + c;
+      return denom === 0 ? sum : sum + (num(h.valueIrt) * c) / denom;
+    }, 0);
     const dayChangePercent =
       holdingsValueIrt > 0 ? (dayChangeIrt / holdingsValueIrt) * 100 : 0;
 

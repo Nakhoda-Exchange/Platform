@@ -7,10 +7,13 @@ import { cookies } from "next/headers";
 import type { AuthFormState } from "./auth-state";
 import { REFERRAL_COOKIE } from "./referral-state";
 import {
+  ACCESS_CLAIM_COOKIE,
   AUTH_TOKEN_COOKIE,
   SESSION_COOKIE,
   safeNextPath,
 } from "./session-state";
+import { accessLevelForStatus, signAccessClaim } from "@/lib/auth/access-claim";
+import type { LoginStatus as UserLoginStatus } from "@/lib/core/domain/auth/login-status";
 import {
   clearLoginChallenge,
   clearLoginStatus,
@@ -26,11 +29,26 @@ import { COOKIE_OPTIONS } from "@/lib/utils/cookie-options";
  * auth sessions land — set ONLY at true login success: OTP for users
  * without a two-step password, the gate for users with one.
  */
-async function startSession(): Promise<void> {
-  (await cookies()).set(SESSION_COOKIE, crypto.randomUUID(), {
+async function startSession(status: UserLoginStatus): Promise<void> {
+  const store = await cookies();
+  store.set(SESSION_COOKIE, crypto.randomUUID(), {
     ...COOKIE_OPTIONS,
     maxAge: 60 * 60 * 24 * 30,
   });
+
+  // Route gate (issue #68): carry the KYC/approval level in a signed claim the
+  // proxy reads, so a pre-KYC (OTP-only) session can't reach /wallet or /trade.
+  // `null` ⇒ signing disabled (no secret, dev/mock) — the gate stays
+  // presence-only there. NOTE: after KYC completion (app/actions/kyc.ts,
+  // `confirmKyc`) this claim must be re-minted as `verified` so a user who
+  // clears KYC in-session gains the money routes without re-login.
+  const claim = await signAccessClaim(accessLevelForStatus(status));
+  if (claim) {
+    store.set(ACCESS_CLAIM_COOKIE, claim, {
+      ...COOKIE_OPTIONS,
+      maxAge: 60 * 60 * 24 * 30,
+    });
+  }
 }
 
 /**
@@ -164,7 +182,7 @@ export async function verifyLogin(
   }
 
   await clearLoginChallenge();
-  await startSession();
+  await startSession(result.data.status);
   redirect(next ?? DESTINATION[result.data.status]);
 }
 
@@ -190,6 +208,6 @@ export async function verifyTwoStepLogin(
 
   const resolved = asStatus(pending.status);
   await clearLoginStatus();
-  if (resolved !== "declined") await startSession();
+  if (resolved !== "declined") await startSession(resolved);
   redirect(pending.next ?? DESTINATION[resolved]);
 }

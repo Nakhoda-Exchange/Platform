@@ -19,7 +19,7 @@ import {
   type TradeSide,
 } from "@/lib/core/domain/trade/order";
 import { coinDisplaySymbol } from "@/lib/core/domain/market/coin";
-import { parsePrice } from "@/lib/core/domain/market/price";
+import { parsePrice, type PriceValue } from "@/lib/core/domain/market/price";
 import { placeTradeOrder, resolveOrder } from "@/app/actions/trade";
 import {
   PRICE_UNAVAILABLE_CODES,
@@ -48,6 +48,40 @@ function roundCoin(amount: number): number {
   if (!Number.isFinite(amount) || amount <= 0) return 0;
   return Number(amount.toPrecision(6));
 }
+
+/**
+ * Like {@link roundCoin} but truncated TOWARD ZERO to 6 significant figures — for
+ * BALANCE-derived amounts that must never exceed the balance. `toPrecision`
+ * rounds to nearest and can round UP (9,999,995 → 1.00000e7 = 10,000,000), which
+ * turned «use full balance» into an over-balance amount (issue #63).
+ */
+function floorCoin(amount: number): number {
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  const exp = Math.floor(Math.log10(amount)); // power of the leading digit
+  const factor = 10 ** (5 - exp); // keep 6 significant figures
+  return Math.floor(amount * factor) / factor;
+}
+
+/**
+ * A number as a PLAIN (never exponential) decimal string for the entry field.
+ * `String(5e-8)` is "5e-8", which the keypad/`toPersianDigits` can't handle
+ * (renders «۵e-۸», corrupts on edit — issue #63); expand it to "0.00000005".
+ * A value that already stringifies without an exponent keeps its shortest form.
+ */
+function toEntryDigits(amount: number): string {
+  if (!Number.isFinite(amount) || amount <= 0) return "";
+  const s = String(amount);
+  if (!/e/i.test(s)) return s;
+  return amount.toFixed(20).replace(/\.?0+$/, "");
+}
+
+/**
+ * Fee-rate label «٪۰٫۳۵» derived from {@link FEE_RATE} so the receipt can't drift
+ * from the math the fee is actually charged at (issue #63).
+ */
+const FEE_PERCENT_LABEL = `٪${toPersianDigits(
+  (FEE_RATE * 100).toFixed(2).replace(/\.?0+$/, ""),
+).replace(".", "٫")}`;
 
 const SIDE_LABEL: Record<TradeSide, string> = { buy: "خرید", sell: "فروش" };
 
@@ -96,7 +130,13 @@ export function TradeScreen({
   // conversions then collapse to a non-finite value that the formatters render
   // as «—», so no fabricated figure is ever shown). Every DISPLAY of the price
   // itself uses the raw `coin.priceIrt` so an unavailable price shows «—», not 0.
-  const unitPriceIrt = parsePrice(coin.priceIrt) ?? 0;
+  const parsedUnitPrice = parsePrice(coin.priceIrt);
+  // A null/unparseable price is UNAVAILABLE — it must NEVER drive a preview (a
+  // division by 0 that renders a fabricated «۰» coin amount) and must never let a
+  // buy/sell reach the server (issue #60). The CTA is disabled and derived
+  // amounts render «—» while this is false.
+  const priceAvailable = parsedUnitPrice !== null;
+  const unitPriceIrt = parsedUnitPrice ?? 0;
   // No holdings of this coin → selling is impossible, so the sell button never
   // appears and the side is pinned to buy (even if arrived at with ?side=sell).
   const canSell = availableCoin > 0;
@@ -107,6 +147,16 @@ export function TradeScreen({
   const [digits, setDigits] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(CONFIRM_SECONDS);
+  // One idempotency key per user INTENT (issue #55): minted when the confirm
+  // sheet opens, threaded through the action into the trade adapter, and REUSED
+  // across the sheet's deliberate retries (price-unavailable «تلاش دوباره», a
+  // resend after a lost response). A new «ادامه» tap mints a fresh key.
+  const [idempotencyKey, setIdempotencyKey] = useState("");
+  // Fresh price re-fetched when the confirm sheet opens (issue #58): the
+  // mount-time `coin.priceIrt` can be arbitrarily stale by the time the user
+  // confirms. `null` until it arrives (or when the refresh fails / the price is
+  // unavailable) — the preview then falls back to the mount price.
+  const [confirmPrice, setConfirmPrice] = useState<number | null>(null);
   // The user's saved trade preferences. `confirmSeconds` sets how long the
   // confirm sheet stays valid; `slippageBps` is submitted with the order and
   // OVERRIDES the coin's configured tolerance.
@@ -132,6 +182,9 @@ export function TradeScreen({
   const settledOrder = state.status === "success" ? state.order : null;
   const displayOrder = settledOrder ?? resolvedOrder;
   const successOpen = displayOrder !== null && displayOrder.id !== ackedOrderId;
+  // A backend idempotency replay: the same intent was already placed (issue #55).
+  // The receipt says «already placed» instead of celebrating a second fill.
+  const alreadyPlaced = state.status === "success" && state.duplicate === true;
 
   // Stale live price (HTTP 503 PRICE_UNAVAILABLE): a momentary backend state,
   // not a bad order. It gets a retry toast instead of the inline error, and the
@@ -154,6 +207,38 @@ export function TradeScreen({
       return () => cancelAnimationFrame(id);
     }
   }, [confirming, pending, secondsLeft]);
+
+  // Re-fetch the live price when the confirm sheet OPENS (issue #58) so the
+  // preview and the «۳۰ ثانیه معتبر» window are anchored to a fresh price, not
+  // the possibly-stale mount value. On success, recompute (via `confirmPrice`)
+  // and restart the validity countdown from this fetch; on failure keep the
+  // mount price (the server re-prices authoritatively at submit either way).
+  useEffect(() => {
+    if (!confirming) {
+      // Defer the reset out of the effect body to avoid a cascading render
+      // (same pattern as the countdown/accepted effects above/below).
+      const id = requestAnimationFrame(() => setConfirmPrice(null));
+      return () => cancelAnimationFrame(id);
+    }
+    let cancelled = false;
+    fetch(`/api/trade/${encodeURIComponent(coin.symbol)}`, {
+      headers: { Accept: "application/json" },
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("stale"))))
+      .then((body: { context?: { coin?: { priceIrt?: PriceValue } } }) => {
+        if (cancelled) return;
+        setConfirmPrice(parsePrice(body.context?.coin?.priceIrt));
+        // Anchor the validity window to THIS fresh price.
+        setSecondsLeft(confirmSeconds);
+      })
+      .catch(() => {
+        /* keep the mount price; the countdown keeps running from sheet open */
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirming, coin.symbol]);
 
   // A 202 ACCEPTED submit: leave the confirm sheet, enter the pending state, and
   // poll the order to a terminal status (or a resting hand-off). Keyed on the
@@ -223,7 +308,9 @@ export function TradeScreen({
     if (!displayOrder) return;
     const id = requestAnimationFrame(() => {
       setConfirming(false);
-      if (!localStorage.getItem(FIRST_TRADE_KEY)) {
+      // A duplicate replay isn't a new trade — don't spend the first-trade
+      // confetti on it (issue #55).
+      if (!alreadyPlaced && !localStorage.getItem(FIRST_TRADE_KEY)) {
         localStorage.setItem(FIRST_TRADE_KEY, "1");
         setCelebrate(true);
       }
@@ -266,8 +353,10 @@ export function TradeScreen({
   };
 
   const entered = Number(digits || "0");
-  // A MARKET order converts the entry through the live price.
-  const priceForConv = unitPriceIrt;
+  // A MARKET order converts the entry through the live price — the fresh
+  // confirm-time price while the sheet is open (issue #58), else the mount price.
+  const priceForConv =
+    confirming && confirmPrice !== null ? confirmPrice : unitPriceIrt;
   // Coin entry converts to Toman at the conversion price; the order (and every
   // guard and fee) stays Toman-denominated.
   const amountIrt =
@@ -275,9 +364,13 @@ export function TradeScreen({
   // Mirror of the server-side fee math (PlaceOrderUseCase is authoritative):
   // buyers pay the fee out of the entered amount, sellers out of the proceeds.
   const feeIrt = Math.round(amountIrt * FEE_RATE);
-  const amountCoin = roundCoin(
-    (amountIrt - (side === "buy" ? feeIrt : 0)) / priceForConv,
-  );
+  // `null` (not 0) when there's no usable price, so the derived amount renders
+  // «—» rather than a fabricated «۰» and never feeds a divide-by-zero preview
+  // into the confirm sheet (issue #60).
+  const amountCoin =
+    priceForConv > 0
+      ? roundCoin((amountIrt - (side === "buy" ? feeIrt : 0)) / priceForConv)
+      : null;
   const maxIrt =
     side === "buy" ? availableIrt : Math.floor(availableCoin * priceForConv);
   // Sell slider (percent of holdings). Derived from the entry, so typing on
@@ -293,11 +386,13 @@ export function TradeScreen({
     if (unit === "irt") {
       setDigits(String(Math.floor((maxIrt * percent) / 100)));
     } else {
+      // Toward-zero + non-exponential (issue #63): a nearest-round could exceed
+      // the holding, and `String(availableCoin)` can be scientific notation.
       setDigits(
-        String(
+        toEntryDigits(
           percent === 100
             ? availableCoin
-            : roundCoin((availableCoin * percent) / 100),
+            : floorCoin((availableCoin * percent) / 100),
         ),
       );
     }
@@ -310,9 +405,12 @@ export function TradeScreen({
   const apiMaxIrt = maxOrderIrt(limits, side);
   // Buying beyond the Toman balance isn't a dead end — it's a nudge to top up
   // and come back with more to spend, so the CTA turns into a deposit link.
-  const needsDeposit = side === "buy" && amountIrt > maxIrt;
-  const error =
-    side === "sell" && availableCoin <= 0
+  // Only when the price is available: an unavailable price shows the disabled
+  // «ادامه» CTA (the block is the price, not the balance), never a deposit nudge.
+  const needsDeposit = priceAvailable && side === "buy" && amountIrt > maxIrt;
+  const error = !priceAvailable
+    ? "قیمت لحظه‌ای در دسترس نیست. کمی بعد دوباره تلاش کنید."
+    : side === "sell" && availableCoin <= 0
       ? "از این رمزارز موجودی ندارید."
       : amountIrt > 0 && amountIrt < minIrt
         ? `کمینه هر سفارش ${formatIrt(minIrt)} است.`
@@ -323,13 +421,20 @@ export function TradeScreen({
             : amountIrt > maxIrt
               ? "موجودی شما کافی نیست."
               : null;
+  // A MARKET order can't be priced (or placed) without a live price, so an
+  // unavailable price is never valid — this disables the CTA client-side (issue
+  // #60), mirroring the server's PRICE_UNAVAILABLE guard.
   const valid =
+    priceAvailable &&
     amountIrt >= minIrt &&
     amountIrt <= maxIrt &&
     (apiMaxIrt === null || amountIrt <= apiMaxIrt);
 
-  // Unit price shown on the confirm receipt: the live market price.
-  const receiptPriceIrt = coin.priceIrt ?? 0;
+  // Unit price shown on the confirm receipt: the fresh confirm-time price (issue
+  // #58) while the sheet is open, else the mount price. Kept nullable so an
+  // unavailable price renders «—», never a fabricated 0.
+  const receiptPriceIrt: PriceValue =
+    confirming && confirmPrice !== null ? confirmPrice : coin.priceIrt;
 
   // Expected price impact for THIS order, priced by the backend once the amount
   // settles. Only quoted for an order the backend would accept — an invalid
@@ -352,7 +457,11 @@ export function TradeScreen({
       value: `${formatCoinAmount(amountCoin)} ${displaySymbol}`,
     },
     { key: "price", label: "قیمت واحد", value: formatIrt(receiptPriceIrt) },
-    { key: "fee", label: "کارمزد (٪۰٫۳۵)", value: formatIrt(feeIrt) },
+    {
+      key: "fee",
+      label: `کارمزد (${FEE_PERCENT_LABEL})`,
+      value: formatIrt(feeIrt),
+    },
     ...(slippageText
       ? [
           {
@@ -418,10 +527,13 @@ export function TradeScreen({
           setDigits(
             unit === "irt"
               ? String(maxIrt)
-              : String(
+              : // Toward-zero + non-exponential (issue #63): a nearest-round of
+                // the max-buy amount could overshoot the balance, and
+                // `String(availableCoin)` can be scientific notation.
+                toEntryDigits(
                   side === "sell"
                     ? availableCoin
-                    : roundCoin(maxIrt / priceForConv),
+                    : floorCoin(maxIrt / priceForConv),
                 ),
           )
         }
@@ -466,7 +578,7 @@ export function TradeScreen({
           <span dir="ltr" className="text-[15px]">
             {unit === "irt"
               ? `≈ ${formatCoinAmount(amountCoin)} ${displaySymbol}`
-              : `≈ ${formatIrt(amountIrt)}`}
+              : `≈ ${formatIrt(priceAvailable ? amountIrt : null)}`}
           </span>
           <button
             type="button"
@@ -598,6 +710,9 @@ export function TradeScreen({
           fullWidth
           disabled={!valid}
           onClick={() => {
+            // One idempotency key per intent (issue #55) — minted here, reused
+            // across the confirm sheet's retries; a new «ادامه» mints a new one.
+            setIdempotencyKey(crypto.randomUUID());
             setSecondsLeft(confirmSeconds);
             setConfirming(true);
           }}
@@ -625,10 +740,11 @@ export function TradeScreen({
               coinId: coin.id,
               symbol: coin.symbol,
               name: coin.name,
-              amountCoin,
+              // Non-null here: the CTA that opened this sheet requires a price.
+              amountCoin: amountCoin ?? 0,
               totalIrt: amountIrt,
               feeIrt,
-              priceIrt: unitPriceIrt,
+              priceIrt: priceForConv,
             };
           }}
           className="flex flex-col gap-4"
@@ -637,6 +753,8 @@ export function TradeScreen({
           <input type="hidden" name="side" value={side} />
           <input type="hidden" name="amountIrt" value={amountIrt} />
           <input type="hidden" name="orderType" value="MARKET" />
+          {/* One key per intent, reused on every retry of THIS sheet (issue #55). */}
+          <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
           {/* The user's own tolerance, when they set one. Absent ⇒ the backend
               resolves the coin's own value. */}
           {preferences.slippageBps !== null ? (
@@ -745,7 +863,13 @@ export function TradeScreen({
       <Sheet
         open={successOpen}
         onClose={startAnother}
-        title={celebrate ? "اولین معامله ثبت شد" : "سفارش شما ثبت شد"}
+        title={
+          celebrate
+            ? "اولین معامله ثبت شد"
+            : alreadyPlaced
+              ? "این سفارش قبلاً ثبت شده بود"
+              : "سفارش شما ثبت شد"
+        }
         manageBack={false}
       >
         <div className="flex flex-col items-center gap-2 text-center">
@@ -762,8 +886,9 @@ export function TradeScreen({
             </p>
           ) : null}
           <p className="text-[14px] text-placeholder">
-            سفارش ثبت شد و در حال انجام است. می‌توانید آن را در «دارایی» دنبال
-            کنید.
+            {alreadyPlaced
+              ? "این سفارش پیش‌تر ثبت شده و دوباره اجرا نشد. می‌توانید آن را در «دارایی» دنبال کنید."
+              : "سفارش ثبت شد و در حال انجام است. می‌توانید آن را در «دارایی» دنبال کنید."}
           </p>
         </div>
 

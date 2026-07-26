@@ -13,6 +13,9 @@ import type {
 } from "@/lib/core/domain/trade/order";
 import { fail, ok, type Result } from "@/lib/core/domain/shared/result";
 
+/** A caller-minted idempotency key (issue #55) — threaded on every submit. */
+const KEY = "intent-key-1";
+
 const BTC: Coin = {
   id: "btc",
   name: "بیت‌کوین",
@@ -38,8 +41,10 @@ function tradeStub(balances: TradeBalances) {
     amountCoin: number;
     totalIrt: number;
     feeIrt: number;
+    idempotencyKey: string;
     orderType: OrderType;
     targetPriceIrt: number | null;
+    amountCoinRaw?: string;
   }> = [];
   const repo: TradeRepository = {
     getBalances: async () => ok(balances),
@@ -51,6 +56,7 @@ function tradeStub(balances: TradeBalances) {
       amountCoin,
       totalIrt,
       feeIrt,
+      idempotencyKey,
       options,
     ): Promise<Result<OrderSubmission>> => {
       const orderType = options?.orderType ?? "MARKET";
@@ -59,8 +65,10 @@ function tradeStub(balances: TradeBalances) {
         amountCoin,
         totalIrt,
         feeIrt,
+        idempotencyKey,
         orderType,
         targetPriceIrt: options?.targetPriceIrt ?? null,
+        amountCoinRaw: options?.amountCoinRaw,
       });
       // A MARKET order settles synchronously; a LIMIT order is accepted (202).
       if (orderType === "LIMIT") {
@@ -95,6 +103,7 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "buy",
       100_000,
+      { idempotencyKey: KEY },
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("BELOW_MIN_ORDER");
@@ -120,6 +129,7 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "buy",
       300_000,
+      { idempotencyKey: KEY },
     );
     expect(okRes.ok).toBe(true);
     expect(allowed.placed[0]?.totalIrt).toBe(300_000);
@@ -130,7 +140,7 @@ describe("PlaceOrderUseCase", () => {
     const belowRes = await new PlaceOrderUseCase(
       marketStub,
       rejected.repo,
-    ).execute("btc", "buy", 100_000);
+    ).execute("btc", "buy", 100_000, { idempotencyKey: KEY });
     expect(belowRes.ok).toBe(false);
     if (!belowRes.ok) expect(belowRes.error.code).toBe("BELOW_MIN_ORDER");
     expect(rejected.placed.length).toBe(0);
@@ -146,6 +156,7 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "buy",
       200_000,
+      { idempotencyKey: KEY },
     );
     expect(okRes.ok).toBe(true);
     expect(allowed.placed[0]?.totalIrt).toBe(200_000);
@@ -156,10 +167,26 @@ describe("PlaceOrderUseCase", () => {
     const belowRes = await new PlaceOrderUseCase(
       marketStub,
       rejected.repo,
-    ).execute("btc", "buy", 50_000);
+    ).execute("btc", "buy", 50_000, { idempotencyKey: KEY });
     expect(belowRes.ok).toBe(false);
     if (!belowRes.ok) expect(belowRes.error.code).toBe("BELOW_MIN_ORDER");
     expect(rejected.placed.length).toBe(0);
+  });
+
+  test("blocks (does not lower the floor) when the limits fetch FAILS (#53)", async () => {
+    // A transient limits outage must NOT silently drop to the offline floor and
+    // accept a below-venue order — it blocks with LIMITS_UNAVAILABLE.
+    const { repo, placed } = tradeStub({ availableIrt: 1e12, coinAmounts: {} });
+    repo.getLimits = async () => fail("HTTP_503", "limits down");
+    const result = await new PlaceOrderUseCase(marketStub, repo).execute(
+      "btc",
+      "buy",
+      5_000_000,
+      { idempotencyKey: KEY },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("LIMITS_UNAVAILABLE");
+    expect(placed.length).toBe(0);
   });
 
   test("rejects an order above the per-token max", async () => {
@@ -180,6 +207,7 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "buy",
       2_000_000,
+      { idempotencyKey: KEY },
     );
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error.code).toBe("ABOVE_MAX_ORDER");
@@ -192,6 +220,7 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "buy",
       2_000_000,
+      { idempotencyKey: KEY },
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("INSUFFICIENT_IRT");
@@ -203,12 +232,54 @@ describe("PlaceOrderUseCase", () => {
       "BTC",
       "buy",
       2_000_000_000,
+      { idempotencyKey: KEY },
     );
     expect(result.ok).toBe(true);
     // fee = 0.35% of 2B = 7,000,000; coins bought with the remainder
     expect(placed[0]?.feeIrt).toBe(7_000_000);
     expect(placed[0]?.amountCoin).toBe(1_993_000_000 / 4_000_000_000);
     expect(placed[0]?.totalIrt).toBe(2_000_000_000);
+  });
+
+  test("forwards the caller's idempotency key to the adapter (#55)", async () => {
+    const { repo, placed } = tradeStub({ availableIrt: 1e10, coinAmounts: {} });
+    await new PlaceOrderUseCase(marketStub, repo).execute(
+      "btc",
+      "buy",
+      2_000_000_000,
+      { idempotencyKey: "abc-123" },
+    );
+    expect(placed[0]?.idempotencyKey).toBe("abc-123");
+  });
+
+  test("refuses a submit with no idempotency key (#55)", async () => {
+    const { repo, placed } = tradeStub({ availableIrt: 1e10, coinAmounts: {} });
+    const result = await new PlaceOrderUseCase(marketStub, repo).execute(
+      "btc",
+      "buy",
+      2_000_000_000,
+      { idempotencyKey: "" },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("MISSING_IDEMPOTENCY_KEY");
+    expect(placed.length).toBe(0);
+  });
+
+  test("uses the caller's EFFECTIVE fee rate when the backend surfaces one (#76)", async () => {
+    // A referral invitee at 0.245% (24.5 bps) — the fee must follow that, not the
+    // fixed 0.35%.
+    const { repo, placed } = tradeStub({ availableIrt: 1e10, coinAmounts: {} });
+    repo.getLimits = async () =>
+      ok({ defaultMinIrt: null, bySymbol: {}, effectiveFeeRateBps: 24.5 });
+    const result = await new PlaceOrderUseCase(marketStub, repo).execute(
+      "btc",
+      "buy",
+      2_000_000_000,
+      { idempotencyKey: KEY },
+    );
+    expect(result.ok).toBe(true);
+    // 24.5 bps of 2B = 4,900,000 (vs the 7,000,000 the default 35 bps would give).
+    expect(placed[0]?.feeIrt).toBe(4_900_000);
   });
 
   test("sell fee is charged on the proceeds, coin amount stays gross", async () => {
@@ -220,6 +291,7 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "sell",
       2_000_000_000, // 0.5 BTC gross
+      { idempotencyKey: KEY },
     );
     expect(result.ok).toBe(true);
     expect(placed[0]?.amountCoin).toBe(0.5);
@@ -235,9 +307,50 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "sell",
       100_000_000, // 0.025 BTC ≫ 0.001 held
+      { idempotencyKey: KEY },
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("INSUFFICIENT_COIN");
+  });
+
+  test("subtracts locked units from the sellable balance (#73)", async () => {
+    // 1 BTC held but 0.9 locked by an open order → only 0.1 sellable. A 0.5-BTC
+    // sell (2B Toman) must be rejected as INSUFFICIENT_COIN.
+    const { repo } = tradeStub({
+      availableIrt: 0,
+      coinAmounts: { BTC: 0.1 }, // adapter already nets this
+      coinAmountsRaw: { BTC: "1" },
+      lockedCoinAmountsRaw: { BTC: "0.9" },
+    });
+    const result = await new PlaceOrderUseCase(marketStub, repo).execute(
+      "btc",
+      "sell",
+      2_000_000_000,
+      { idempotencyKey: KEY },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("INSUFFICIENT_COIN");
+  });
+
+  test("sells the EXACT held balance (raw string) on a «sell all» overshoot, no float loss (#57)", async () => {
+    // An 18-decimal holding a JS float cannot represent exactly. held × price =
+    // 493,827,156.049… Toman; the «همه» keypad rounds UP to a whole-Toman notional
+    // that overshoots by <0.5%, so the clamp fires and the EXACT held string —
+    // not a lossy float re-derivation — is what gets committed on the wire.
+    const heldRaw = "0.123456789012345678"; // × 4e9 ≈ 493,827,156.049 Toman
+    const { repo, placed } = tradeStub({
+      availableIrt: 0,
+      coinAmounts: { BTC: 0.123456789012345678 },
+      coinAmountsRaw: { BTC: heldRaw },
+    });
+    const result = await new PlaceOrderUseCase(marketStub, repo).execute(
+      "btc",
+      "sell",
+      493_827_157, // one Toman over the exact notional (within the 0.5% clamp)
+      { idempotencyKey: KEY },
+    );
+    expect(result.ok).toBe(true);
+    expect(placed[0]?.amountCoinRaw).toBe(heldRaw);
   });
 
   test("preserves the repository error code (e.g. PRICE_UNAVAILABLE)", async () => {
@@ -261,6 +374,7 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "buy",
       2_000_000_000,
+      { idempotencyKey: KEY },
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("PRICE_UNAVAILABLE");
@@ -278,6 +392,7 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "buy",
       2_000_000_000,
+      { idempotencyKey: KEY },
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("PRICE_UNAVAILABLE");
@@ -290,6 +405,7 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "buy",
       2_000_000_000,
+      { idempotencyKey: KEY },
     );
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.data.kind).toBe("settled");
@@ -302,7 +418,11 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "buy",
       2_000_000_000,
-      { orderType: "LIMIT", targetPriceIrt: 2_000_000_000 }, // half the live price
+      {
+        idempotencyKey: KEY,
+        orderType: "LIMIT",
+        targetPriceIrt: 2_000_000_000,
+      }, // half the live price
     );
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -325,7 +445,7 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "buy",
       2_000_000_000,
-      { orderType: "LIMIT", targetPriceIrt: 0 },
+      { idempotencyKey: KEY, orderType: "LIMIT", targetPriceIrt: 0 },
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("INVALID_TARGET_PRICE");
@@ -344,7 +464,11 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "buy",
       2_000_000_000,
-      { orderType: "LIMIT", targetPriceIrt: 3_000_000_000 },
+      {
+        idempotencyKey: KEY,
+        orderType: "LIMIT",
+        targetPriceIrt: 3_000_000_000,
+      },
     );
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.data.kind).toBe("accepted");
@@ -364,6 +488,7 @@ describe("PlaceOrderUseCase", () => {
       "btc",
       "sell",
       maxIrt,
+      { idempotencyKey: KEY },
     );
     expect(result.ok).toBe(true);
     expect(placed[0]?.amountCoin).toBe(held);

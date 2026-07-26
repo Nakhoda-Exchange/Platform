@@ -20,6 +20,36 @@ export interface TradeQuote {
    * band is what actually bounds the fill.
    */
   expectedSlippageBps: number | null;
+
+  /**
+   * Server-minted quote reference (issue #59). When the backend returns a
+   * fixed-price quote — `quoteId` + a locked `priceIrt` valid until `expiresAt`
+   * — the order references it (see {@link PlaceOrderOptions.quoteId}) so the
+   * house, not the user, bears intra-TTL slippage. All optional: an older
+   * backend that only prices slippage omits them, and the order falls back to
+   * the price-band model. `null`/absent ⇒ no server-minted quote available.
+   */
+  quoteId?: string | null;
+  /** The fixed unit price this quote locks, whole Toman per coin. */
+  priceIrt?: number | null;
+  /** When the fixed price stops being honoured (ISO-8601). Past it → re-quote. */
+  expiresAt?: string | null;
+  /**
+   * The caller's EFFECTIVE fee rate for this quote, basis points (issue #76). A
+   * referral invitee is discounted, so the fixed FEE_RATE would mismatch; the
+   * quote is a natural carrier for the real rate. `null`/absent ⇒ unknown here.
+   */
+  feeRateBps?: number | null;
+}
+
+/** Whether a server-minted quote's fixed price is still valid at `now`. */
+export function isQuoteExpired(
+  expiresAt: string | null | undefined,
+  now: number = Date.now(),
+): boolean {
+  if (!expiresAt) return false; // no expiry advertised ⇒ not expiring
+  const t = Date.parse(expiresAt);
+  return Number.isFinite(t) && t <= now;
 }
 
 /**

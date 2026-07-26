@@ -17,7 +17,19 @@ import type { Result } from "@/lib/core/domain/shared/result";
  */
 export interface TradeBalances {
   availableIrt: number;
+  // AVAILABLE (spendable) units per coin — total held minus anything locked.
   coinAmounts: Record<string, number>;
+  // The same figures as their raw decimal STRINGS (numeric(38,18)), kept exact
+  // for money-correct comparison and «sell all» derivation — parsing to `number`
+  // loses digits (issue #57). Absent on a legacy adapter → callers fall back to
+  // the number fields.
+  availableIrtRaw?: string;
+  coinAmountsRaw?: Record<string, string>;
+  // Units LOCKED per coin by open orders (raw decimal strings), so `coinAmounts`
+  // can be reported net of them and a balance can't be spent twice across the
+  // pending→open window (issue #73). Absent/empty ⇒ nothing locked (the backend
+  // does not yet surface a per-coin lock — documented as an Agent 4 contract).
+  lockedCoinAmountsRaw?: Record<string, string>;
 }
 
 /** Per-token trade limits keyed by UPPERCASE symbol (e.g. "SOL"). */
@@ -32,9 +44,13 @@ export type TradeLimitsMap = Record<string, TokenTradeLimits>;
 export interface TradeLimits {
   defaultMinIrt: number | null;
   bySymbol: TradeLimitsMap;
+  // The caller's EFFECTIVE fee rate (basis points) from the backend, when it
+  // surfaces one — a referral invitee is discounted, so the fixed FEE_RATE would
+  // mismatch (issue #76). `null`/absent ⇒ the offline FEE_RATE_BPS default.
+  effectiveFeeRateBps?: number | null;
 }
 
-/** Extra fields a LIMIT order carries; absent/`orderType: "MARKET"` for a market order. */
+/** Extra fields an order carries alongside the positional args. */
 export interface PlaceOrderOptions {
   orderType: OrderType;
   /**
@@ -45,6 +61,18 @@ export interface PlaceOrderOptions {
   slippageBps?: number | null;
   /** Whole IRT per whole coin (the trigger price). Required for LIMIT. */
   targetPriceIrt?: number | null;
+  /**
+   * EXACT coin amount as a decimal string (numeric(38,18)) for the wire, used
+   * instead of the lossy `String(amountCoin)` — set on a «sell all» so the full
+   * held balance is sold without float precision loss (issue #57).
+   */
+  amountCoinRaw?: string;
+  /**
+   * The server-minted quote this order commits to (issue #59). When present the
+   * backend prices the fill at the quote's locked price (house bears intra-TTL
+   * slippage) instead of the client `requestedPrice` band. Absent ⇒ band model.
+   */
+  quoteId?: string | null;
 }
 
 /**
@@ -73,6 +101,12 @@ export interface TradeRepository {
    * the caller polls to completion — see {@link OrderSubmission}. A MARKET order
    * omits `options` (or passes `orderType: "MARKET"`); a LIMIT order passes
    * `orderType: "LIMIT"` with a `targetPriceIrt`.
+   *
+   * `idempotencyKey` is minted ONCE per user intent by the caller (when the
+   * confirm sheet opens) and REUSED on every retry — the adapter forwards it as
+   * the `Idempotency-Key` header, so a retry after a lost response replays the
+   * original settlement instead of executing twice (issue #55). The adapter must
+   * NOT mint its own key.
    */
   placeOrder(
     coin: Coin,
@@ -80,6 +114,7 @@ export interface TradeRepository {
     amountCoin: number,
     totalIrt: number,
     feeIrt: number,
+    idempotencyKey: string,
     options?: PlaceOrderOptions,
   ): Promise<Result<OrderSubmission>>;
   /** A single status read of an order (GET /orders/{orderId}) — drives the poll loop. */
