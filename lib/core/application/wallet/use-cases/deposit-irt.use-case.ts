@@ -2,7 +2,7 @@ import {
   MIN_DEPOSIT_IRT,
   type CardDeposit,
 } from "@/lib/core/domain/wallet/deposit";
-import type { DepositStatus } from "@/lib/core/domain/wallet/deposit";
+import type { DepositStatusView } from "@/lib/core/domain/wallet/deposit";
 import { fail, type Result } from "@/lib/core/domain/shared/result";
 import { toPersianDigits } from "@/lib/utils/digits";
 import type { WalletRepository } from "../ports/wallet-repository.port";
@@ -38,7 +38,7 @@ export class DepositIrtUseCase {
     return this.wallet.initiateCardDeposit(cardId, amountIrt);
   }
 
-  status(depositId: string): Promise<Result<DepositStatus>> {
+  status(depositId: string): Promise<Result<DepositStatusView>> {
     return this.wallet.getDepositStatus(depositId);
   }
 }

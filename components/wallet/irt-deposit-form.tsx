@@ -47,25 +47,35 @@ export function IrtDepositForm({
   const [deposit, setDeposit] = useState<CardDeposit | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  /** What the ledger ACTUALLY credited, once known (#64). */
+  const [creditedIrt, setCreditedIrt] = useState<number | null>(null);
 
   const amount = Number(digits || "0");
   const belowMin = amount > 0 && amount < minDepositIrt;
 
   useEffect(() => {
-    if (!deposit || submitted) return;
+    // Stop once the window has expired (#71): the countdown already tells the
+    // user the deposit lapsed, and polling on forever kept a dead tab hitting
+    // the API indefinitely.
+    if (!deposit || submitted || secondsLeft <= 0) return;
     const tick = setInterval(
       () => setSecondsLeft((s) => Math.max(0, s - 1)),
       1_000,
     );
     const poll = setInterval(async () => {
       const result = await checkDeposit(deposit.id);
-      if (result.ok && result.data === "done") setSubmitted(true);
+      if (result.ok && result.data.status === "done") {
+        // Keep what was ACTUALLY credited so the receipt states that figure
+        // rather than the amount typed on the keypad (#64).
+        setCreditedIrt(result.data.creditedIrt);
+        setSubmitted(true);
+      }
     }, POLL_MS);
     return () => {
       clearInterval(tick);
       clearInterval(poll);
     };
-  }, [deposit, submitted]);
+  }, [deposit, submitted, secondsLeft]);
 
   // Step 3 — receipt (the backend confirmed the transfer).
   if (submitted && deposit) {
@@ -76,9 +86,20 @@ export function IrtDepositForm({
           <h2 className="text-[22px] font-extrabold text-ink">
             واریز شما تأیید شد
           </h2>
+          {/* The CREDITED figure, not the typed one. They differ whenever the
+              user transferred a different amount than they entered, which is
+              ordinary — and asserting the typed amount there was the dispute
+              this closes (#64). Falls back to the typed amount only when the
+              backend reports no credited figure (older backend). */}
           <p className="text-[16px] text-muted">
-            {formatIrt(amount)} به موجودی شما اضافه شد.
+            {formatIrt(creditedIrt ?? amount)} به موجودی شما اضافه شد.
           </p>
+          {creditedIrt !== null && creditedIrt !== amount ? (
+            <p className="text-[13px] text-muted">
+              مبلغ درخواستی شما {formatIrt(amount)} بود؛ مبلغ واریزشده به حساب
+              شما اضافه شد.
+            </p>
+          ) : null}
         </div>
         <div className="flex w-full max-w-[360px] flex-col gap-3">
           <Link

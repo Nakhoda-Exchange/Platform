@@ -1,7 +1,7 @@
 import type { BankCard } from "@/lib/core/domain/wallet/bank-card";
 import type {
   CardDeposit,
-  DepositStatus,
+  DepositStatusView,
 } from "@/lib/core/domain/wallet/deposit";
 
 /** Action results for the deposit flow (types live beside the "use server" file). */
@@ -10,4 +10,4 @@ export type ActionResult<T> =
 
 export type AddCardResult = ActionResult<BankCard>;
 export type StartDepositResult = ActionResult<CardDeposit>;
-export type DepositStatusResult = ActionResult<DepositStatus>;
+export type DepositStatusResult = ActionResult<DepositStatusView>;

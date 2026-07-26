@@ -14,3 +14,21 @@ export interface CardDeposit {
 }
 
 export type DepositStatus = "pending" | "done" | "unknown";
+
+/**
+ * A polled deposit.
+ *
+ * `creditedIrt` is what the ledger ACTUALLY credited — the only figure a receipt
+ * may truthfully state. The amount the user typed on the deposit screen is an
+ * INTENT: people transfer a slightly different amount than they typed, and
+ * showing the typed figure as if it had been credited is a money dispute
+ * waiting to happen (audit #64).
+ *
+ * Null until the deposit is `done`, because nothing has been credited before
+ * then. Older backends omit it, which reads the same way.
+ */
+export interface DepositStatusView {
+  status: DepositStatus;
+  creditedIrt: number | null;
+  requestedIrt: number | null;
+}
