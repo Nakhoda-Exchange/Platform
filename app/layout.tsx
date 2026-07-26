@@ -34,6 +34,18 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "ناخدا", statusBarStyle: "default" },
   // Demo site — no search engine or bot should index it (robots.ts + this meta).
   robots: { index: false, follow: false },
+  other: {
+    // Enamad (نماد اعتماد الکترونیکی) site-ownership verification. Their crawler
+    // fetches a page and looks for this tag, so it has to be in the head of
+    // EVERY page, not just the landing one — declaring it on the root layout is
+    // what makes it inherited site-wide.
+    //
+    // Note for whoever debugs a failed verification: `robots: noindex` above does
+    // not hide this from Enamad (they fetch directly, they do not use a search
+    // index), but a page that fails to render server-side will emit no head at
+    // all. Check the rendered HTML, not this file.
+    enamad: "45518028",
+  },
 };
 
 export default async function RootLayout({
