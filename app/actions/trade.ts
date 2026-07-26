@@ -21,13 +21,21 @@ export async function placeTradeOrder(
   const amountIrt = Number(formData.get("amountIrt") ?? 0);
   const orderType: OrderType =
     formData.get("orderType") === "LIMIT" ? "LIMIT" : "MARKET";
+  // The user's own slippage tolerance, when they set one (trade settings sheet).
+  const rawSlippage = formData.get("slippageBps");
+  const slippageBps =
+    rawSlippage != null && rawSlippage !== "" ? Number(rawSlippage) : null;
   const rawTarget = formData.get("targetPriceIrt");
   const targetPriceIrt =
     rawTarget != null && rawTarget !== "" ? Number(rawTarget) : null;
 
   const result = await container
     .resolve(TOKENS.PlaceOrderUseCase)
-    .execute(coinId, side, amountIrt, { orderType, targetPriceIrt });
+    .execute(coinId, side, amountIrt, {
+      orderType,
+      targetPriceIrt,
+      slippageBps,
+    });
 
   if (!result.ok) {
     return {

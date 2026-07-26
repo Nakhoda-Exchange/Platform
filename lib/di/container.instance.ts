@@ -10,6 +10,11 @@ import { GetPortfolioHistoryUseCase } from "@/lib/core/application/portfolio/use
 import { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/get-trade-context.use-case";
 import { GetTradeLimitsUseCase } from "@/lib/core/application/trade/use-cases/get-trade-limits.use-case";
 import { GetTradeQuoteUseCase } from "@/lib/core/application/trade/use-cases/get-trade-quote.use-case";
+import {
+  GetTradePreferencesUseCase,
+  SaveTradePreferencesUseCase,
+} from "@/lib/core/application/account/use-cases/trade-preferences.use-case";
+import { HttpTradePreferencesRepository } from "@/lib/infrastructure/account/http-trade-preferences.repository";
 import { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
 import { PollOrderUseCase } from "@/lib/core/application/trade/use-cases/poll-order.use-case";
 import { ListOpenOrdersUseCase } from "@/lib/core/application/trade/use-cases/list-open-orders.use-case";
@@ -82,6 +87,10 @@ function registerHttpAdapters(container: Container, baseUrl: string): void {
   container.registerSingleton(
     TOKENS.TradeRepository,
     () => new HttpTradeRepository(http),
+  );
+  container.register(
+    TOKENS.TradePreferencesRepository,
+    () => new HttpTradePreferencesRepository(http),
   );
   container.registerSingleton(
     TOKENS.TransactionsRepository,
@@ -183,6 +192,20 @@ function registerUseCases(container: Container): void {
   container.register(
     TOKENS.GetTradeQuoteUseCase,
     (c) => new GetTradeQuoteUseCase(c.resolve(TOKENS.TradeRepository)),
+  );
+  container.register(
+    TOKENS.GetTradePreferencesUseCase,
+    (c) =>
+      new GetTradePreferencesUseCase(
+        c.resolve(TOKENS.TradePreferencesRepository),
+      ),
+  );
+  container.register(
+    TOKENS.SaveTradePreferencesUseCase,
+    (c) =>
+      new SaveTradePreferencesUseCase(
+        c.resolve(TOKENS.TradePreferencesRepository),
+      ),
   );
   container.register(
     TOKENS.PlaceOrderUseCase,

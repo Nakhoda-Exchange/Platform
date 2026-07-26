@@ -17,6 +17,11 @@ import type { TradeRepository } from "@/lib/core/application/trade/ports/trade-r
 import type { GetTradeContextUseCase } from "@/lib/core/application/trade/use-cases/get-trade-context.use-case";
 import type { GetTradeLimitsUseCase } from "@/lib/core/application/trade/use-cases/get-trade-limits.use-case";
 import type { GetTradeQuoteUseCase } from "@/lib/core/application/trade/use-cases/get-trade-quote.use-case";
+import type { TradePreferencesRepository } from "@/lib/core/application/account/ports/trade-preferences.repository.port";
+import type {
+  GetTradePreferencesUseCase,
+  SaveTradePreferencesUseCase,
+} from "@/lib/core/application/account/use-cases/trade-preferences.use-case";
 import type { PlaceOrderUseCase } from "@/lib/core/application/trade/use-cases/place-order.use-case";
 import type { PollOrderUseCase } from "@/lib/core/application/trade/use-cases/poll-order.use-case";
 import type { ListOpenOrdersUseCase } from "@/lib/core/application/trade/use-cases/list-open-orders.use-case";
@@ -83,6 +88,15 @@ export const TOKENS = {
   ),
   GetTradeLimitsUseCase: token<GetTradeLimitsUseCase>("GetTradeLimitsUseCase"),
   GetTradeQuoteUseCase: token<GetTradeQuoteUseCase>("GetTradeQuoteUseCase"),
+  TradePreferencesRepository: token<TradePreferencesRepository>(
+    "TradePreferencesRepository",
+  ),
+  GetTradePreferencesUseCase: token<GetTradePreferencesUseCase>(
+    "GetTradePreferencesUseCase",
+  ),
+  SaveTradePreferencesUseCase: token<SaveTradePreferencesUseCase>(
+    "SaveTradePreferencesUseCase",
+  ),
   PlaceOrderUseCase: token<PlaceOrderUseCase>("PlaceOrderUseCase"),
   PollOrderUseCase: token<PollOrderUseCase>("PollOrderUseCase"),
   ListOpenOrdersUseCase: token<ListOpenOrdersUseCase>("ListOpenOrdersUseCase"),
