@@ -70,11 +70,10 @@ export function maxOrderIrt(
 }
 
 /**
- * Default market-order fee (0.35%, competitive with Nobitex/Wallex). The revenue
- * engine the referral program shares — see doc/referral/PRD.md. This is the
- * FALLBACK rate: a caller's EFFECTIVE rate (a referral invitee is discounted, so
- * a fixed 0.35% would mismatch the backend — issue #76) rides on the trade
- * context / quote as `effectiveFeeRateBps` and wins when present.
+ * Default market-order fee (0.35%, competitive with Nobitex/Wallex). This is the
+ * FALLBACK rate only: whenever the backend surfaces a per-caller EFFECTIVE rate
+ * it rides on the trade context / quote as `effectiveFeeRateBps` and wins, so a
+ * discounted caller is never charged this figure (issue #76).
  */
 export const FEE_RATE = 0.0035;
 
@@ -106,7 +105,7 @@ export interface TradeContext {
   // trading below the venue minimum (issue #53).
   limitsAvailable: boolean;
   // The caller's EFFECTIVE fee rate in basis points, from the backend (a
-  // referral invitee is discounted). `null` when the backend does not surface
+  // caller may be discounted). `null` when the backend does not surface
   // one → the offline FEE_RATE_BPS default applies (issue #76).
   effectiveFeeRateBps: number | null;
 }

@@ -9,7 +9,6 @@ import {
   encodeIdentity,
   type KycFormState,
 } from "./kyc-state";
-import { REFERRAL_COOKIE } from "./referral-state";
 import { ACCESS_CLAIM_COOKIE } from "./session-state";
 import { COOKIE_OPTIONS } from "@/lib/utils/cookie-options";
 import { signAccessClaim } from "@/lib/auth/access-claim";
@@ -52,7 +51,7 @@ export async function submitIdentity(
 /**
  * KYC step 2 — the user confirmed the read-only identity. Tell the backend to
  * mark the user KYC-verified (which unlocks the trade/wallet routes); only on
- * success do we clear the pending record, finalize referral, and proceed. On
+ * success do we clear the pending record and proceed. On
  * failure the pending cookie is kept so the user can retry.
  */
 export async function confirmKyc(): Promise<KycFormState> {
@@ -76,13 +75,6 @@ export async function confirmKyc(): Promise<KycFormState> {
       ...COOKIE_OPTIONS,
       maxAge: 60 * 60 * 24 * 30,
     });
-  }
-
-  // Referral attribution finalizes here: KYC passed with a stored ?ref code.
-  const ref = store.get(REFERRAL_COOKIE)?.value;
-  if (ref) {
-    await container.resolve(TOKENS.GetReferralOverviewUseCase).applyCode(ref);
-    store.delete(REFERRAL_COOKIE);
   }
 
   redirect("/market");

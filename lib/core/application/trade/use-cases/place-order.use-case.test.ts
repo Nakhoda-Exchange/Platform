@@ -266,7 +266,7 @@ describe("PlaceOrderUseCase", () => {
   });
 
   test("uses the caller's EFFECTIVE fee rate when the backend surfaces one (#76)", async () => {
-    // A referral invitee at 0.245% (24.5 bps) — the fee must follow that, not the
+    // A discounted caller at 0.245% (24.5 bps) — the fee must follow that, not the
     // fixed 0.35%.
     const { repo, placed } = tradeStub({ availableIrt: 1e10, coinAmounts: {} });
     repo.getLimits = async () =>

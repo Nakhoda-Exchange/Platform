@@ -45,7 +45,7 @@ export interface TradeLimits {
   defaultMinIrt: number | null;
   bySymbol: TradeLimitsMap;
   // The caller's EFFECTIVE fee rate (basis points) from the backend, when it
-  // surfaces one — a referral invitee is discounted, so the fixed FEE_RATE would
+  // surfaces one — a discounted caller would mismatch the fixed FEE_RATE, which
   // mismatch (issue #76). `null`/absent ⇒ the offline FEE_RATE_BPS default.
   effectiveFeeRateBps?: number | null;
 }

@@ -7,7 +7,6 @@ import {
   BellIcon,
   ChevronLeftIcon,
   CreditCardIcon,
-  GiftIcon,
   HeadphonesIcon,
   HelpCircleIcon,
   ShieldIcon,
@@ -108,12 +107,6 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
           href="/account/bank-accounts"
         />
         <Row Icon={BellIcon} label="اعلان‌ها" href="/account/announcements" />
-        <Row
-          Icon={GiftIcon}
-          label="دعوت از دوستان"
-          href="/account/referral"
-          highlight
-        />
         <Row Icon={HelpCircleIcon} label="سوالات متداول" href="/account/faq" />
         <Row Icon={HeadphonesIcon} label="پشتیبانی" onClick={openSupportChat} />
       </div>

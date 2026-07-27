@@ -36,7 +36,7 @@ export interface TradeQuote {
   expiresAt?: string | null;
   /**
    * The caller's EFFECTIVE fee rate for this quote, basis points (issue #76). A
-   * referral invitee is discounted, so the fixed FEE_RATE would mismatch; the
+   * caller may be discounted, so the fixed FEE_RATE would mismatch; the
    * quote is a natural carrier for the real rate. `null`/absent ⇒ unknown here.
    */
   feeRateBps?: number | null;

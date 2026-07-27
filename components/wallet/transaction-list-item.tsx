@@ -10,7 +10,7 @@ const TYPE_LABEL: Record<Transaction["type"], string> = {
   sell: "فروش",
   deposit: "واریز تومان",
   withdraw: "برداشت تومان",
-  reward: "پاداش دعوت",
+  reward: "پاداش",
 };
 
 const STATUS: Record<

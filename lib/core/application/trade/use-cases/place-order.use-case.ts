@@ -133,8 +133,8 @@ export class PlaceOrderUseCase {
 
     // The fee: a buyer's fee comes out of the entered amount (they receive coins
     // for the remainder); a seller's fee comes out of the proceeds. Either way it
-    // accrues to the platform (referral pool). The rate is the caller's EFFECTIVE
-    // rate when the backend surfaces one (a referral invitee is discounted —
+    // accrues to the platform. The rate is the caller's EFFECTIVE
+    // rate when the backend surfaces one (a caller may be discounted —
     // issue #76), else the FEE_RATE_BPS default; fee IRT is exact integer bps
     // math on the whole-Toman notional, not a float multiply (issue #57).
     const feeRateBps = limitsResult.data.effectiveFeeRateBps ?? FEE_RATE_BPS;

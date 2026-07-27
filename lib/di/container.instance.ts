@@ -28,7 +28,6 @@ import { GetWalletConfigUseCase } from "@/lib/core/application/wallet/use-cases/
 import { GetProfileUseCase } from "@/lib/core/application/account/use-cases/get-profile.use-case";
 import { TwoStepPasswordUseCase } from "@/lib/core/application/account/use-cases/two-step-password.use-case";
 import { ListAnnouncementsUseCase } from "@/lib/core/application/account/use-cases/list-announcements.use-case";
-import { GetReferralOverviewUseCase } from "@/lib/core/application/referral/use-cases/get-referral-overview.use-case";
 import { GetCurrencyUnitsUseCase } from "@/lib/core/application/config/use-cases/get-currency-units.use-case";
 import { HttpClient } from "@/lib/infrastructure/http/http-client";
 import { authAndLocaleInterceptor } from "@/lib/infrastructure/http/interceptors";
@@ -43,7 +42,6 @@ import { HttpWalletRepository } from "@/lib/infrastructure/wallet/http-wallet.re
 import { HttpWalletConfigRepository } from "@/lib/infrastructure/wallet/http-wallet-config.repository";
 import { HttpUserRepository } from "@/lib/infrastructure/account/http-user.repository";
 import { HttpAnnouncementsRepository } from "@/lib/infrastructure/account/http-announcements.repository";
-import { HttpReferralRepository } from "@/lib/infrastructure/referral/http-referral.repository";
 import { HttpConfigRepository } from "@/lib/infrastructure/config/http-config.repository";
 import { Container } from "./container";
 import type { Token } from "./token";
@@ -111,10 +109,6 @@ function registerHttpAdapters(container: Container, baseUrl: string): void {
   container.registerSingleton(
     TOKENS.AnnouncementsRepository,
     () => new HttpAnnouncementsRepository(http),
-  );
-  container.registerSingleton(
-    TOKENS.ReferralRepository,
-    () => new HttpReferralRepository(http),
   );
   container.registerSingleton(
     TOKENS.ConfigRepository,
@@ -281,10 +275,6 @@ function registerUseCases(container: Container): void {
     TOKENS.ListAnnouncementsUseCase,
     (c) =>
       new ListAnnouncementsUseCase(c.resolve(TOKENS.AnnouncementsRepository)),
-  );
-  container.register(
-    TOKENS.GetReferralOverviewUseCase,
-    (c) => new GetReferralOverviewUseCase(c.resolve(TOKENS.ReferralRepository)),
   );
   container.register(
     TOKENS.GetCurrencyUnitsUseCase,

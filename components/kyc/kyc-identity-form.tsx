@@ -16,7 +16,6 @@ export function KycIdentityForm() {
   );
   const [nationalCode, setNationalCode] = useState("");
   const [birthDate, setBirthDate] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
   const valid =
     isValidNationalCode(nationalCode) && isValidJalaliDate(birthDate);
 
@@ -39,16 +38,6 @@ export function KycIdentityForm() {
           name="birthDate"
           value={birthDate}
           onChange={setBirthDate}
-        />
-        <Field
-          label="کد دعوت (اختیاری)"
-          name="inviteCode"
-          value={inviteCode}
-          onChange={(e) => setInviteCode(e.target.value)}
-          dir="ltr"
-          maxLength={6}
-          placeholder="مثلاً A1B2C3"
-          className="text-right"
         />
       </div>
 

@@ -40,8 +40,6 @@ import type { GetProfileUseCase } from "@/lib/core/application/account/use-cases
 import type { TwoStepPasswordUseCase } from "@/lib/core/application/account/use-cases/two-step-password.use-case";
 import type { AnnouncementsRepository } from "@/lib/core/application/account/ports/announcements-repository.port";
 import type { ListAnnouncementsUseCase } from "@/lib/core/application/account/use-cases/list-announcements.use-case";
-import type { ReferralRepository } from "@/lib/core/application/referral/ports/referral-repository.port";
-import type { GetReferralOverviewUseCase } from "@/lib/core/application/referral/use-cases/get-referral-overview.use-case";
 import type { ConfigRepository } from "@/lib/core/application/config/ports/config-repository.port";
 import type { GetCurrencyUnitsUseCase } from "@/lib/core/application/config/use-cases/get-currency-units.use-case";
 
@@ -65,7 +63,6 @@ export const TOKENS = {
   AnnouncementsRepository: token<AnnouncementsRepository>(
     "AnnouncementsRepository",
   ),
-  ReferralRepository: token<ReferralRepository>("ReferralRepository"),
   ConfigRepository: token<ConfigRepository>("ConfigRepository"),
   // Application use cases
   RequestOtpUseCase: token<RequestOtpUseCase>("RequestOtpUseCase"),
@@ -117,9 +114,6 @@ export const TOKENS = {
   ),
   ListAnnouncementsUseCase: token<ListAnnouncementsUseCase>(
     "ListAnnouncementsUseCase",
-  ),
-  GetReferralOverviewUseCase: token<GetReferralOverviewUseCase>(
-    "GetReferralOverviewUseCase",
   ),
   GetCurrencyUnitsUseCase: token<GetCurrencyUnitsUseCase>(
     "GetCurrencyUnitsUseCase",

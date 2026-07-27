@@ -45,7 +45,7 @@ interface PortfolioDto {
 interface TradeLimitsDto {
   defaultMinTradeIrt?: string | null;
   // The caller's EFFECTIVE fee rate in basis points, when the backend surfaces
-  // one on this authed payload (a referral invitee is discounted — issue #76).
+  // one on this authed payload (a caller may be discounted — issue #76).
   effectiveFeeRateBps?: number | null;
   limits: Array<{
     symbol: string;

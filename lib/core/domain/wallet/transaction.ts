@@ -1,4 +1,4 @@
-/** What happened: money in/out (Toman), a trade, or a referral reward. */
+/** What happened: money in/out (Toman), a trade, or a legacy reward credit. */
 export type TransactionType =
   "deposit" | "withdraw" | "buy" | "sell" | "reward";
 
