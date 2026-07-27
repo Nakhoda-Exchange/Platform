@@ -31,9 +31,21 @@ The full tradable list (PLP). Public.
     "chainId": "solana", // tokens only; null/absent for native coins
     "contractAddress": "…", // tokens only
     "fdv": 90000, // همت; null/absent when unknown
+    // Holder counts, on EVERY coin (list and detail alike). Each half is
+    // independently nullable and `null` means UNKNOWN — hide it, never «۰».
+    "holders": {
+      "onChain": null, // distinct on-chain holders; null until an indexer is configured
+      "platform": 137, // distinct Nakhoda users holding a non-zero balance
+      "total": 137, // sum of the known halves; null only when BOTH are unknown
+    },
   },
 ]
 ```
+
+**Holders do not double-count.** Platform users hold custodially, so the exchange
+shows up on chain as **one** holder (the treasury wallet), not as N users —
+adding the halves is sound. `onChain` is `null` today: no indexer provider is
+configured, and DexScreener's public API carries no holders field at all.
 
 ## GET `/market/coins/{idOrSymbol}`
 
@@ -51,7 +63,7 @@ maps either to `null` → the not-found screen.
   "description": "بیت‌کوین نخستین…",
   "series":  [ { "at": 1783250000000, "priceIrt": 3890000000 }, … ],
   "candles": [ { "at": 1783250000000, "open": 1, "high": 2, "low": 1, "close": 2 }, … ],
-  "holdersCount": 128000    // optional, best-effort; null/absent → row hidden
+  "holdersCount": 128000    // mirrors coin.holders.total; null/absent → row hidden
 }
 ```
 

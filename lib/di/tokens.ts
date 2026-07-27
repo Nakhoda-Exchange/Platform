@@ -45,6 +45,7 @@ import type { GetCurrencyUnitsUseCase } from "@/lib/core/application/config/use-
 import type { GetSignupConfigUseCase } from "@/lib/core/application/config/use-cases/get-signup-config.use-case";
 import type { IncentivesRepository } from "@/lib/core/application/incentives/ports/incentives-repository.port";
 import type { RedeemIncentiveUseCase } from "@/lib/core/application/incentives/use-cases/redeem-incentive.use-case";
+import type { IncentiveLocksUseCase } from "@/lib/core/application/incentives/use-cases/incentive-locks.use-case";
 
 /** Central registry of injection tokens, grouped by layer. */
 export const TOKENS = {
@@ -125,6 +126,7 @@ export const TOKENS = {
   GetSignupConfigUseCase: token<GetSignupConfigUseCase>(
     "GetSignupConfigUseCase",
   ),
+  IncentiveLocksUseCase: token<IncentiveLocksUseCase>("IncentiveLocksUseCase"),
   RedeemIncentiveUseCase: token<RedeemIncentiveUseCase>(
     "RedeemIncentiveUseCase",
   ),

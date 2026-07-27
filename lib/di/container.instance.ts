@@ -31,6 +31,7 @@ import { ListAnnouncementsUseCase } from "@/lib/core/application/account/use-cas
 import { GetCurrencyUnitsUseCase } from "@/lib/core/application/config/use-cases/get-currency-units.use-case";
 import { GetSignupConfigUseCase } from "@/lib/core/application/config/use-cases/get-signup-config.use-case";
 import { RedeemIncentiveUseCase } from "@/lib/core/application/incentives/use-cases/redeem-incentive.use-case";
+import { IncentiveLocksUseCase } from "@/lib/core/application/incentives/use-cases/incentive-locks.use-case";
 import { HttpIncentivesRepository } from "@/lib/infrastructure/incentives/http-incentives.repository";
 import { HttpClient } from "@/lib/infrastructure/http/http-client";
 import { authAndLocaleInterceptor } from "@/lib/infrastructure/http/interceptors";
@@ -294,6 +295,10 @@ function registerUseCases(container: Container): void {
   container.register(
     TOKENS.RedeemIncentiveUseCase,
     (c) => new RedeemIncentiveUseCase(c.resolve(TOKENS.IncentivesRepository)),
+  );
+  container.register(
+    TOKENS.IncentiveLocksUseCase,
+    (c) => new IncentiveLocksUseCase(c.resolve(TOKENS.IncentivesRepository)),
   );
 }
 
