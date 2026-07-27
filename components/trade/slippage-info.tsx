@@ -1,21 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { hasMeaningfulSlippage } from "@/lib/core/domain/trade/quote";
 import { formatSlippagePercent } from "@/lib/utils/money";
 import { InfoIcon } from "@/components/ui/icons";
 import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
 /**
- * How the expected slippage reads to the user. A route with no meaningful price
- * impact — the exchange's own inventory, or a CEX quote inside its window — is
- * said in words rather than as «٪۰», which looks like a missing number.
- * `null` (not determined) has no text at all: the caller shows nothing.
+ * Floor for the slippage shown to the user, in basis points (0.1%).
+ *
+ * A firm-price route genuinely has no price impact, but quoting «بدون لغزش» or
+ * «٪۰» reads as a promise the fill cannot make — the figure is an estimate, and
+ * the order's price band is what actually bounds it. Stating a small honest
+ * minimum is the conservative direction to round: it never under-promises.
+ */
+const MIN_DISPLAYED_SLIPPAGE_BPS = 10;
+
+/**
+ * How the expected slippage reads to the user. Always a percentage, never words
+ * and never zero — anything at or below the floor is stated as «٪۰٫۱».
+ * `null` (not determined) has no text at all: the caller decides what to show.
  */
 export function slippageLabel(bps: number | null): string | null {
   if (bps === null) return null;
-  return hasMeaningfulSlippage(bps) ? formatSlippagePercent(bps) : "بدون لغزش";
+  return formatSlippagePercent(Math.max(bps, MIN_DISPLAYED_SLIPPAGE_BPS));
 }
 
 /** The plain-Persian explainer behind every ⓘ on this screen. */

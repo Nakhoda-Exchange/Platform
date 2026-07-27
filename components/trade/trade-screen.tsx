@@ -31,11 +31,7 @@ import { CheckCircleIcon } from "@/components/ui/icons";
 import { Sheet } from "@/components/ui/sheet";
 import { Confetti } from "@/components/ui/confetti";
 import { LivePriceChip } from "./live-price-chip";
-import {
-  SlippageChip,
-  SlippageInfoButton,
-  slippageLabel,
-} from "./slippage-info";
+import { SlippageChip } from "./slippage-info";
 import { useSlippageQuote } from "@/lib/client/use-slippage-quote";
 import { useTradePreferences } from "@/lib/client/use-trade-preferences";
 import { Keypad } from "./keypad";
@@ -446,7 +442,6 @@ export function TradeScreen({
     amountIrt,
     enabled: valid && amountIrt > 0,
   });
-  const slippageText = slippageLabel(slippageBps);
 
   // The rate the backend will actually charge, from the same quote. FEE_RATE is
   // only a fallback for before the quote lands — never the source of truth.
@@ -479,18 +474,6 @@ export function TradeScreen({
       key: "fee",
       label: `کارمزد (${feePercentLabel(effectiveFeeRate)})`,
       value: formatIrt(feeIrt),
-    },
-    {
-      key: "slippage",
-      label: (
-        <span className="inline-flex items-center gap-1.5">
-          لغزش تخمینی
-          <SlippageInfoButton />
-        </span>
-      ),
-      // Always shown. When the backend could not price a route the value is «—»
-      // — the row is never hidden, and never fabricates a zero.
-      value: slippageText ?? "—",
     },
     ...(preferences.slippageBps !== null
       ? [
