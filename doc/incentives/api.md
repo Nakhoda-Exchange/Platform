@@ -85,11 +85,11 @@ signup outright with `INVITE_CODE_REQUIRED` (403).
 
 Set per code by an admin, because the right timing is a campaign decision:
 
-| `trigger`           | Pays                              | Why |
-| ------------------- | --------------------------------- | --- |
-| `instant`           | at redemption                     | best conversion; keep the amount small |
-| `after_kyc`         | when the user clears KYC          | a real, identified person |
-| `after_first_trade` | after their first settled trade   | a real customer |
+| `trigger`           | Pays                            | Why                                    |
+| ------------------- | ------------------------------- | -------------------------------------- |
+| `instant`           | at redemption                   | best conversion; keep the amount small |
+| `after_kyc`         | when the user clears KYC        | a real, identified person              |
+| `after_first_trade` | after their first settled trade | a real customer                        |
 
 The deferred two are the anti-abuse control: a throwaway signup is never paid.
 

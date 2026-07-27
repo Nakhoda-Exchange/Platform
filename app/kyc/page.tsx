@@ -13,7 +13,9 @@ export const metadata: Metadata = {
 export default async function KycPage() {
   // When registration is invite-only the code becomes mandatory. A failed read
   // falls back to OPTIONAL: a config blip must not make KYC un-submittable.
-  const config = await container.resolve(TOKENS.GetSignupConfigUseCase).execute();
+  const config = await container
+    .resolve(TOKENS.GetSignupConfigUseCase)
+    .execute();
   const inviteRequired = config.ok ? config.data.inviteOnly : false;
 
   return (
