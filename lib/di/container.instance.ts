@@ -29,6 +29,9 @@ import { GetProfileUseCase } from "@/lib/core/application/account/use-cases/get-
 import { TwoStepPasswordUseCase } from "@/lib/core/application/account/use-cases/two-step-password.use-case";
 import { ListAnnouncementsUseCase } from "@/lib/core/application/account/use-cases/list-announcements.use-case";
 import { GetCurrencyUnitsUseCase } from "@/lib/core/application/config/use-cases/get-currency-units.use-case";
+import { GetSignupConfigUseCase } from "@/lib/core/application/config/use-cases/get-signup-config.use-case";
+import { RedeemIncentiveUseCase } from "@/lib/core/application/incentives/use-cases/redeem-incentive.use-case";
+import { HttpIncentivesRepository } from "@/lib/infrastructure/incentives/http-incentives.repository";
 import { HttpClient } from "@/lib/infrastructure/http/http-client";
 import { authAndLocaleInterceptor } from "@/lib/infrastructure/http/interceptors";
 import { HttpAuthRepository } from "@/lib/infrastructure/auth/http-auth.repository";
@@ -113,6 +116,10 @@ function registerHttpAdapters(container: Container, baseUrl: string): void {
   container.registerSingleton(
     TOKENS.ConfigRepository,
     () => new HttpConfigRepository(http),
+  );
+  container.registerSingleton(
+    TOKENS.IncentivesRepository,
+    () => new HttpIncentivesRepository(http),
   );
 }
 
@@ -279,6 +286,14 @@ function registerUseCases(container: Container): void {
   container.register(
     TOKENS.GetCurrencyUnitsUseCase,
     (c) => new GetCurrencyUnitsUseCase(c.resolve(TOKENS.ConfigRepository)),
+  );
+  container.register(
+    TOKENS.GetSignupConfigUseCase,
+    (c) => new GetSignupConfigUseCase(c.resolve(TOKENS.ConfigRepository)),
+  );
+  container.register(
+    TOKENS.RedeemIncentiveUseCase,
+    (c) => new RedeemIncentiveUseCase(c.resolve(TOKENS.IncentivesRepository)),
   );
 }
 

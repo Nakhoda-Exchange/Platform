@@ -11,7 +11,7 @@ import {
   HelpCircleIcon,
   ShieldIcon,
   type IconProps,
-} from "@/components/ui/icons";
+  GiftIcon,} from "@/components/ui/icons";
 import { openSupportChat } from "@/components/support/goftino";
 import { ThemeSelector } from "./theme-row";
 import { cn } from "@/lib/utils/cn";
@@ -106,6 +106,7 @@ export function AccountMenu({ profile }: { profile: UserProfile }) {
           label="حساب‌های بانکی"
           href="/account/bank-accounts"
         />
+        <Row Icon={GiftIcon} label="کد هدیه" href="/account/redeem" />
         <Row Icon={BellIcon} label="اعلان‌ها" href="/account/announcements" />
         <Row Icon={HelpCircleIcon} label="سوالات متداول" href="/account/faq" />
         <Row Icon={HeadphonesIcon} label="پشتیبانی" onClick={openSupportChat} />

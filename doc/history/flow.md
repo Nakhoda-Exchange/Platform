@@ -17,7 +17,7 @@ TransactionTimeline: group by Jalali day (امروز/دیروز/formatJalaliDay)
 ## File map
 
 - Domain: `lib/core/domain/wallet/transaction.ts` (`TransactionType`:
-  deposit/withdraw/buy/sell — `reward` joins with the referral program).
+  deposit/withdraw/buy/sell — `reward` is a growth incentive payout).
 - Port + use case: `transactions-repository.port.ts`,
   `list-transactions.use-case.ts` (sort desc + optional type filter).
 - UI: `components/wallet/transaction-timeline.tsx` (day grouping),

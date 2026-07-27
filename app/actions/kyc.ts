@@ -21,8 +21,9 @@ import { signAccessClaim } from "@/lib/auth/access-claim";
  * because Vercel serves the submit and confirm requests from different
  * serverless instances, so an in-memory handoff would be lost between them.
  *
- * The invite code is optional and captured on the form; the mock inquiry does
- * not consume it yet — wire it through when the backend needs it.
+ * The invite code is optional: it rides along to the backend, which redeems it
+ * for this user. An unusable code costs the reward, never the inquiry — KYC must
+ * never fail because a promo code expired.
  */
 export async function submitIdentity(
   _prev: KycFormState,
@@ -30,10 +31,11 @@ export async function submitIdentity(
 ): Promise<KycFormState> {
   const nationalCode = String(formData.get("nationalCode") ?? "");
   const birthDate = String(formData.get("birthDate") ?? "");
+  const inviteCode = String(formData.get("inviteCode") ?? "");
 
   const result = await container
     .resolve(TOKENS.InquireIdentityUseCase)
-    .execute(nationalCode, birthDate);
+    .execute(nationalCode, birthDate, inviteCode);
 
   if (!result.ok) {
     return { error: result.error.message };

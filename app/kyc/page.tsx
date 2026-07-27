@@ -3,12 +3,19 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { Logo } from "@/components/layout/logo";
 import { KycProgress } from "@/components/kyc/kyc-progress";
 import { KycIdentityForm } from "@/components/kyc/kyc-identity-form";
+import { container } from "@/lib/di/container.instance";
+import { TOKENS } from "@/lib/di/tokens";
 
 export const metadata: Metadata = {
   title: "احراز هویت | ناخدا",
 };
 
-export default function KycPage() {
+export default async function KycPage() {
+  // When registration is invite-only the code becomes mandatory. A failed read
+  // falls back to OPTIONAL: a config blip must not make KYC un-submittable.
+  const config = await container.resolve(TOKENS.GetSignupConfigUseCase).execute();
+  const inviteRequired = config.ok ? config.data.inviteOnly : false;
+
   return (
     <AuthShell>
       <div className="flex w-full flex-col items-start gap-6">
@@ -29,7 +36,7 @@ export default function KycPage() {
         </div>
       </div>
 
-      <KycIdentityForm />
+      <KycIdentityForm inviteRequired={inviteRequired} />
     </AuthShell>
   );
 }

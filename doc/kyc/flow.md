@@ -76,11 +76,15 @@ infrastructure; presentation resolves use cases from the DI container.
 ## API contract (client ⇄ inquiry)
 
 ```
-request : { nationalCode: string(10), birthDate: string(jalali), inviteCode?: string(6) }
+request : { nationalCode: string(10), birthDate: string(jalali), inviteCode?: string(3-32) }
 response: { matched: boolean, identity?: { firstName, lastName, fatherName } }
 ```
 
-`inviteCode` is only sent when non-empty.
+`inviteCode` is only sent when non-empty. It is the growth incentive/invite code
+(`doc/incentives/api.md`): the backend redeems it for this user. Redemption is
+best-effort — an expired or exhausted code costs the reward, never the inquiry.
+When invite-only mode is on (`GET /incentives/signup-config`) the field becomes
+**required** and the form blocks submit without it.
 
 ## UI
 
