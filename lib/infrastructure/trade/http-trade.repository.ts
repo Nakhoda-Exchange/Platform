@@ -307,7 +307,12 @@ export class HttpTradeRepository implements TradeRepository {
     // the whole-Toman trigger. A server-minted `quoteId` (issue #59) rides along
     // when the screen obtained a fixed-price quote — the backend then prices the
     // fill at the quote instead of the client `requestedPrice` band.
-    const body: Record<string, string> = isLimit
+    // NOT Record<string, string>: `slippageBps` is the one field the backend
+    // types as a NUMBER (z.number().int().min(0).max(10_000)); everything else
+    // is an IntString. Typing the whole body as string forced String() on it and
+    // zod rejected "300" with VALIDATION_ERROR — so every order from a user who
+    // had set a slippage tolerance failed, while users on the default succeeded.
+    const body: Record<string, string | number> = isLimit
       ? {
           symbol: coin.symbol.toUpperCase(),
           side: side.toUpperCase(),
@@ -332,7 +337,7 @@ export class HttpTradeRepository implements TradeRepository {
     // The user's own tolerance rides along when they set one; omitted entirely
     // otherwise so the backend resolves the coin's configured value.
     if (options?.slippageBps != null && Number.isFinite(options.slippageBps)) {
-      body.slippageBps = String(Math.round(options.slippageBps));
+      body.slippageBps = Math.round(options.slippageBps);
     }
     if (options?.quoteId) body.quoteId = options.quoteId;
 
