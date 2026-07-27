@@ -2,6 +2,7 @@
 
 import type { BankCard } from "@/lib/core/domain/wallet/bank-card";
 import type { Iban } from "@/lib/core/domain/wallet/bank-account";
+import type { IncentiveLock } from "@/lib/core/domain/incentives/incentive-lock";
 import { IrtWithdrawForm } from "@/components/wallet/irt-withdraw-form";
 import { LoadError } from "@/components/ui/load-error";
 import { useClientData } from "@/lib/client/use-client-data";
@@ -11,6 +12,9 @@ interface WithdrawVM {
   ibans: Iban[];
   cards: BankCard[];
   availableIrt: number;
+  /** Toman held back by unvested incentive gifts; "0" when unencumbered. */
+  lockedIrt: string;
+  locks: IncentiveLock[];
   minWithdrawIrt: number;
   feeBps: number;
   feeCapIrt: number;
@@ -39,6 +43,8 @@ export function WithdrawClient() {
         initialIbans={data.ibans}
         cards={data.cards}
         availableIrt={data.availableIrt}
+        lockedIrt={data.lockedIrt}
+        locks={data.locks}
         minWithdrawIrt={data.minWithdrawIrt}
         feeBps={data.feeBps}
         feeCapIrt={data.feeCapIrt}

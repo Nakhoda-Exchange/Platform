@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import type { Iban } from "@/lib/core/domain/wallet/bank-account";
 import type { BankCard } from "@/lib/core/domain/wallet/bank-card";
+import type { IncentiveLock } from "@/lib/core/domain/incentives/incentive-lock";
 import { MIN_WITHDRAW_IRT } from "@/lib/core/domain/wallet/withdraw";
 import { computeWithdrawFee } from "@/lib/core/domain/wallet/wallet-config";
 import { requestIrtWithdraw, requestWithdrawOtp } from "@/app/actions/withdraw";
@@ -11,6 +12,7 @@ import { Field } from "@/components/ui/field";
 import { WalletIcon } from "@/components/ui/icons";
 import { OtpInput } from "@/components/auth/otp-input";
 import { IbanPicker } from "./iban-picker";
+import { IncentiveLockNotice } from "./incentive-lock-notice";
 import { WalletEmpty } from "./wallet-empty";
 import { WithdrawResult } from "./withdraw-result";
 import { toEnglishDigits, toPersianDigits } from "@/lib/utils/digits";
@@ -23,6 +25,8 @@ export function IrtWithdrawForm({
   initialIbans,
   cards,
   availableIrt,
+  lockedIrt = "0",
+  locks = [],
   minWithdrawIrt = MIN_WITHDRAW_IRT,
   feeBps = 0,
   feeCapIrt = 0,
@@ -31,6 +35,13 @@ export function IrtWithdrawForm({
   initialIbans: Iban[];
   cards: BankCard[];
   availableIrt: number;
+  /**
+   * Toman held back by unvested incentive gifts. Netted out of `availableIrt`
+   * below so every downstream check — the «همه» button, the max validation, the
+   * empty state — works off the figure that can actually leave.
+   */
+  lockedIrt?: string;
+  locks?: IncentiveLock[];
   /** Minimum withdrawal (Toman) from the wallet config (#156); constant fallback. */
   minWithdrawIrt?: number;
   /** Withdrawal fee rate in basis points (#156). */
@@ -65,20 +76,38 @@ export function IrtWithdrawForm({
     return () => clearInterval(t);
   }, [resendIn]);
 
+  // What can ACTUALLY leave. The backend enforces the same floor inside the
+  // reserve statement, so this is a courtesy, not the control — but without it
+  // the user meets an unexplained «موجودی کافی نیست» on money they can see.
+  const locked = Math.max(0, Number(lockedIrt) || 0);
+  const withdrawableIrt = Math.max(0, availableIrt - locked);
+
   const amount = Number(digits || "0");
   const fee = computeWithdrawFee(amount, feeBps, feeCapIrt);
   const net = Math.max(0, amount - fee);
   const clientError =
     amount > 0 && amount < minWithdrawIrt
       ? `کمینه برداشت ${formatIrt(minWithdrawIrt)} است.`
-      : amount > availableIrt
-        ? "موجودی شما کافی نیست."
+      : amount > withdrawableIrt
+        ? locked > 0
+          ? "این مبلغ بیش از موجودی قابل برداشت شماست."
+          : "موجودی شما کافی نیست."
         : null;
   const valid =
-    amount >= minWithdrawIrt && amount <= availableIrt && selectedId !== "";
+    amount >= minWithdrawIrt && amount <= withdrawableIrt && selectedId !== "";
 
   if (done) {
     return <WithdrawResult summary={`${formatIrt(amount)} به شبای شما`} />;
+  }
+
+  // Every Toman they hold is an unvested gift. Showing the "go sell something"
+  // empty state here would be actively misleading — selling changes nothing.
+  if (withdrawableIrt <= 0 && locked > 0) {
+    return (
+      <div className="flex flex-1 flex-col gap-5">
+        <IncentiveLockNotice lockedIrt={lockedIrt} locks={locks} />
+      </div>
+    );
   }
 
   // Toman is only withdrawable once you have some. Explain how to get it here,
@@ -209,17 +238,21 @@ export function IrtWithdrawForm({
       <div className="flex items-center justify-between text-[14px]">
         <span className="text-muted">
           موجودی قابل برداشت:{" "}
-          <span className="font-bold text-ink">{formatIrt(availableIrt)}</span>
+          <span className="font-bold text-ink">
+            {formatIrt(withdrawableIrt)}
+          </span>
         </span>
         <button
           type="button"
-          onClick={() => setDigits(String(availableIrt))}
-          disabled={availableIrt <= 0}
+          onClick={() => setDigits(String(withdrawableIrt))}
+          disabled={withdrawableIrt <= 0}
           className="rounded-full bg-brand/10 px-4 py-1.5 font-bold text-brand transition-colors hover:bg-brand/15 disabled:opacity-50"
         >
           همه
         </button>
       </div>
+
+      <IncentiveLockNotice lockedIrt={lockedIrt} locks={locks} />
 
       <IbanPicker
         label="شبای مقصد"

@@ -155,7 +155,38 @@ export function CoinInfoCard({ detail }: { detail: CoinDetail }) {
       </StatRow>,
     );
   }
-  if (detail.holdersCount != null && detail.holdersCount > 0) {
+  // Holders: the split when we have it, else the legacy single figure. A `null`
+  // half is UNKNOWN — it is left out entirely rather than rendered as «۰», and
+  // the combined row appears only when both halves are real (otherwise it would
+  // just restate the one half we know).
+  const holders = detail.coin.holders;
+  const onChain = holders?.onChain ?? null;
+  const platform = holders?.platform ?? null;
+  if (onChain != null && onChain > 0 && platform != null && platform > 0) {
+    rows.push(
+      <StatRow key="holders" label="مجموع دارندگان">
+        {(onChain + platform).toLocaleString("fa-IR")}
+      </StatRow>,
+    );
+  }
+  if (onChain != null && onChain > 0) {
+    rows.push(
+      <StatRow key="holders-onchain" label="دارندگان در شبکه">
+        {onChain.toLocaleString("fa-IR")}
+      </StatRow>,
+    );
+  }
+  if (platform != null && platform > 0) {
+    rows.push(
+      <StatRow key="holders-platform" label="دارندگان در ناخدا">
+        {platform.toLocaleString("fa-IR")}
+      </StatRow>,
+    );
+  } else if (
+    !holders &&
+    detail.holdersCount != null &&
+    detail.holdersCount > 0
+  ) {
     rows.push(
       <StatRow key="holders" label="تعداد دارندگان">
         {detail.holdersCount.toLocaleString("fa-IR")}

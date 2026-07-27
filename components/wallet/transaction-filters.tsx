@@ -11,6 +11,7 @@ const TYPE_LABEL: Record<TransactionType, string> = {
   deposit: "واریز",
   withdraw: "برداشت",
   reward: "پاداش",
+  clawback: "بازپس‌گیری هدیه",
 };
 
 /** Type filter chips — plain links (`?type=`), so the page stays a server component. */

@@ -11,6 +11,7 @@ const TYPE_LABEL: Record<Transaction["type"], string> = {
   deposit: "واریز تومان",
   withdraw: "برداشت تومان",
   reward: "پاداش",
+  clawback: "بازپس‌گیری هدیه",
 };
 
 const STATUS: Record<
@@ -41,7 +42,9 @@ export function TransactionListItem({ tx }: { tx: Transaction }) {
     : "";
   const received = tx.type === "buy" ? coin : irt;
   const spent = tx.type === "buy" ? irt : tx.type === "sell" ? coin : null;
-  const incoming = tx.type !== "withdraw";
+  // A clawback takes money OUT — it must read as a debit, or the user sees a
+  // green «+» for a balance that just went down.
+  const incoming = tx.type !== "withdraw" && tx.type !== "clawback";
 
   return (
     <div className="flex items-center justify-between gap-3 py-3">
@@ -56,7 +59,7 @@ export function TransactionListItem({ tx }: { tx: Transaction }) {
             aria-hidden
             className="flex size-[42px] shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand"
           >
-            {tx.type === "reward" ? (
+            {tx.type === "reward" || tx.type === "clawback" ? (
               <GiftIcon size={20} />
             ) : tx.type === "deposit" ? (
               <ArrowDownIcon size={20} />

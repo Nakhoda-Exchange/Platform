@@ -93,8 +93,81 @@ Set per code by an admin, because the right timing is a campaign decision:
 
 The deferred two are the anti-abuse control: a throwaway signup is never paid.
 
+## Withdrawal locks
+
+`payoutTrigger` answers "when do we pay?". A **lock** answers the separate
+question "once paid, when may it leave?" — a campaign can gift 100,000 IRT that
+the user trades with immediately but cannot cash out for 30 days.
+
+Two things about a lock that are easy to get wrong:
+
+- **The money is fully tradeable.** A lock gates the exit, not the use. That is
+  not a nicety: the volume condition asks the user to trade the gift, so a lock
+  that froze it could never be satisfied. Word it «قابل برداشت نیست», never
+  «مسدود».
+- **Release is a cliff.** Every configured condition must be met _together_, and
+  until then **nothing** frees up. Showing a progress bar at 95% without saying
+  so would be a lie of omission.
+
+### GET `/incentives/locks` — **auth**
+
+```jsonc
+{
+  "lockedIrt": "100000", // subtract from the available balance
+  "items": [
+    {
+      "id": "lck_9f2…",
+      "amountIrt": "100000",
+      "unlockAt": "2026-08-26T12:00:00Z", // null = no time condition
+      "requiredVolumeIrt": "2000000", // null = no volume condition
+      "requiredDepositIrt": null, // null = no deposit condition
+      "forfeitAt": "2026-10-25T12:00:00Z", // null = never expires
+      "volumeIrt": "750000", // progress since the gift landed
+      "depositIrt": "0",
+      "unmet": ["time", "volume"], // never empty — a met lock is released
+      "canForfeit": true,
+    },
+  ],
+}
+```
+
+Reading this also **releases** any lock whose terms have come good, so the answer
+is never stale: a user who just earned their gift sees it freed the moment they
+look.
+
+### POST `/incentives/locks/{id}/forfeit` — **auth**
+
+Gives up an unvested gift: we recover what remains and the floor drops to zero
+permanently. Available only when `canForfeit` is true (the campaign chose
+`forfeit` over `block`).
+
+```jsonc
+{ "outcome": "forfeited", "recoveredIrt": "100000" }
+```
+
+Be precise with the user about what this buys them: it does **not** free up more
+money at that instant — recovering X lowers the balance and the floor by the same
+X. What it ends is the encumbrance, so future deposits are freely withdrawable.
+That is exactly what someone stuck behind terms they can no longer meet needs,
+and it is the whole reason the option exists.
+
+`outcome: "released"` means the terms turned out to be already met and nothing
+was taken — a user is never charged for money they had earned.
+
+### Where it surfaces
+
+The withdraw screen nets `lockedIrt` out of the available balance before the user
+types an amount. Without that they meet a «موجودی کافی نیست» on a balance they
+can plainly see, which reads as a bug. The backend enforces the same floor inside
+the reserve statement regardless, so the UI figure is a courtesy, not the control.
+
 ## Wallet history
 
 A credited incentive appears in `/wallet/transactions` as a `reward` row (see
 [`doc/history/api.md`](../history/api.md)), rendered with the gift icon and the
 «پاداش» label.
+
+A recovered gift appears as a `clawback` row — «بازپس‌گیری هدیه», rendered as a
+DEBIT. It is deliberately its own type rather than a negative `reward`: it is the
+only history row that takes back money the user was previously shown as theirs,
+and it should say so plainly.

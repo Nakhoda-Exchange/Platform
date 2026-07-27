@@ -1,3 +1,22 @@
+/**
+ * Holder counts split by population, because the two mean different things and
+ * one number would hide which half is missing.
+ *
+ * - `onChain` — distinct on-chain holders from an indexer. `null` today: no
+ *   indexer is configured, and DexScreener's public API carries no holders
+ *   field at all. Render nothing for a `null` half — never «۰».
+ * - `platform` — distinct Nakhoda users holding a non-zero balance.
+ *
+ * The halves do not double-count: our users hold custodially, so the exchange
+ * appears on chain as ONE holder (the treasury wallet), not as N users.
+ */
+export interface HoldersBreakdown {
+  onChain: number | null;
+  platform: number | null;
+  /** Sum of the known halves; `null` only when BOTH are unknown. */
+  total: number | null;
+}
+
 /** A tradable coin as shown in the market screens. */
 export interface Coin {
   id: string;
@@ -34,6 +53,10 @@ export interface Coin {
   // Fully-diluted valuation in همت (like `marketCap`). Null/absent when unknown
   // (native coins, sparse rows); the PDP hides the FDV row rather than show 0.
   fdv?: number | null;
+  // Holder counts (on-chain + platform). Present on every coin the market feed
+  // returns — list and detail alike — so a holders figure is not a PDP
+  // exclusive. Absent from older payloads; each half is independently nullable.
+  holders?: HoldersBreakdown;
 }
 
 /**
