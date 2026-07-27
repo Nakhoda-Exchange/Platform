@@ -6,7 +6,7 @@ import type {
   TradeRepository,
 } from "@/lib/core/application/trade/ports/trade-repository.port";
 import { coinDisplaySymbol, type Coin } from "@/lib/core/domain/market/coin";
-import { parsePrice } from "@/lib/core/domain/market/price";
+import { parsePrice, toPriceWire } from "@/lib/core/domain/market/price";
 import type { TradeQuote } from "@/lib/core/domain/trade/quote";
 import type {
   OpenOrder,
@@ -298,13 +298,17 @@ export class HttpTradeRepository implements TradeRepository {
     // (PlaceOrderUseCase) already refuses an unavailable price, so this is
     // effectively non-null (0 only as an unreachable bridge, never displayed).
     const unitPriceIrt = parsePrice(coin.priceIrt) ?? 0;
+    // The price on the wire is the EXACT decimal, never rounded to whole Toman:
+    // a coin cheaper than one Toman has no whole-number price, and rounding it
+    // put every order outside the backend's tolerance band (issue #111).
+    const unitPriceWire = toPriceWire(coin.priceIrt) ?? "0";
 
     // A MARKET order sends `amount` as whole Toman with `amountUnit: "IRT"` for
     // BOTH sides (a buy spends it, a sell targets it to receive) — the settled,
     // backward-compatible contract. A LIMIT order is SPEND-committed, so the
     // spend unit differs by side: a BUY commits an IRT amount, a SELL commits a
     // coin amount (the backend rejects a TARGET-unit limit). `targetPrice` is
-    // the whole-Toman trigger. A server-minted `quoteId` (issue #59) rides along
+    // the trigger, an exact decimal. A server-minted `quoteId` (issue #59) rides along
     // when the screen obtained a fixed-price quote — the backend then prices the
     // fill at the quote instead of the client `requestedPrice` band.
     // NOT Record<string, string>: `slippageBps` is the one field the backend
@@ -317,7 +321,7 @@ export class HttpTradeRepository implements TradeRepository {
           symbol: coin.symbol.toUpperCase(),
           side: side.toUpperCase(),
           orderType: "LIMIT",
-          targetPrice: String(Math.round(options?.targetPriceIrt ?? 0)),
+          targetPrice: toPriceWire(options?.targetPriceIrt ?? 0) ?? "0",
           ...(side === "buy"
             ? { amount: String(Math.round(totalIrt)), amountUnit: "IRT" }
             : {
@@ -331,7 +335,7 @@ export class HttpTradeRepository implements TradeRepository {
           orderType: "MARKET",
           amount: String(Math.round(totalIrt)),
           amountUnit: "IRT",
-          requestedPrice: String(Math.round(unitPriceIrt)),
+          requestedPrice: unitPriceWire,
         };
 
     // The user's own tolerance rides along when they set one; omitted entirely

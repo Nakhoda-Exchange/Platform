@@ -8,8 +8,9 @@ const COIN: Coin = {
   name: "Bonk",
   symbol: "BONK",
   iconUrl: "",
-  priceIrt: "2500",
-  priceUsd: "0.00002",
+  // BONK really does trade below one Toman — this is a live production figure.
+  priceIrt: "0.59323356936",
+  priceUsd: "0.00000315",
   change24h: 1.2,
   marketCap: 1,
   isNew: false,
@@ -96,5 +97,24 @@ describe("HttpTradeRepository.placeOrder wire types", () => {
     const body = sent[0] as Record<string, unknown>;
     expect(typeof body.amount).toBe("string");
     expect(typeof body.requestedPrice).toBe("string");
+  });
+
+  test("sends a sub-Toman price EXACTLY, not rounded to whole Toman", async () => {
+    // Issue #111. BONK is worth ~0.593 Toman, so Math.round sent "1" — 68% above
+    // the market price the backend guards against. Every BONK order was refused
+    // with PRICE_OUT_OF_TOLERANCE, and no user action could change that: the
+    // rounding happened here, not in anything the user typed.
+    const sent: unknown[] = [];
+    await repoCapturing(sent).placeOrder(
+      COIN,
+      "buy",
+      40,
+      100_000,
+      350,
+      "idem-4",
+    );
+
+    const body = sent[0] as Record<string, unknown>;
+    expect(body.requestedPrice).toBe("0.59323356936");
   });
 });

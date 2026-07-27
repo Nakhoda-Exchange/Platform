@@ -31,3 +31,33 @@ export function parsePrice(value: PriceValue): number | null {
 export function hasPrice(value: PriceValue): boolean {
   return parsePrice(value) !== null;
 }
+
+/** A plain non-negative decimal — no exponent, which the backend also accepts
+ *  but which is needlessly lossy to produce from a rounded number. */
+const PLAIN_DECIMAL = /^\d+(\.\d+)?$/;
+
+/**
+ * A price formatted for the ORDER wire: an exact plain decimal string, or `null`
+ * when there is no usable price.
+ *
+ * Rounding to whole Toman here is what made cheap coins untradeable (issue
+ * #111). BONK trades at ~0.593 IRT, so `Math.round` sent `1` — a 68% deviation
+ * from the market price the backend guards against, and every single BONK order
+ * came back `PRICE_OUT_OF_TOLERANCE` no matter what the user did.
+ *
+ * The raw wire string is passed through untouched when it is already a plain
+ * decimal: it came from the backend at full precision, and re-deriving it from
+ * the parsed `number` would only add float noise. The numeric path exists for
+ * live WebSocket ticks, and uses `toFixed` rather than `String` because
+ * `String(0.0000028)` yields `"2.8e-6"`.
+ */
+export function toPriceWire(value: PriceValue): string | null {
+  const parsed = parsePrice(value);
+  if (parsed === null || parsed <= 0) return null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (PLAIN_DECIMAL.test(trimmed)) return trimmed;
+  }
+  const fixed = parsed.toFixed(18).replace(/\.?0+$/, "");
+  return fixed === "" || fixed === "0" ? null : fixed;
+}
