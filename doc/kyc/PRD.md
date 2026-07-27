@@ -55,10 +55,10 @@ Figma: `nakhoda-kyc-identity`, `nakhoda-kyc-confirm` (mobile, 390×844).
 
 User provides the minimum needed to run the inquiry.
 
-| Field         | Label (fa)        | Requirement                                     |
-| ------------- | ----------------- | ----------------------------------------------- |
-| National code | کد ملی            | required, **exactly 10 digits**, valid checksum |
-| Birth date    | تاریخ تولد (شمسی) | required, **Jalali** `YYYY/MM/DD`               |
+| Field         | Label (fa)        | Requirement                                             |
+| ------------- | ----------------- | ------------------------------------------------------- |
+| National code | کد ملی            | required, **exactly 10 digits**, valid checksum         |
+| Birth date    | تاریخ تولد (شمسی) | required, **Jalali** `YYYY/MM/DD`                       |
 | Invite code   | کد دعوت/هدیه      | **optional** (required in invite-only mode), ۳–۳۲ نویسه |
 
 - Primary CTA: **استعلام و ادامه**. Disabled until national code + birth date

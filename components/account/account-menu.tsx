@@ -11,7 +11,8 @@ import {
   HelpCircleIcon,
   ShieldIcon,
   type IconProps,
-  GiftIcon,} from "@/components/ui/icons";
+  GiftIcon,
+} from "@/components/ui/icons";
 import { openSupportChat } from "@/components/support/goftino";
 import { ThemeSelector } from "./theme-row";
 import { cn } from "@/lib/utils/cn";

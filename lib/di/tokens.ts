@@ -122,6 +122,10 @@ export const TOKENS = {
   GetCurrencyUnitsUseCase: token<GetCurrencyUnitsUseCase>(
     "GetCurrencyUnitsUseCase",
   ),
-  GetSignupConfigUseCase: token<GetSignupConfigUseCase>("GetSignupConfigUseCase"),
-  RedeemIncentiveUseCase: token<RedeemIncentiveUseCase>("RedeemIncentiveUseCase"),
+  GetSignupConfigUseCase: token<GetSignupConfigUseCase>(
+    "GetSignupConfigUseCase",
+  ),
+  RedeemIncentiveUseCase: token<RedeemIncentiveUseCase>(
+    "RedeemIncentiveUseCase",
+  ),
 } as const;
