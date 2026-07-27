@@ -42,6 +42,9 @@ import type { AnnouncementsRepository } from "@/lib/core/application/account/por
 import type { ListAnnouncementsUseCase } from "@/lib/core/application/account/use-cases/list-announcements.use-case";
 import type { ConfigRepository } from "@/lib/core/application/config/ports/config-repository.port";
 import type { GetCurrencyUnitsUseCase } from "@/lib/core/application/config/use-cases/get-currency-units.use-case";
+import type { GetSignupConfigUseCase } from "@/lib/core/application/config/use-cases/get-signup-config.use-case";
+import type { IncentivesRepository } from "@/lib/core/application/incentives/ports/incentives-repository.port";
+import type { RedeemIncentiveUseCase } from "@/lib/core/application/incentives/use-cases/redeem-incentive.use-case";
 
 /** Central registry of injection tokens, grouped by layer. */
 export const TOKENS = {
@@ -64,6 +67,7 @@ export const TOKENS = {
     "AnnouncementsRepository",
   ),
   ConfigRepository: token<ConfigRepository>("ConfigRepository"),
+  IncentivesRepository: token<IncentivesRepository>("IncentivesRepository"),
   // Application use cases
   RequestOtpUseCase: token<RequestOtpUseCase>("RequestOtpUseCase"),
   VerifyOtpUseCase: token<VerifyOtpUseCase>("VerifyOtpUseCase"),
@@ -118,4 +122,6 @@ export const TOKENS = {
   GetCurrencyUnitsUseCase: token<GetCurrencyUnitsUseCase>(
     "GetCurrencyUnitsUseCase",
   ),
+  GetSignupConfigUseCase: token<GetSignupConfigUseCase>("GetSignupConfigUseCase"),
+  RedeemIncentiveUseCase: token<RedeemIncentiveUseCase>("RedeemIncentiveUseCase"),
 } as const;

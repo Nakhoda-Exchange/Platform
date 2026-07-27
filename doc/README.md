@@ -17,7 +17,7 @@ implementation notes). Keep them in sync with the code they describe.
 | Transactions timeline (تاریخچه)    | [`history/`](./history/)           |
 | Account hub (حساب کاربری)          | [`account/`](./account/)           |
 | Dark/light theme (حالت نمایش)      | [`theme/`](./theme/)               |
-| Referral program (کد دعوت)         | [`referral/`](./referral/)         |
+| کدهای تشویقی (کد هدیه/دعوت)        | [`incentives/`](./incentives/)     |
 
 Backend integration: every feature also has an **`api.md`** — the endpoint
 contract its HTTP adapter implements (shared rules in

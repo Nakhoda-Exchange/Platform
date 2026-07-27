@@ -18,6 +18,7 @@ export class InquireIdentityUseCase {
   async execute(
     rawNationalCode: string,
     rawBirthDate: string,
+    rawInviteCode?: string,
   ): Promise<Result<Identity>> {
     const nationalCode = NationalCode.create(rawNationalCode);
     if (!nationalCode.ok) return nationalCode;
@@ -33,7 +34,10 @@ export class InquireIdentityUseCase {
       );
     }
 
-    return this.inquiry.inquire(nationalCode.data, birthDate.data);
+    // Trimmed to undefined when blank, so the adapter omits the field entirely
+    // rather than sending an empty string the backend would have to reject.
+    const inviteCode = rawInviteCode?.trim() || undefined;
+    return this.inquiry.inquire(nationalCode.data, birthDate.data, inviteCode);
   }
 
   /** Confirm the reviewed identity so the backend marks the user KYC-verified. */

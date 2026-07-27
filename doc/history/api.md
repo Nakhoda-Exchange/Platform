@@ -30,7 +30,7 @@ by type client-side for now — add `?type=` server-side when lists grow).
 ```
 
 `amountIrt`/`amountCoin` are **decimal strings** (conventions); `at` is an ISO
-string the adapter parses to a `Date`. `reward` rows are referral payouts
+string the adapter parses to a `Date`. `reward` rows are growth-incentive payouts
 («پاداش دعوت») — Toman only, no coin fields required.
 
 ### Status gap: no `expired`, no deposit mismatch (#72/#74)

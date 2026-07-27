@@ -41,8 +41,7 @@ receipt ── links ─▶ /wallet · /market
   derived coin amount may exceed holdings by a rounding hair — clamped to a
   full sell in the use case, unit-tested.
 - **Fee is live**: the 0.35% market-order fee (`FEE_RATE`) is fully implemented —
-  a «کارمزد» line on the confirm + receipt, feeding the referral pool
-  (`doc/referral`). It is NOT "intentionally absent".
+  a «کارمزد» line on the confirm + receipt. It is NOT "intentionally absent".
 - **Async lifecycle**: a MARKET order settles synchronously today (`SETTLED`); a
   LIMIT order (and MARKET once async settlement is enabled) returns `ACCEPTED`
   and rests — the client polls `GET /trade/orders/{id}` to a terminal state, then

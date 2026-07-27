@@ -59,10 +59,10 @@ User provides the minimum needed to run the inquiry.
 | ------------- | ----------------- | ----------------------------------------------- |
 | National code | کد ملی            | required, **exactly 10 digits**, valid checksum |
 | Birth date    | تاریخ تولد (شمسی) | required, **Jalali** `YYYY/MM/DD`               |
-| Invite code   | کد دعوت (اختیاری) | **optional**, 6-char alphanumeric               |
+| Invite code   | کد دعوت/هدیه      | **optional** (required in invite-only mode), ۳–۳۲ نویسه |
 
 - Primary CTA: **استعلام و ادامه**. Disabled until national code + birth date
-  are valid. Invite code never blocks submission.
+  are valid. The invite code never blocks submission unless invite-only mode is on.
 - All digits shown as Persian digits.
 
 ## Screen 2 — Confirm identity

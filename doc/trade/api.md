@@ -108,7 +108,7 @@ Two success shapes plus an in-body rejection:
 
 A settled/filled order must appear in `/wallet/transactions` immediately. Fees
 are live (0.35%): buyers pay it out of `totalIrt`, sellers receive
-`totalIrt − feeIrt`; fees feed the referral pool (`doc/referral/api.md`).
+`totalIrt − feeIrt`.
 
 ## GET `/trade/orders/{orderId}` — auth — status
 

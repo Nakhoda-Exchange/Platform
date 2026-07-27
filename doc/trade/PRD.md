@@ -18,7 +18,7 @@ in plain Persian.
 
 - Limit/stop orders (structure allows a type later), order book, coin-unit
   entry mode (IRT-entry with live equivalent ships first), fees (arrive with
-  the referral program — see `doc/referral/PRD.md`).
+  the growth incentives — see `doc/incentives/api.md`).
 
 ## Flow
 

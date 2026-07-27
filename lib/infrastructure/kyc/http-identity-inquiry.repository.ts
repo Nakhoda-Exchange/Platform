@@ -12,10 +12,13 @@ export class HttpIdentityInquiryRepository implements IdentityInquiryPort {
   inquire(
     nationalCode: NationalCode,
     birthDate: JalaliDate,
+    inviteCode?: string,
   ): Promise<Result<Identity>> {
     return this.http.post<Identity>("/kyc/identity-inquiry", {
       nationalCode: nationalCode.value,
       birthDate: birthDate.value, // Jalali YYYY/MM/DD, Latin digits
+      // Only sent when non-empty, so the body stays unchanged for the common case.
+      ...(inviteCode ? { inviteCode } : {}),
     });
   }
 

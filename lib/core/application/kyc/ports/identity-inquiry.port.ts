@@ -12,6 +12,12 @@ export interface IdentityInquiryPort {
   inquire(
     nationalCode: NationalCode,
     birthDate: JalaliDate,
+    /**
+     * Optional growth incentive / invite code typed on the KYC form. Passed
+     * through to the backend, which redeems it for this user; an unusable code
+     * costs the reward, never the inquiry.
+     */
+    inviteCode?: string,
   ): Promise<Result<Identity>>;
 
   /**

@@ -40,6 +40,7 @@ export const HEADER_CONFIG: Record<string, HeaderConfig> = {
     title: "بازنشانی رمز",
     backHref: "/account/two-step",
   },
+  "/account/redeem": { title: "کد هدیه", backHref: "/account" },
   "/account/announcements": { title: "اعلان‌ها", backHref: "/account" },
   "/account/terms": { title: "قوانین و حریم خصوصی", backHref: "/account" },
   "/account/faq": { title: "سوالات متداول", backHref: "/account" },

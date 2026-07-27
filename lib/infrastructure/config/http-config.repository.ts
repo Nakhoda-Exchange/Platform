@@ -1,5 +1,6 @@
 import type { ConfigRepository } from "@/lib/core/application/config/ports/config-repository.port";
 import type { CurrencyUnits } from "@/lib/core/domain/config/currency-units";
+import type { SignupConfig } from "@/lib/core/domain/config/signup-config";
 import type { Result } from "@/lib/core/domain/shared/result";
 import type { HttpClient } from "../http/http-client";
 
@@ -9,5 +10,9 @@ export class HttpConfigRepository implements ConfigRepository {
 
   getCurrencyUnits(): Promise<Result<CurrencyUnits>> {
     return this.http.get<CurrencyUnits>("/reference-data/currency-units");
+  }
+
+  getSignupConfig(): Promise<Result<SignupConfig>> {
+    return this.http.get<SignupConfig>("/incentives/signup-config");
   }
 }
