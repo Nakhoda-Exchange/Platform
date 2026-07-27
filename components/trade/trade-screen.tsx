@@ -40,7 +40,11 @@ import { useSlippageQuote } from "@/lib/client/use-slippage-quote";
 import { useTradePreferences } from "@/lib/client/use-trade-preferences";
 import { Keypad } from "./keypad";
 import { toPersianDigits } from "@/lib/utils/digits";
-import { formatCoinAmount, formatIrt } from "@/lib/utils/money";
+import {
+  formatCoinAmount,
+  formatIrt,
+  formatSlippagePercent,
+} from "@/lib/utils/money";
 import { cn } from "@/lib/utils/cn";
 
 /** Round a derived coin amount to 6 significant digits for display. */
@@ -76,12 +80,19 @@ function toEntryDigits(amount: number): string {
 }
 
 /**
- * Fee-rate label «٪۰٫۳۵» derived from {@link FEE_RATE} so the receipt can't drift
- * from the math the fee is actually charged at (issue #63).
+ * Fee-rate label «٪۶» / «٪۰٫۳۵» for the rate ACTUALLY being charged.
+ *
+ * This was a module constant derived from {@link FEE_RATE}, which made the
+ * receipt structurally incapable of telling the truth: the backend's effective
+ * rate is a runtime value that arrives on the quote, and when the two diverged
+ * the sheet kept promising the constant. Production ran at 600 bps while this
+ * printed «٪۰٫۳۵» — a 17x understatement on every order.
  */
-const FEE_PERCENT_LABEL = `٪${toPersianDigits(
-  (FEE_RATE * 100).toFixed(2).replace(/\.?0+$/, ""),
-).replace(".", "٫")}`;
+function feePercentLabel(rate: number): string {
+  return `٪${toPersianDigits(
+    (rate * 100).toFixed(2).replace(/\.?0+$/, ""),
+  ).replace(".", "٫")}`;
+}
 
 const SIDE_LABEL: Record<TradeSide, string> = { buy: "خرید", sell: "فروش" };
 
@@ -361,16 +372,6 @@ export function TradeScreen({
   // guard and fee) stays Toman-denominated.
   const amountIrt =
     unit === "irt" ? entered : Math.round(entered * priceForConv);
-  // Mirror of the server-side fee math (PlaceOrderUseCase is authoritative):
-  // buyers pay the fee out of the entered amount, sellers out of the proceeds.
-  const feeIrt = Math.round(amountIrt * FEE_RATE);
-  // `null` (not 0) when there's no usable price, so the derived amount renders
-  // «—» rather than a fabricated «۰» and never feeds a divide-by-zero preview
-  // into the confirm sheet (issue #60).
-  const amountCoin =
-    priceForConv > 0
-      ? roundCoin((amountIrt - (side === "buy" ? feeIrt : 0)) / priceForConv)
-      : null;
   const maxIrt =
     side === "buy" ? availableIrt : Math.floor(availableCoin * priceForConv);
   // Sell slider (percent of holdings). Derived from the entry, so typing on
@@ -439,13 +440,30 @@ export function TradeScreen({
   // Expected price impact for THIS order, priced by the backend once the amount
   // settles. Only quoted for an order the backend would accept — an invalid
   // amount would just be refused, and a figure for it would mean nothing.
-  const { bps: slippageBps } = useSlippageQuote({
+  const { bps: slippageBps, feeRateBps } = useSlippageQuote({
     symbol: coin.symbol,
     side,
     amountIrt,
     enabled: valid && amountIrt > 0,
   });
   const slippageText = slippageLabel(slippageBps);
+
+  // The rate the backend will actually charge, from the same quote. FEE_RATE is
+  // only a fallback for before the quote lands — never the source of truth.
+  const effectiveFeeRate = feeRateBps !== null ? feeRateBps / 10_000 : FEE_RATE;
+
+  // Mirror of the server-side fee math (PlaceOrderUseCase is authoritative):
+  // buyers pay the fee out of the entered amount, sellers out of the proceeds.
+  // Computed here, below the quote, so the preview and the receipt agree with
+  // what is charged rather than with a compile-time constant.
+  const feeIrt = Math.round(amountIrt * effectiveFeeRate);
+  // `null` (not 0) when there's no usable price, so the derived amount renders
+  // «—» rather than a fabricated «۰» and never feeds a divide-by-zero preview
+  // into the confirm sheet (issue #60).
+  const amountCoin =
+    priceForConv > 0
+      ? roundCoin((amountIrt - (side === "buy" ? feeIrt : 0)) / priceForConv)
+      : null;
 
   // Confirm-receipt lines. The slippage row appears only when the backend could
   // actually price one — never as a blank or a fabricated zero.
@@ -459,20 +477,27 @@ export function TradeScreen({
     { key: "price", label: "قیمت واحد", value: formatIrt(receiptPriceIrt) },
     {
       key: "fee",
-      label: `کارمزد (${FEE_PERCENT_LABEL})`,
+      label: `کارمزد (${feePercentLabel(effectiveFeeRate)})`,
       value: formatIrt(feeIrt),
     },
-    ...(slippageText
+    {
+      key: "slippage",
+      label: (
+        <span className="inline-flex items-center gap-1.5">
+          لغزش تخمینی
+          <SlippageInfoButton />
+        </span>
+      ),
+      // Always shown. When the backend could not price a route the value is «—»
+      // — the row is never hidden, and never fabricates a zero.
+      value: slippageText ?? "—",
+    },
+    ...(preferences.slippageBps !== null
       ? [
           {
-            key: "slippage",
-            label: (
-              <span className="inline-flex items-center gap-1.5">
-                لغزش تخمینی
-                <SlippageInfoButton />
-              </span>
-            ),
-            value: slippageText,
+            key: "slippage-tolerance",
+            label: "حداکثر لغزش مجاز",
+            value: formatSlippagePercent(preferences.slippageBps),
           },
         ]
       : []),

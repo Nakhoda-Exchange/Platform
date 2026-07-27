@@ -31,10 +31,18 @@ export function useSlippageQuote({
   amountIrt: number;
   /** Skip pricing while the composed order isn't one the backend would accept. */
   enabled: boolean;
-}): { bps: number | null; loading: boolean } {
-  const [state, setState] = useState<{ key: string; bps: number | null }>({
+}): { bps: number | null; feeRateBps: number | null; loading: boolean } {
+  // `feeRateBps` rides along with the slippage figure because it comes from the
+  // same quote. Dropping it was how the confirm sheet ended up quoting the
+  // hardcoded FEE_RATE while the backend charged something else entirely.
+  const [state, setState] = useState<{
+    key: string;
+    bps: number | null;
+    feeRateBps: number | null;
+  }>({
     key: "",
     bps: null,
+    feeRateBps: null,
   });
 
   const key = enabled ? `${symbol}:${side}:${Math.round(amountIrt)}` : "";
@@ -56,12 +64,18 @@ export function useSlippageQuote({
           if (!res.ok) throw new Error("quote failed");
           return (await res.json()) as { quote: TradeQuote };
         })
-        .then((body) => setState({ key, bps: body.quote.expectedSlippageBps }))
+        .then((body) =>
+          setState({
+            key,
+            bps: body.quote.expectedSlippageBps,
+            feeRateBps: body.quote.feeRateBps ?? null,
+          }),
+        )
         .catch(() => {
           if (controller.signal.aborted) return;
           // Display-only: a failed quote hides the figure, it never blocks or
           // interrupts the order the user is composing.
-          setState({ key, bps: null });
+          setState({ key, bps: null, feeRateBps: null });
         });
     }, DEBOUNCE_MS);
 
@@ -72,8 +86,10 @@ export function useSlippageQuote({
   }, [key, symbol, side, amountIrt]);
 
   // Derived, so a late response for a superseded amount is ignored outright.
+  const fresh = key !== "" && state.key === key;
   return {
-    bps: key !== "" && state.key === key ? state.bps : null,
+    bps: fresh ? state.bps : null,
+    feeRateBps: fresh ? state.feeRateBps : null,
     loading: key !== "" && state.key !== key,
   };
 }
