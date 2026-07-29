@@ -17,6 +17,7 @@ import type {
   TradeSide,
 } from "@/lib/core/domain/trade/order";
 import { fail, ok, type Result } from "@/lib/core/domain/shared/result";
+import { userFacingMessage } from "@/lib/core/domain/shared/error-copy";
 import type { HttpClient } from "../http/http-client";
 
 /**
@@ -149,6 +150,17 @@ function toOrderType(value: string): OrderType {
 }
 
 /**
+ * How long an order submit may take before the client gives up, well above the
+ * transport default (15s, sized for a read).
+ *
+ * A MARKET order settles SYNCHRONOUSLY while `ASYNC_SETTLEMENT_ENABLED` is off:
+ * routing, the venue call and the ledger write all happen inside this request.
+ * Aborting at the read timeout does not cancel any of that — it only loses the
+ * answer, so the app reported «اتصال برقرار نشد» for orders that executed.
+ */
+const SUBMIT_TIMEOUT_MS = 60_000;
+
+/**
  * A rejected order carries a machine reason; surface a Persian, user-showable
  * message. Anything unmapped falls back to a generic trade error.
  */
@@ -156,14 +168,17 @@ function messageForRejection(reason: string | undefined): string {
   switch (reason) {
     case "PRICE_BAND_BREACHED":
       return "قیمت بازار تغییر کرد. دوباره تلاش کنید.";
+    case "RESERVE_FAILED":
     case "INSUFFICIENT_BALANCE":
     case "INSUFFICIENT_FUNDS":
-      return "موجودی شما کافی نیست.";
+      return userFacingMessage("INSUFFICIENT_FUNDS");
     case "NO_LIQUIDITY":
+      return userFacingMessage("INSUFFICIENT_LIQUIDITY");
     case "NO_ROUTE":
-      return "امکان انجام این معامله در حال حاضر نیست.";
+      return userFacingMessage("VENUE_UNAVAILABLE");
     default:
-      return "انجام سفارش ممکن نشد. دوباره تلاش کنید.";
+      // `reason` is a machine token (SCREAMING_SNAKE, English) — never shown.
+      return userFacingMessage("ORDER_REJECTED");
   }
 }
 
@@ -311,12 +326,13 @@ export class HttpTradeRepository implements TradeRepository {
     // the trigger, an exact decimal. A server-minted `quoteId` (issue #59) rides along
     // when the screen obtained a fixed-price quote — the backend then prices the
     // fill at the quote instead of the client `requestedPrice` band.
-    // NOT Record<string, string>: `slippageBps` is the one field the backend
-    // types as a NUMBER (z.number().int().min(0).max(10_000)); everything else
-    // is an IntString. Typing the whole body as string forced String() on it and
-    // zod rejected "300" with VALIDATION_ERROR — so every order from a user who
-    // had set a slippage tolerance failed, while users on the default succeeded.
-    const body: Record<string, string | number> = isLimit
+    // NOT Record<string, string>: `slippageBps` is a NUMBER on the backend
+    // (z.number().int().min(0).max(10_000)) and `sellAll` a BOOLEAN; everything
+    // else is an IntString. Typing the whole body as string forced String() on
+    // them and zod rejected "300" with VALIDATION_ERROR — so every order from a
+    // user who had set a slippage tolerance failed, while users on the default
+    // succeeded.
+    const body: Record<string, string | number | boolean> = isLimit
       ? {
           symbol: coin.symbol.toUpperCase(),
           side: side.toUpperCase(),
@@ -344,6 +360,11 @@ export class HttpTradeRepository implements TradeRepository {
       body.slippageBps = Math.round(options.slippageBps);
     }
     if (options?.quoteId) body.quoteId = options.quoteId;
+    // «فروش همه» (issue #54): the backend re-sizes from the ledger and waives
+    // the minimum, which is the only way a full sell leaves no dust and a
+    // below-minimum holding stays sellable. `amount` above still travels (the
+    // backend ignores it for sizing) so nothing else about the request changes.
+    if (options?.sellAll && side === "sell") body.sellAll = true;
 
     // The Idempotency-Key is the caller's, minted ONCE per user intent and
     // REUSED on retry — so a retry after a lost response replays the original
@@ -353,8 +374,23 @@ export class HttpTradeRepository implements TradeRepository {
       path: "/trade/orders",
       headers: { "Idempotency-Key": idempotencyKey },
       body,
+      timeoutMs: SUBMIT_TIMEOUT_MS,
     });
-    if (!result.ok) return result;
+    if (!result.ok) {
+      // A submit that never answered is NOT a submit that failed. While the
+      // backend settles a MARKET order inside the request, the venue round-trip
+      // can outlast any client budget — and our abort does not cancel it. The
+      // order may be live. Say exactly that rather than reporting a failure the
+      // user "fixes" by placing a second one; the idempotency key makes their
+      // retry safe, but only if they retry the SAME intent knowingly.
+      if (result.error.code === "NETWORK") {
+        return fail(
+          "SUBMIT_UNCONFIRMED",
+          userFacingMessage("SUBMIT_UNCONFIRMED"),
+        );
+      }
+      return result;
+    }
 
     // The backend replays the original response for a repeated key and flags it.
     const duplicate = result.data.duplicate === true;

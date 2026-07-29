@@ -117,4 +117,88 @@ describe("HttpTradeRepository.placeOrder wire types", () => {
     const body = sent[0] as Record<string, unknown>;
     expect(body.requestedPrice).toBe("0.59323356936");
   });
+
+  test("sends sellAll as a BOOLEAN on a full sell (issue #54)", async () => {
+    // The backend has sized sell-alls from the ledger since #54 — and waived
+    // the minimum for them — but the flag was never sent, so every «فروش همه»
+    // went as an ordinary notional order: dust left behind, and a holding under
+    // the floor unsellable.
+    const sent: unknown[] = [];
+    await repoCapturing(sent).placeOrder(
+      COIN,
+      "sell",
+      1234.5,
+      732,
+      2,
+      "idem-sell-all",
+      { orderType: "MARKET", sellAll: true, amountCoinRaw: "1234.5" },
+    );
+
+    const body = sent[0] as Record<string, unknown>;
+    expect(body.sellAll).toBe(true);
+    expect(body.side).toBe("SELL");
+  });
+
+  test("never sends sellAll on a BUY", async () => {
+    const sent: unknown[] = [];
+    await repoCapturing(sent).placeOrder(COIN, "buy", 40, 100_000, 350, "i", {
+      orderType: "MARKET",
+      sellAll: true,
+    });
+    expect(sent[0] as Record<string, unknown>).not.toHaveProperty("sellAll");
+  });
+});
+
+describe("HttpTradeRepository.placeOrder failure modes", () => {
+  test("a lost response is UNCONFIRMED, not a failure", async () => {
+    // A MARKET order settles synchronously against a venue, so the submit can
+    // outlive any client budget — and aborting it does not cancel the order.
+    // Reporting «اتصال برقرار نشد» told users a live order had failed, which
+    // they act on by placing a second one.
+    const http = new HttpClient({
+      baseUrl: "https://api.test",
+      fetchFn: async () => {
+        throw new Error("connection reset");
+      },
+    });
+    const result = await new HttpTradeRepository(http).placeOrder(
+      COIN,
+      "buy",
+      40,
+      100_000,
+      350,
+      "idem-lost",
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("SUBMIT_UNCONFIRMED");
+      expect(result.error.message).not.toContain("ناموفق");
+    }
+  });
+
+  test("a rejection reason never reaches the user as its machine token", async () => {
+    const http = new HttpClient({
+      baseUrl: "https://api.test",
+      fetchFn: async () =>
+        new Response(
+          JSON.stringify({ status: "REJECTED", reason: "RESERVE_FAILED" }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    });
+    const result = await new HttpTradeRepository(http).placeOrder(
+      COIN,
+      "sell",
+      40,
+      100_000,
+      350,
+      "idem-rej",
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toBe("موجودی شما برای این سفارش کافی نیست.");
+      expect(/[A-Za-z]/.test(result.error.message)).toBe(false);
+    }
+  });
 });

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { TradeSide } from "@/lib/core/domain/trade/order";
-import type { TradeQuote } from "@/lib/core/domain/trade/quote";
+import { isQuoteExpired, type TradeQuote } from "@/lib/core/domain/trade/quote";
 
 /** Quiet period after the last keystroke before the amount is priced. */
 const DEBOUNCE_MS = 450;
@@ -31,7 +31,19 @@ export function useSlippageQuote({
   amountIrt: number;
   /** Skip pricing while the composed order isn't one the backend would accept. */
   enabled: boolean;
-}): { bps: number | null; feeRateBps: number | null; loading: boolean } {
+}): {
+  bps: number | null;
+  feeRateBps: number | null;
+  /**
+   * The server-minted quote (issue #59) this price came from, or `null` when
+   * the backend minted none / it has since expired. An order that carries it
+   * executes at the PINNED price the user was shown — the house absorbs any
+   * move inside the TTL — instead of riding the client price band, where an
+   * ordinary mid-confirm tick becomes a `PRICE_OUT_OF_TOLERANCE` rejection.
+   */
+  quoteId: string | null;
+  loading: boolean;
+} {
   // `feeRateBps` rides along with the slippage figure because it comes from the
   // same quote. Dropping it was how the confirm sheet ended up quoting the
   // hardcoded FEE_RATE while the backend charged something else entirely.
@@ -39,10 +51,14 @@ export function useSlippageQuote({
     key: string;
     bps: number | null;
     feeRateBps: number | null;
+    quoteId: string | null;
+    expiresAt: string | null;
   }>({
     key: "",
     bps: null,
     feeRateBps: null,
+    quoteId: null,
+    expiresAt: null,
   });
 
   const key = enabled ? `${symbol}:${side}:${Math.round(amountIrt)}` : "";
@@ -69,13 +85,21 @@ export function useSlippageQuote({
             key,
             bps: body.quote.expectedSlippageBps,
             feeRateBps: body.quote.feeRateBps ?? null,
+            quoteId: body.quote.quoteId ?? null,
+            expiresAt: body.quote.expiresAt ?? null,
           }),
         )
         .catch(() => {
           if (controller.signal.aborted) return;
           // Display-only: a failed quote hides the figure, it never blocks or
           // interrupts the order the user is composing.
-          setState({ key, bps: null, feeRateBps: null });
+          setState({
+            key,
+            bps: null,
+            feeRateBps: null,
+            quoteId: null,
+            expiresAt: null,
+          });
         });
     }, DEBOUNCE_MS);
 
@@ -90,6 +114,9 @@ export function useSlippageQuote({
   return {
     bps: fresh ? state.bps : null,
     feeRateBps: fresh ? state.feeRateBps : null,
+    // An EXPIRED quote is worse than none: submitting it is a guaranteed 410,
+    // so it is dropped here and the order falls back to the price band.
+    quoteId: fresh && !isQuoteExpired(state.expiresAt) ? state.quoteId : null,
     loading: key !== "" && state.key !== key,
   };
 }

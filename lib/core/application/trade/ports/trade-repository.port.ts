@@ -73,6 +73,19 @@ export interface PlaceOrderOptions {
    * slippage) instead of the client `requestedPrice` band. Absent ⇒ band model.
    */
   quoteId?: string | null;
+  /**
+   * SELL EVERYTHING (issue #54). The backend sizes the order from the LEDGER and
+   * waives the minimum-notional floor and the base-amount bounds.
+   *
+   * Both halves matter, and neither is reachable from the client. The client's
+   * figure is derived from a page-load price, so any drift between then and the
+   * fill leaves DUST behind (or over-sells into a rejection) — a «فروش همه» that
+   * doesn't sell all. And without the waiver, a holding whose value has fallen
+   * under the minimum order is frozen permanently: too small to sell, and there
+   * is no reason to buy more of it. The backend has supported this since #54;
+   * the flag was simply never sent.
+   */
+  sellAll?: boolean;
 }
 
 /**

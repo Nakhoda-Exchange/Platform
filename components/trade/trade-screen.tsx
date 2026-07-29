@@ -25,6 +25,7 @@ import {
   PRICE_UNAVAILABLE_CODES,
   type TradeFormState,
 } from "@/app/actions/trade-state";
+import { userFacingMessage } from "@/lib/core/domain/shared/error-copy";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { CheckCircleIcon } from "@/components/ui/icons";
@@ -103,13 +104,39 @@ const CONFIRM_SECONDS = 30;
 /** Per-device flag: the first trade earns the confetti welcome, once. */
 const FIRST_TRADE_KEY = "nakhoda_has_traded";
 
-/** In-flight resolution of a 202-accepted order (poll → terminal / hand-off). */
-interface Resolving {
-  orderId: string;
+/**
+ * An order that has left the user's hands but has no receipt yet.
+ *
+ * `submitting` starts the INSTANT the user confirms — before the server has
+ * answered anything. That is the point: a MARKET order settles synchronously
+ * against a venue, so «waiting for the response» meant holding the user on a
+ * confirm button through a whole venue round-trip. Their order is placed; the
+ * outcome finds them (this sheet, the success sheet, or a toast) whether they
+ * stay on this screen or not.
+ *
+ * `resolving` is the 202-accepted poll; `resting` is an order left open.
+ */
+interface Submission {
+  phase: "submitting" | "resolving" | "resting";
+  /** Known from `resolving` onward; `null` while the submit is still in flight. */
+  orderId: string | null;
   orderType: OrderType;
-  /** True once the poll budget elapsed and the order is left resting. */
-  resting: boolean;
 }
+
+/**
+ * Failures that mean «the price moved, confirm again» rather than «your order
+ * was refused». All of them are momentary and all of them are fixed by the same
+ * gesture, so the confirm sheet reopens with the amounts intact and its CTA
+ * turns into «تلاش دوباره» (the idempotency key is reused, so the retry can
+ * only ever replay or place once).
+ */
+const RETRYABLE_PRICE_CODES = [
+  ...PRICE_UNAVAILABLE_CODES,
+  "PRICE_STALE",
+  "PRICE_OUT_OF_TOLERANCE",
+  "QUOTE_EXPIRED",
+  "QUOTE_MISMATCH",
+] as const;
 
 /**
  * Trade screen (Moonshot-style): a side toggle and a Toman (or coin) amount
@@ -171,9 +198,9 @@ export function TradeScreen({
   const confirmSeconds = preferences.confirmSeconds;
   const [celebrate, setCelebrate] = useState(false);
   const [ackedOrderId, setAckedOrderId] = useState<string | null>(null);
-  // A 202-accepted order being polled to completion, and the receipt it resolves
-  // to (SETTLED). Separate from the synchronous `success` state below.
-  const [resolving, setResolving] = useState<Resolving | null>(null);
+  // The order in flight — from the moment the user confirms until a receipt (or
+  // a toast) replaces it. Separate from the synchronous `success` state below.
+  const [submission, setSubmission] = useState<Submission | null>(null);
   const [resolvedOrder, setResolvedOrder] = useState<PlacedOrder | null>(null);
   // Snapshot of the just-submitted order, used to build the receipt if a polled
   // order settles (the poll result carries status, not the display fields).
@@ -193,12 +220,17 @@ export function TradeScreen({
   // The receipt says «already placed» instead of celebrating a second fill.
   const alreadyPlaced = state.status === "success" && state.duplicate === true;
 
-  // Stale live price (HTTP 503 PRICE_UNAVAILABLE): a momentary backend state,
-  // not a bad order. It gets a retry toast instead of the inline error, and the
-  // confirm sheet stays open with the same amounts so «تلاش دوباره» re-submits.
-  const priceUnavailable =
+  // The price moved (or momentarily vanished) under the order: a backend state,
+  // not a bad order. It gets a «try again» toast instead of a failure, and the
+  // confirm sheet reopens with the same amounts so «تلاش دوباره» re-submits.
+  const priceMoved =
     state.status === "error" &&
-    (PRICE_UNAVAILABLE_CODES as readonly string[]).includes(state.code ?? "");
+    (RETRYABLE_PRICE_CODES as readonly string[]).includes(state.code ?? "");
+  // A submit whose response never arrived. NOT a failure — the order may have
+  // executed — so it gets its own sheet telling the user where to look, never a
+  // «ناموفق» toast that invites a duplicate order.
+  const submitUnconfirmed =
+    state.status === "error" && state.code === "SUBMIT_UNCONFIRMED";
 
   // The confirm sheet is only valid for a short window; tick it down while open
   // (paused during submission) and auto-close when it runs out.
@@ -258,7 +290,7 @@ export function TradeScreen({
     // render); the poll's own setStates run after an await, so they're fine.
     const raf = requestAnimationFrame(() => {
       setConfirming(false);
-      setResolving({ orderId, orderType: ot, resting: false });
+      setSubmission({ phase: "resolving", orderId, orderType: ot });
     });
 
     (async () => {
@@ -270,11 +302,11 @@ export function TradeScreen({
         if (snapshotRef.current) {
           setResolvedOrder({ ...snapshotRef.current, id: orderId });
         }
-        setResolving(null);
+        setSubmission(null);
         return;
       }
       if (res.status === "REJECTED") {
-        setResolving(null);
+        setSubmission(null);
         toast({
           variant: "error",
           title: "سفارش انجام نشد",
@@ -283,22 +315,26 @@ export function TradeScreen({
         return;
       }
       if (res.status === "CANCELLED") {
-        setResolving(null);
+        setSubmission(null);
         toast({ variant: "info", title: "سفارش لغو شد" });
         return;
       }
       if (res.status === "error") {
-        setResolving(null);
+        // The order is placed and safe in the open list — only OUR read of it
+        // failed, which is not something the user needs the details of. Hand
+        // them off to where the truth is instead of describing our plumbing.
+        setSubmission((s) => (s ? { ...s, phase: "resting" } : s));
         toast({
-          variant: "error",
-          title: "خطا در پیگیری سفارش",
-          description: res.message,
+          variant: "info",
+          title: "وضعیت سفارش در دسترس نیست",
+          description:
+            "سفارش شما ثبت شده است؛ آن را در «سفارش‌های باز» ببینید.",
         });
         return;
       }
       // TIMEOUT — still resting. Not an error: the order is safe in the open
       // list. Leave the pending sheet in its "resting" state to hand off there.
-      setResolving((r) => (r ? { ...r, resting: true } : r));
+      setSubmission((s) => (s ? { ...s, phase: "resting" } : s));
     })();
 
     return () => {
@@ -315,6 +351,7 @@ export function TradeScreen({
     if (!displayOrder) return;
     const id = requestAnimationFrame(() => {
       setConfirming(false);
+      setSubmission(null);
       // A duplicate replay isn't a new trade — don't spend the first-trade
       // confetti on it (issue #55).
       if (!alreadyPlaced && !localStorage.getItem(FIRST_TRADE_KEY)) {
@@ -329,23 +366,43 @@ export function TradeScreen({
   // Every action error surfaces as a toast — never inline text in the confirm
   // sheet. Fired once per action return (`state` is a fresh object each submit,
   // so keying the effect on it guards against duplicate toasts on re-render).
+  //
+  // The DESCRIPTION never comes from the raw error. `userFacingMessage` decides
+  // it from the stable `code`, so an English backend string can't reach the
+  // toast and an internal fault reads as one plain Persian sentence rather than
+  // leaking «CONCURRENT_MODIFICATION» at someone trying to sell a coin.
   useEffect(() => {
     if (state.status !== "error") return;
-    if (priceUnavailable) {
-      toast({
-        variant: "error",
-        title: "قیمت لحظه‌ای در دسترس نیست",
-        description: "لطفاً کمی بعد دوباره تلاش کنید.",
+    // An unconfirmed submit has its own sheet (below) — a toast that says
+    // «انجام نشد» would be a claim we cannot make, and the user would act on it
+    // by placing the order a second time.
+    if (submitUnconfirmed) {
+      const id = requestAnimationFrame(() => {
+        setConfirming(false);
+        setSubmission({
+          phase: "resting",
+          orderId: null,
+          orderType: "MARKET",
+        });
       });
-    } else {
-      toast({
-        variant: "error",
-        title: "خطا در ثبت سفارش",
-        description: state.message || "دوباره تلاش کنید.",
-      });
+      return () => cancelAnimationFrame(id);
     }
-    // Defer the timer reset out of the effect body (avoids a cascading render).
-    const id = requestAnimationFrame(() => setSecondsLeft(confirmSeconds));
+
+    toast({
+      variant: "error",
+      title: priceMoved ? "قیمت بازار تغییر کرد" : "ثبت سفارش انجام نشد",
+      description: userFacingMessage(state.code, state.message),
+    });
+
+    const id = requestAnimationFrame(() => {
+      setSubmission(null);
+      setSecondsLeft(confirmSeconds);
+      // A moved price is retryable with the SAME intent, so bring the confirm
+      // sheet back with the amounts intact instead of making the user rebuild
+      // the order; the idempotency key is unchanged, so a retry can only ever
+      // replay or place once.
+      if (priceMoved) setConfirming(true);
+    });
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
@@ -353,6 +410,7 @@ export function TradeScreen({
   // Dismiss the status sheet → ready for another order (keep the form as it is).
   const startAnother = () => {
     if (displayOrder) setAckedOrderId(displayOrder.id);
+    setSubmission(null);
     setResolvedOrder(null);
     setCelebrate(false);
     setConfirming(false);
@@ -370,6 +428,24 @@ export function TradeScreen({
     unit === "irt" ? entered : Math.round(entered * priceForConv);
   const maxIrt =
     side === "buy" ? availableIrt : Math.floor(availableCoin * priceForConv);
+  // Selling the WHOLE position (issue #54): the entry covers the entire holding,
+  // however the user got there — the balance chip, the ٪۱۰۰ shortcut, the
+  // slider, or simply typing it.
+  //
+  // This is not cosmetic. Sized from the client, the order is derived from a
+  // page-load price, so drift leaves DUST behind on every «فروش همه»; sized by
+  // the backend from the ledger it is exact. And it carries the minimum-order
+  // waiver — without which a holding that has fallen below the floor can never
+  // be sold at all, because nobody tops up a position they are trying to exit.
+  // The upper edge is bounded: typing ten times the holding is an OVER-sell that
+  // must still say «موجودی کافی نیست», not quietly become «sell everything». The
+  // 0.5% band is the same rounding allowance PlaceOrderUseCase clamps with.
+  const sellingAll =
+    side === "sell" &&
+    availableCoin > 0 &&
+    maxIrt > 0 &&
+    amountIrt >= maxIrt &&
+    amountIrt <= maxIrt * 1.005;
   // Sell slider (percent of holdings). Derived from the entry, so typing on
   // the keypad moves the slider too; sliding writes the entry in the active
   // unit. Sell-only — «چند درصد بفروشم؟» has no buy-side meaning.
@@ -409,23 +485,35 @@ export function TradeScreen({
     ? "قیمت لحظه‌ای در دسترس نیست. کمی بعد دوباره تلاش کنید."
     : side === "sell" && availableCoin <= 0
       ? "از این رمزارز موجودی ندارید."
-      : amountIrt > 0 && amountIrt < minIrt
+      : // The floor never blocks a full sell — see `sellingAll`.
+        !sellingAll && amountIrt > 0 && amountIrt < minIrt
         ? `کمینه هر سفارش ${formatIrt(minIrt)} است.`
         : apiMaxIrt !== null && amountIrt > apiMaxIrt
           ? `بیشینه هر سفارش ${formatIrt(apiMaxIrt)} است.`
           : needsDeposit
             ? "موجودی کافی نیست. برای خرید، حساب خود را شارژ کنید."
-            : amountIrt > maxIrt
+            : !sellingAll && amountIrt > maxIrt
               ? "موجودی شما کافی نیست."
               : null;
   // A MARKET order can't be priced (or placed) without a live price, so an
   // unavailable price is never valid — this disables the CTA client-side (issue
   // #60), mirroring the server's PRICE_UNAVAILABLE guard.
+  //
+  // A full sell clears the minimum and the balance cap by definition: the size
+  // IS the balance, and the server re-derives it. Only the maximum still bites
+  // (exempting that would let a sell-all bypass a risk limit, as on the server).
   const valid =
     priceAvailable &&
-    amountIrt >= minIrt &&
-    amountIrt <= maxIrt &&
+    (sellingAll ? true : amountIrt >= minIrt && amountIrt <= maxIrt) &&
     (apiMaxIrt === null || amountIrt <= apiMaxIrt);
+
+  // Why the floor isn't stopping them. Without this, a holding worth less than
+  // the minimum reads as a screen that has simply stopped enforcing its own rule
+  // — and users who have seen «کمینه هر سفارش» before will not trust the CTA.
+  const note =
+    error === null && sellingAll && amountIrt < minIrt
+      ? "فروش کل دارایی از کمینه سفارش معاف است."
+      : null;
 
   // Unit price shown on the confirm receipt: the fresh confirm-time price (issue
   // #58) while the sheet is open, else the mount price. Kept nullable so an
@@ -436,7 +524,11 @@ export function TradeScreen({
   // Expected price impact for THIS order, priced by the backend once the amount
   // settles. Only quoted for an order the backend would accept — an invalid
   // amount would just be refused, and a figure for it would mean nothing.
-  const { bps: slippageBps, feeRateBps } = useSlippageQuote({
+  const {
+    bps: slippageBps,
+    feeRateBps,
+    quoteId,
+  } = useSlippageQuote({
     symbol: coin.symbol,
     side,
     amountIrt,
@@ -446,6 +538,24 @@ export function TradeScreen({
   // The rate the backend will actually charge, from the same quote. FEE_RATE is
   // only a fallback for before the quote lands — never the source of truth.
   const effectiveFeeRate = feeRateBps !== null ? feeRateBps / 10_000 : FEE_RATE;
+
+  // The server-minted quote this order will COMMIT to (issue #59): the fill is
+  // priced at the figure the sheet showed, and the house absorbs any move inside
+  // its TTL, instead of the order riding the client price band where an ordinary
+  // mid-confirm tick comes back as PRICE_OUT_OF_TOLERANCE.
+  //
+  // Never on a «فروش همه»: the backend re-sizes that from the ledger, and a
+  // quote may only price the exact (symbol, side, amount) it was minted for — so
+  // pinning one there is a guaranteed QUOTE_MISMATCH.
+  const committedQuoteId = sellingAll ? null : quoteId;
+
+  // Expected slippage against the tolerance the user actually set. Above it the
+  // order does not get filled at a worse price — it gets REFUSED — so this is a
+  // fix-it-now warning, shown while the amount can still be changed, rather than
+  // a rejection to decode after the fact.
+  const toleranceBps = preferences.slippageBps;
+  const slippageOverTolerance =
+    slippageBps !== null && toleranceBps !== null && slippageBps > toleranceBps;
 
   // Mirror of the server-side fee math (PlaceOrderUseCase is authoritative):
   // buyers pay the fee out of the entered amount, sellers out of the proceeds.
@@ -475,19 +585,22 @@ export function TradeScreen({
       label: `کارمزد (${feePercentLabel(effectiveFeeRate)})`,
       value: formatIrt(feeIrt),
     },
-    ...(preferences.slippageBps !== null
+    ...(toleranceBps !== null
       ? [
           {
             key: "slippage-tolerance",
             label: "حداکثر لغزش مجاز",
-            value: formatSlippagePercent(preferences.slippageBps),
+            value: formatSlippagePercent(toleranceBps),
           },
         ]
       : []),
     side === "sell"
       ? {
           key: "total",
-          label: "دریافتی خالص",
+          // A full sell is sized by the server from the ledger at fill time, so
+          // this figure is an estimate of the proceeds and saying otherwise
+          // would over-promise by whatever the price moves in between.
+          label: sellingAll ? "دریافتی تقریبی" : "دریافتی خالص",
           value: formatIrt(amountIrt - feeIrt),
         }
       : { key: "total", label: "مجموع پرداختی", value: formatIrt(amountIrt) },
@@ -608,9 +721,12 @@ export function TradeScreen({
             doesn't shift the centred amount and jump the layout. */}
         <p
           role="alert"
-          className="min-h-[1.25rem] text-[13px] font-bold text-loss"
+          className={cn(
+            "min-h-[1.25rem] text-[13px] font-bold",
+            error ? "text-loss" : "text-muted",
+          )}
         >
-          {error}
+          {error ?? note}
         </p>
       </div>
 
@@ -754,6 +870,24 @@ export function TradeScreen({
               feeIrt,
               priceIrt: priceForConv,
             };
+            // HAND THE ORDER OFF NOW. A MARKET order settles synchronously
+            // against a venue, so waiting for the response meant pinning the
+            // user to a spinning confirm button for the whole round-trip — and
+            // nothing about that wait changed the outcome. The order is placed
+            // the moment they confirm; the sheet below says so, and the receipt
+            // (or the toast) reaches them wherever they are.
+            //
+            // Deferred a frame so React finishes dispatching this submit before
+            // the sheet starts unmounting the form — same pattern as the
+            // countdown/accepted effects above.
+            requestAnimationFrame(() => {
+              setConfirming(false);
+              setSubmission({
+                phase: "submitting",
+                orderId: null,
+                orderType: "MARKET",
+              });
+            });
           }}
           className="flex flex-col gap-4"
         >
@@ -763,14 +897,19 @@ export function TradeScreen({
           <input type="hidden" name="orderType" value="MARKET" />
           {/* One key per intent, reused on every retry of THIS sheet (issue #55). */}
           <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+          {/* «فروش همه» (issue #54): the backend sizes from the ledger and waives
+              the minimum, so the position empties completely and a below-minimum
+              holding stays sellable. */}
+          {sellingAll ? <input type="hidden" name="sellAll" value="1" /> : null}
+          {/* The server-minted quote the sheet priced this order from (issue #59)
+              — the fill honours it, so the house carries any move inside its TTL. */}
+          {committedQuoteId ? (
+            <input type="hidden" name="quoteId" value={committedQuoteId} />
+          ) : null}
           {/* The user's own tolerance, when they set one. Absent ⇒ the backend
               resolves the coin's own value. */}
-          {preferences.slippageBps !== null ? (
-            <input
-              type="hidden"
-              name="slippageBps"
-              value={preferences.slippageBps}
-            />
+          {toleranceBps !== null ? (
+            <input type="hidden" name="slippageBps" value={toleranceBps} />
           ) : null}
 
           <dl className="flex flex-col divide-y divide-line rounded-card border border-line">
@@ -785,6 +924,21 @@ export function TradeScreen({
             ))}
           </dl>
 
+          {/* The tolerance the user set is a REFUSAL threshold, not a price cap:
+              above it the order comes back rejected. Say so here, where the
+              amount can still be changed, instead of after the fact. */}
+          {slippageOverTolerance ? (
+            <p
+              role="alert"
+              className="rounded-card bg-loss-soft p-3 text-center text-[13px] leading-6 text-loss"
+            >
+              لغزش تخمینی این سفارش ({formatSlippagePercent(slippageBps)}) از
+              حداکثر مجاز شما ({formatSlippagePercent(toleranceBps)}) بیشتر است
+              و احتمالاً انجام نمی‌شود. مقدار کمتری را امتحان کنید یا حد لغزش را
+              در تنظیمات معامله بالا ببرید.
+            </p>
+          ) : null}
+
           <p className="text-center text-[12px] text-placeholder">
             این تأیید تا {toPersianDigits(secondsLeft)} ثانیه دیگر معتبر است
           </p>
@@ -793,7 +947,7 @@ export function TradeScreen({
             <Button type="submit" size="xl" fullWidth disabled={pending}>
               {pending
                 ? "در حال ثبت سفارش…"
-                : priceUnavailable
+                : priceMoved
                   ? "تلاش دوباره"
                   : `تأیید ${SIDE_LABEL[side]}`}
             </Button>
@@ -811,23 +965,33 @@ export function TradeScreen({
         </form>
       </Sheet>
 
-      {/* Pending sheet — a 202-accepted order being polled. While polling it
-          spins; once it's clear the order is resting (limit / timed-out poll),
-          it hands the user off to the open-orders list. */}
+      {/* Submission sheet. It opens the INSTANT the user confirms — the order is
+          theirs to walk away from, not something to be held on a spinner for.
+          «resting» means the order is safely open (a limit order, a timed-out
+          poll, or a submit whose answer we never got) and hands off to the
+          open-orders list. Dismissable throughout: the receipt or the toast
+          still finds the user afterwards. */}
       <Sheet
-        open={resolving !== null && !successOpen}
-        onClose={() => setResolving(null)}
+        open={submission !== null && !successOpen}
+        onClose={() => setSubmission(null)}
         title={
-          resolving?.resting
-            ? "سفارش شما ثبت شد"
-            : resolving?.orderType === "LIMIT"
-              ? "در حال ثبت سفارش حد"
-              : "در حال نهایی‌سازی سفارش"
+          submitUnconfirmed
+            ? // We do NOT know this order was placed — claiming so would be as
+              // wrong as claiming it failed.
+              "وضعیت سفارش نامشخص است"
+            : submission?.phase === "resting"
+              ? "سفارش شما ثبت شد"
+              : submission?.orderType === "LIMIT"
+                ? "در حال ثبت سفارش حد"
+                : "سفارش شما ارسال شد"
         }
         manageBack={false}
       >
         <div className="flex flex-col items-center gap-3 text-center">
-          {resolving?.resting ? (
+          {/* No mark at all when the outcome is unknown: a tick would claim the
+              order landed, a spinner that we are still watching it. Neither is
+              true — the response is simply gone. */}
+          {submitUnconfirmed ? null : submission?.phase === "resting" ? (
             <CheckCircleIcon size={52} className="text-brand" />
           ) : (
             <span
@@ -836,9 +1000,11 @@ export function TradeScreen({
             />
           )}
           <p className="text-[15px] leading-7 text-muted">
-            {resolving?.resting
-              ? "سفارش شما ثبت شد و تا رسیدن به شرایط اجرا باز می‌ماند. می‌توانید آن را در «سفارش‌های باز» ببینید یا لغو کنید."
-              : "لطفاً کمی صبر کنید…"}
+            {submitUnconfirmed
+              ? "سفارش شما ارسال شد اما پاسخ سامانه دریافت نشد. پیش از ثبت دوباره، «سفارش‌های باز» و «دارایی» را بررسی کنید."
+              : submission?.phase === "resting"
+                ? "سفارش شما ثبت شد و تا رسیدن به شرایط اجرا باز می‌ماند. می‌توانید آن را در «سفارش‌های باز» ببینید یا لغو کنید."
+                : "سفارش شما ثبت شد و در حال انجام است. لازم نیست منتظر بمانید — نتیجه را به شما نشان می‌دهیم."}
           </p>
         </div>
         <div className="flex flex-col gap-2">
@@ -848,20 +1014,18 @@ export function TradeScreen({
           >
             مشاهده سفارش‌های باز
           </Link>
-          {resolving?.resting ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="lg"
-              fullWidth
-              onClick={() => {
-                setResolving(null);
-                setDigits("");
-              }}
-            >
-              بستن
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            fullWidth
+            onClick={() => {
+              setSubmission(null);
+              if (submission?.phase === "resting") setDigits("");
+            }}
+          >
+            بستن
+          </Button>
         </div>
       </Sheet>
 

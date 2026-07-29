@@ -49,10 +49,14 @@ function SlippageSheet({
           همین لحظه و مقدار سفارش شماست، نه یک تضمین — با تغییر مقدار سفارش، این
           عدد هم تغییر می‌کند.
         </p>
+        {/* This paragraph used to describe a «بدون لغزش» label that
+            MIN_DISPLAYED_SLIPPAGE_BPS makes unreachable — the explainer promised
+            a state the screen can never show. It now explains the floor itself. */}
         <p>
-          «بدون لغزش» یعنی سفارش شما با قیمت قطعی انجام می‌شود و بازار را
-          جابه‌جا نمی‌کند. این عدد جدا از «کارمزد» است؛ کارمزد به‌صورت مجزا در
-          تأیید سفارش نمایش داده می‌شود.
+          کمترین عددی که نمایش می‌دهیم ٪۰٫۱ است: حتی وقتی مسیر سفارش قیمت قطعی
+          دارد، به‌جای «صفر» همین عدد را می‌بینید — چون این رقم یک تخمین است و
+          «صفر» شبیه تضمین به‌نظر می‌رسد. این عدد جدا از «کارمزد» است؛ کارمزد
+          به‌صورت مجزا در تأیید سفارش نمایش داده می‌شود.
         </p>
       </div>
       <Button type="button" size="lg" fullWidth onClick={onClose}>

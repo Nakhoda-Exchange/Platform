@@ -45,6 +45,7 @@ function tradeStub(balances: TradeBalances) {
     orderType: OrderType;
     targetPriceIrt: number | null;
     amountCoinRaw?: string;
+    sellAll?: boolean;
   }> = [];
   const repo: TradeRepository = {
     getBalances: async () => ok(balances),
@@ -69,6 +70,7 @@ function tradeStub(balances: TradeBalances) {
         orderType,
         targetPriceIrt: options?.targetPriceIrt ?? null,
         amountCoinRaw: options?.amountCoinRaw,
+        sellAll: options?.sellAll,
       });
       // A MARKET order settles synchronously; a LIMIT order is accepted (202).
       if (orderType === "LIMIT") {
@@ -492,5 +494,78 @@ describe("PlaceOrderUseCase", () => {
     );
     expect(result.ok).toBe(true);
     expect(placed[0]?.amountCoin).toBe(held);
+  });
+
+  describe("«فروش همه» (issue #54)", () => {
+    test("sells a holding worth LESS than the minimum order", async () => {
+      // The dust trap: a position that has fallen below the floor cannot be
+      // topped up to clear it — nobody buys more of a coin they are exiting —
+      // so enforcing the minimum there freezes the user's own money forever.
+      const held = 0.00005; // 200,000 Toman at 4B/BTC — under the 500k floor
+      const proceeds = Math.floor(held * Number(BTC.priceIrt));
+
+      const blocked = tradeStub({
+        availableIrt: 0,
+        coinAmounts: { BTC: held },
+        coinAmountsRaw: { BTC: "0.00005" },
+      });
+      const refused = await new PlaceOrderUseCase(
+        marketStub,
+        blocked.repo,
+      ).execute("btc", "sell", proceeds, { idempotencyKey: KEY });
+      expect(refused.ok).toBe(false);
+      if (!refused.ok) expect(refused.error.code).toBe("BELOW_MIN_ORDER");
+      expect(blocked.placed.length).toBe(0);
+
+      const { repo, placed } = tradeStub({
+        availableIrt: 0,
+        coinAmounts: { BTC: held },
+        coinAmountsRaw: { BTC: "0.00005" },
+      });
+      const allowed = await new PlaceOrderUseCase(marketStub, repo).execute(
+        "btc",
+        "sell",
+        proceeds,
+        { idempotencyKey: KEY, sellAll: true },
+      );
+      expect(allowed.ok).toBe(true);
+      expect(placed[0]?.sellAll).toBe(true);
+    });
+
+    test("sends the EXACT held units, so no dust is left behind", async () => {
+      // Sized from a page-load price the amount is always a little off, which
+      // is what left a remainder. The raw decimal goes on the wire and
+      // `sellAll` lets the backend re-size from the ledger at fill time.
+      const { repo, placed } = tradeStub({
+        availableIrt: 0,
+        coinAmounts: { BTC: 0.512345678901234567 },
+        coinAmountsRaw: { BTC: "0.512345678901234567" },
+      });
+      const result = await new PlaceOrderUseCase(marketStub, repo).execute(
+        "btc",
+        "sell",
+        1_000_000, // a drift-affected estimate of the proceeds, not the size
+        { idempotencyKey: KEY, sellAll: true },
+      );
+      expect(result.ok).toBe(true);
+      expect(placed[0]?.amountCoinRaw).toBe("0.512345678901234567");
+      expect(placed[0]?.sellAll).toBe(true);
+    });
+
+    test("is ignored on a BUY — the flag can only ever empty a position", async () => {
+      const { repo, placed } = tradeStub({
+        availableIrt: 1e9,
+        coinAmounts: {},
+      });
+      const result = await new PlaceOrderUseCase(marketStub, repo).execute(
+        "btc",
+        "buy",
+        100_000,
+        { idempotencyKey: KEY, sellAll: true },
+      );
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error.code).toBe("BELOW_MIN_ORDER");
+      expect(placed.length).toBe(0);
+    });
   });
 });

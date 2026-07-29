@@ -44,6 +44,18 @@ export interface PlaceOrderInput {
    * obtained a fixed-price quote first. Absent ⇒ the price-band model applies.
    */
   quoteId?: string | null;
+  /**
+   * The user is selling their ENTIRE holding of this coin (issue #54). The
+   * order is sized by the BACKEND from the ledger, so `amountIrt` is only the
+   * screen's estimate of what it will fetch — and the minimum-order floor is
+   * waived here as it is there.
+   *
+   * The waiver is the whole point. A holding worth less than the minimum order
+   * cannot be topped up to clear it (nobody buys more of a coin they are trying
+   * to exit) so enforcing the floor on a full sell does not protect anyone — it
+   * just locks the user out of their own money. SELL only.
+   */
+  sellAll?: boolean;
 }
 
 /**
@@ -84,8 +96,15 @@ export class PlaceOrderUseCase {
       return fail("INVALID_TARGET_PRICE", "قیمت هدف را درست وارد کنید.");
     }
 
+    // A «فروش همه» is sized by the BACKEND from the ledger, so the amount here
+    // is the screen's estimate of the proceeds — not the order size. It is what
+    // makes a full sell leave no dust and a below-minimum holding sellable.
+    const sellAll = input.sellAll === true && side === "sell" && !isLimit;
+
     if (!Number.isFinite(amountIrt) || amountIrt <= 0) {
-      return fail("EMPTY_AMOUNT", "مبلغ سفارش را وارد کنید.");
+      // …but a sell-all of a holding worth under one Toman still has nothing to
+      // enter, and the backend refuses an empty holding on its own terms.
+      if (!sellAll) return fail("EMPTY_AMOUNT", "مبلغ سفارش را وارد کنید.");
     }
 
     const coins = await this.market.listCoins();
@@ -112,7 +131,10 @@ export class PlaceOrderUseCase {
     const limits = limitsResult.data.bySymbol[coin.symbol.toUpperCase()];
     const defaultMinIrt = limitsResult.data.defaultMinIrt;
     const minIrt = minOrderIrt(limits, side, defaultMinIrt);
-    if (amountIrt < minIrt) {
+    // The floor exists to refuse uneconomically small NEW positions. A sell-all
+    // disposes of one that already exists, so applying it there would freeze the
+    // user's coin permanently — the backend waives it for the same reason (#54).
+    if (!sellAll && amountIrt < minIrt) {
       return fail(
         "BELOW_MIN_ORDER",
         `کمینه این سفارش ${faToman.format(minIrt)} تومان است.`,
@@ -181,7 +203,16 @@ export class PlaceOrderUseCase {
       // available notional (Toman) × 10^18, and the requested notional × 10^18.
       const availValueScaled = (availScaled * priceScaled) / ONE;
       const amountValueScaled = BigInt(Math.round(amountIrt)) * ONE;
-      if (amountValueScaled > availValueScaled) {
+      if (sellAll) {
+        // The BACKEND re-sizes this from the ledger at fill time, which is the
+        // only figure that can be exact — ours is a snapshot of a balance that
+        // may already have moved. Send the exact held units anyway so a backend
+        // without the sell-all path still sells the whole position rather than
+        // the float re-derivation, and skip the over-sell guard: there is
+        // nothing to over-sell when the size is the balance itself.
+        amountCoinRaw = formatScaled(availScaled);
+        amountCoin = parsePrice(amountCoinRaw) ?? amountCoin;
+      } else if (amountValueScaled > availValueScaled) {
         // Overshoot: clamp only a ≤0.5% «sell all» rounding artifact.
         if (
           amountValueScaled * BigInt(1000) <=
@@ -213,6 +244,7 @@ export class PlaceOrderUseCase {
         // it combines with the coin's own value (it wins).
         slippageBps: input.slippageBps ?? null,
         amountCoinRaw,
+        sellAll,
         quoteId: input.quoteId ?? null,
       },
     );

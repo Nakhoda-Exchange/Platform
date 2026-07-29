@@ -30,10 +30,27 @@ in plain Persian.
 
 ## Guards (server-side, Persian errors)
 
-- Minimum order **۵۰۰٬۰۰۰ تومان**.
+- Minimum order **۵۰۰٬۰۰۰ تومان** — **except a «فروش همه»**, which is exempt.
+  The floor exists to refuse uneconomically small _new_ positions; applied to a
+  full sell it merely freezes a holding whose value has fallen below it, since
+  nobody buys more of a coin they are trying to exit. The screen says why
+  («فروش کل دارایی از کمینه سفارش معاف است») rather than silently relaxing a rule
+  it enforced a moment earlier.
 - Buy: total ≤ cash balance. Sell: coin amount ≤ held (with a clamp for the
-  «فروش همه» floor-rounding artifact).
+  «فروش همه» floor-rounding artifact). A full sell is sized by the **server**
+  from the ledger, so it empties the position exactly rather than leaving dust
+  behind at whatever the price drifted to since the page loaded.
 - KYC gate: deferred until auth sessions exist (documented blocker).
+- Every message the user sees is chosen from the error's `code`, never echoed
+  from the wire — see «Error messages are decided client-side» in `api.md`.
+
+## Submission is asynchronous to the user
+
+Confirming hands the order off and shows the submission sheet immediately. A
+MARKET order settles synchronously against a venue, so waiting for the response
+meant pinning the user to a spinning button through a whole venue round-trip —
+during which nothing they could do changed the outcome. The sheet is
+dismissable; the receipt (or the failure) reaches them wherever they are.
 
 ## Effects
 

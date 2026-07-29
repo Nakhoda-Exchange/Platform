@@ -78,8 +78,37 @@ settles once.
   "targetPrice": "4500000000", "amount": "0.5", "amountUnit": "BTC" }
 
 // optional on either: the user's own slippage tolerance (overrides the coin's)
-"slippageBps": "50"
+"slippageBps": 50   // a NUMBER, unlike every sibling money field
+
+// SELL EVERYTHING — sent whenever the entry covers the whole holding
+{ "symbol": "BTC", "side": "SELL", "orderType": "MARKET",
+  "amount": "2000000", "amountUnit": "IRT", "requestedPrice": "4000000000",
+  "sellAll": true }
+
+// commit to a server-minted quote: the fill honours its price for its TTL
+"quoteId": "quote_1f2e…"
 ```
+
+### `sellAll` — the only correct way to sell a whole position
+
+`sellAll: true` makes the backend size the order from the **ledger** and waives
+both the minimum-notional floor and the base-amount bounds. Both halves matter,
+and neither is reachable from the client:
+
+- the client's figure comes from a page-load price, so drift between then and the
+  fill leaves **dust** behind (or over-sells into a rejection);
+- without the waiver, a holding whose value has fallen under the minimum order is
+  **frozen forever** — too small to sell, and nobody buys more of a coin they are
+  trying to exit.
+
+`amount` still travels (the backend ignores it for sizing) and the exact held
+units ride along as the coin amount, so a backend without the sell-all path still
+empties the position rather than a float re-derivation of it. SELL only; ignored
+on a BUY.
+
+`quoteId` and `sellAll` are **mutually exclusive**: a quote may only price the
+exact `(symbol, side, amount)` it was minted for, and a sell-all's amount is
+decided server-side — pinning one is a guaranteed `QUOTE_MISMATCH`.
 
 Two success shapes plus an in-body rejection:
 
@@ -105,6 +134,26 @@ Two success shapes plus an in-body rejection:
 - The receipt (`PlacedOrder`) is built **client-side** from the validated request
   inputs plus the returned `orderId`; the submit result carries settlement
   status, not display fields.
+- **Retryable price codes** — `PRICE_UNAVAILABLE`, `PRICE_STALE`,
+  `PRICE_OUT_OF_TOLERANCE`, `QUOTE_EXPIRED`, `QUOTE_MISMATCH` all mean «the price
+  moved, confirm again», not «your order was refused». The screen reopens the
+  confirm sheet with the amounts intact and the same idempotency key.
+- **A lost response is not a failure.** While MARKET orders settle synchronously,
+  the submit can outlive any client budget — and aborting it does not cancel the
+  order. A transport failure on this endpoint becomes `SUBMIT_UNCONFIRMED`, whose
+  copy sends the user to check `/orders` and `/wallet` **before** retrying; it
+  must never read as «ناموفق», which users act on by placing a second order.
+
+### Error messages are decided client-side, by `code`
+
+The contract says `message` is user-showable Persian — but the trade engine
+published its own English domain strings («order size 300000 IRT is below the
+minimum 500000 IRT») straight into a toast, so the app no longer takes that on
+trust. `lib/core/domain/shared/error-copy.ts` maps the stable `code` to Persian
+copy, drops any message that isn't Persian, and collapses internal codes
+(`INTERNAL_ERROR`, `BAD_RESPONSE`, `VALIDATION_ERROR`, `CONCURRENT_MODIFICATION`…)
+to one generic sentence. **A new user-facing failure needs a `code`** — a message
+alone will be shown only if it is genuinely Persian, and never for those codes.
 
 A settled/filled order must appear in `/wallet/transactions` immediately. Fees
 are live (0.35%): buyers pay it out of `totalIrt`, sellers receive

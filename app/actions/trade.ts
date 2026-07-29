@@ -19,6 +19,18 @@ export async function placeTradeOrder(
   const coinId = String(formData.get("coinId") ?? "");
   const side = formData.get("side") === "sell" ? "sell" : "buy";
   const amountIrt = Number(formData.get("amountIrt") ?? 0);
+  // «فروش همه» (issue #54): the order is sized by the BACKEND from the ledger,
+  // and both the minimum-order floor and the base-amount bounds are waived — so
+  // a full sell leaves no dust and a holding worth less than the minimum is
+  // still sellable instead of frozen.
+  const sellAll = formData.get("sellAll") === "1";
+  // A server-minted quote (issue #59) the confirm sheet obtained and showed. The
+  // order commits to that fixed price, so the HOUSE — not the user — carries any
+  // drift inside its TTL; without it every order rides the client price band and
+  // an ordinary mid-confirm move becomes a PRICE_OUT_OF_TOLERANCE rejection.
+  const rawQuoteId = formData.get("quoteId");
+  const quoteId =
+    typeof rawQuoteId === "string" && rawQuoteId ? rawQuoteId : null;
   // Toman is whole units: reject a non-integer / non-finite / negative amount up
   // front (issue #63) rather than letting a fractional value slip past the
   // balance check and get rounded UP at the adapter (1 Toman over balance).
@@ -50,6 +62,8 @@ export async function placeTradeOrder(
       targetPriceIrt,
       slippageBps,
       idempotencyKey,
+      sellAll,
+      quoteId,
     });
 
   if (!result.ok) {
